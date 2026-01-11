@@ -42,10 +42,20 @@ const purchasedWebSchema = new Schema({
     type: String,
   },
 
+  webName: {
+    type: String,
+    required: true,
+  },
+
   isLive: {
     type: Boolean,
     default: true,
   },
+
+  author:{
+    type: Schema.Types.ObjectId,
+    ref: "user",
+  }
 })
 
 module.exports = mongoose.model("PurchasedWeb", purchasedWebSchema);

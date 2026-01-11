@@ -1,0 +1,55 @@
+<% layout("/layouts/boilerplate") %>
+<body class="text-slate-200 min-h-screen">
+
+    <main class="max-w-4xl mx-auto px-6 py-10">
+        <div class="relative mb-24">
+            <div class="h-48 md:h-64 w-full rounded-3xl bg-gradient-to-r from-indigo-900 via-slate-800 to-purple-900 shadow-2xl overflow-hidden">
+                <img src="https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&w=1000&q=80" alt="Cover" class="w-full h-full object-cover opacity-50">
+            </div>
+
+            <div class="absolute -bottom-16 left-8 flex flex-col md:flex-row md:items-end gap-6 w-[calc(100%-4rem)]">
+                <div class="relative">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="Avatar" class="w-32 h-32 md:w-40 md:h-40 rounded-3xl border-4 border-[#020617] bg-[#1e293b] shadow-2xl">
+                </div>
+                
+                <div class="flex-grow pb-2">
+                    <h1 class="text-3xl font-bold text-white"><%= currUser.username %></h1>
+                    <p class="text-slate-200"><%= currUser.email %></p>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    
+
+            <div class="lg:col-span-2 space-y-6">
+                <div class="profile-card p-8 rounded-2xl">
+                    <h2 class="text-xl font-bold mb-6">Purchased links</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
+                        <% for(order of purchasedLinks){%>
+                          <div class="space-y-1">
+                            <label class="text-xs font-semibold text-slate-500 uppercase"><%= order.webName %> For <%= order.receiver %>
+                            
+                              <% if(order.isLive){%>
+                                <span class="islive">Lii</span>
+                              <% } %>
+                              <% if(!order.isLive){%>
+                              <span class="isnotlive">Lii</span>
+                              <% } %>
+                          </label>
+                          
+                            <p class="text-slate-200"><%= order.webId %></p>
+                          </div>   
+                        <% } %>
+                        
+                    </div>
+                    
+            
+                </div>
+            </div>
+        </div>
+    </main>
+</body>

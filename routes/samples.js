@@ -7,7 +7,7 @@ const wrapAsync = require("../utils/wrapAsync.js");
 const { isLoggedIn } = require("../middleware.js")
 const {saveRedirectUrl} = require("../middleware.js");
 const passport = require("passport");
-
+const {isAdmin} = require("../middleware.js")
 // adding sample data 
 router.post("/home", wrapAsync(async (req, res) => {
   const testData = new WebSample({
@@ -42,7 +42,7 @@ router.get("/home", wrapAsync(async (req, res) => {
 }))
 
 // form to add new web
-router.get("/new", wrapAsync(async (req, res) => {
+router.get("/new",isAdmin, wrapAsync(async (req, res) => {
   res.render("addNewWeb")
 }))
 
@@ -75,7 +75,6 @@ router.post("/purchase/:id", isLoggedIn, wrapAsync(async (req, res) => {
   const { id } = req.params;
   const buyinfo = req.body.purchase;
   const specialMsgarr = [buyinfo.specialMsg];
-  console.log(specialMsgarr);
 
   const imageUrlarr = [buyinfo.imageUrl]
   const newPurchase = new purchasedWeb({
@@ -86,6 +85,8 @@ router.post("/purchase/:id", isLoggedIn, wrapAsync(async (req, res) => {
     imageUrl: imageUrlarr,
     paymentProofUrl: buyinfo.paymentProofUrl,
     specialMsg: specialMsgarr,
+    author: req.user._id,
+    webName: buyinfo.webName ,
   })
 
   try {
@@ -160,6 +161,13 @@ router.get("/logout", isLoggedIn, (req, res, next) => {
   });
 });
 
+
+// render profile page
+router.get("/profile",isLoggedIn, async(req,res)=>{
+  let purchasedLinks = await purchasedWeb.find({author:req.user._id});
+  
+  res.render("profile",{purchasedLinks});
+})
 
 
 
