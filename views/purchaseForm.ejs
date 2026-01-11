@@ -1,0 +1,129 @@
+<% layout("/layouts/boilerplate") %>
+
+  <body class="bg-[#020617] text-slate-200 min-h-screen flex flex-col">
+
+    <main class="flex-grow flex items-center justify-center px-6 py-12">
+      <div class="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+
+        <div>
+          <h1 class="text-5xl font-extrabold mb-6 leading-tight">
+            Let's Create <span class="text-indigo-500">New Website Link</span>.
+          </h1>
+
+          <!-- description  -->
+          <p class="text-slate-400 text-lg mb-8">
+            Our payment gateway is currently unavailable. In the meantime, you can complete your payment manually by
+            scanning the provided QR code.
+            <br><br>
+            After making the payment, please upload the payment screenshot using the form. Once verified, you will
+            receive
+            the website link within 24 hours.
+            <br><br>
+            If the link does not appear in your profile after 24 hours, please contact our support team for assistance.
+          </p>
+
+          <!-- support  -->
+          <div class="space-y-6">
+            <div class="flex items-center gap-4">
+              <div class="p-3 bg-indigo-500/10 rounded-lg text-indigo-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <span>support@wishlink.com</span>
+            </div>
+            <div class="flex items-center gap-4">
+              <div class="p-3 bg-purple-500/10 rounded-lg text-purple-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <span>Mumbai, India</span>
+            </div>
+          </div>
+
+
+        </div>
+
+
+        <!-- MAIN FORM -->
+
+        <div class="glass-effect p-8 md:p-10 rounded-3xl shadow-2xl">
+          <!-- QR Code image  -->
+          <% if(selectedWeb.price!=0){ %>
+            <div class="QRcodeBox">
+              <img src="https://miro.medium.com/v2/resize:fit:1400/1*f3oY1PxU9BbzKUyU_v822A.png" alt="QR">
+            </div>
+            <% } %>
+              <br>
+              <form action="/purchase/<%= id %>" method="POST" class="space-y-5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label class="block text-sm font-medium mb-2 text-slate-400">Selected Website</label>
+                    <div class="w-full px-4 py-3 rounded-xl form-input text-white">
+                      <%= selectedWeb.webName %>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium mb-2 text-slate-400">Price</label>
+                    <input name="purchase[price]" class="w-full px-4 py-3 rounded-xl form-input text-white"
+                      value=<%=selectedWeb.price %> readonly >
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium mb-2 text-slate-400">Website link will expire in</label>
+                    <div class="w-full px-4 py-3 rounded-xl form-input text-white">10 days</div>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium mb-2 text-slate-400">Receiver</label>
+                    <input name="purchase[receiver]" type="text" placeholder="ex. Natasha"
+                      class="w-full px-4 py-3 rounded-xl form-input text-white" required>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium mb-2 text-slate-400">Sender</label>
+                    <input name="purchase[sender]" type="text" placeholder="ex. Tom"
+                      class="w-full px-4 py-3 rounded-xl form-input text-white" required>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium mb-2 text-slate-400">Image Url</label>
+                    <input name="purchase[imageUrl]" type="text" placeholder="image"
+                      class="w-full px-4 py-3 rounded-xl form-input text-white" required>
+                  </div>
+
+                  <% if(selectedWeb.price!=0){ %>
+                    <div>
+                      <label class="block text-sm font-medium mb-2 text-slate-400">Upload payment screenshot</label>
+                      <input name="purchase[paymentProofUrl]" type="text" placeholder="image"
+                        class="w-full px-4 py-3 rounded-xl form-input text-white" required>
+                    </div>
+                  <% } %>
+
+                    <div>
+                      <label class="block text-sm font-medium mb-2 text-slate-400">Special message</label>
+                      <textarea name="purchase[specialMsg]" maxlength="150" rows="4"
+                        placeholder="Wishing you endless happiness, good health, and success in everything you do..."
+                        class="w-full px-4 py-3 rounded-xl form-input text-white" required></textarea>
+                    </div>
+
+                </div>
+
+                <button type="submit"
+                  class="w-full gradient-bg py-4 rounded-xl font-bold text-white shadow-lg shadow-indigo-500/30 hover:opacity-90 transition transform hover:-translate-y-1">
+                  Upload New Website
+                </button>
+
+              </form>
+        </div>
+      </div>
+    </main>
+
+  </body>

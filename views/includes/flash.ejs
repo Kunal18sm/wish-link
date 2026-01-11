@@ -1,0 +1,17 @@
+<% if (success && success.length) { %>
+  <div id="flash-message"
+    class="fixed top-16 left-1/2 -translate-x-1/2 z-[100] min-w-[300px] text-center px-6 py-3 rounded-xl bg-slate-900/80 border border-indigo-500/50 backdrop-blur-md shadow-[0_0_20px_rgba(99,102,241,0.2)]">
+    <span class="text-sm font-medium text-indigo-400 tracking-wide">
+      <%= success %>
+    </span>
+  </div>
+<% } %>
+
+<% if (error && error.length) { %>
+  <div id="flash-message"
+    class="fixed top-16 left-1/2 -translate-x-1/2 z-[100] min-w-[300px] text-center px-6 py-3 rounded-xl bg-slate-900/80 border border-indigo-500/50 backdrop-blur-md shadow-[0_0_20px_rgba(99,102,241,0.2)]">
+    <span class="text-sm font-medium text-indigo-400 tracking-wide">
+      <%= error %>
+    </span>
+  </div>
+<% } %>
