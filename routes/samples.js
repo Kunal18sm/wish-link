@@ -5,9 +5,15 @@ const router = express.Router({ mergeParams: true });
 const user = require("../models/user.js")
 const wrapAsync = require("../utils/wrapAsync.js");
 const { isLoggedIn } = require("../middleware.js")
-const {saveRedirectUrl} = require("../middleware.js");
+const { saveRedirectUrl } = require("../middleware.js");
 const passport = require("passport");
-const {isAdmin} = require("../middleware.js")
+const { isAdmin } = require("../middleware.js")
+
+const multer = require("multer");
+const { storage } = require("../cloudConfig.js");
+const upload = multer({ storage });
+
+
 // adding sample data 
 router.post("/home", wrapAsync(async (req, res) => {
   const testData = new WebSample({
@@ -42,17 +48,21 @@ router.get("/home", wrapAsync(async (req, res) => {
 }))
 
 // form to add new web
-router.get("/new",isAdmin, wrapAsync(async (req, res) => {
+router.get("/new",isLoggedIn ,isAdmin, wrapAsync(async (req, res) => {
   res.render("addNewWeb")
 }))
 
 // add new sample website (ADMIN)
-router.post("/new", wrapAsync(async (req, res) => {
+router.post("/new",upload.single("imageUrl"),wrapAsync(async (req, res) => {
+  
+  let url = req.file.path;
+  let filename = req.file.filename;
+
   const formData = req.body.listing;
   const newSample = new WebSample({
     webName: formData.webName,
     price: formData.price,
-    imageUrl: formData.imageUrl,
+    imageUrl: {url,filename},
     webUrl: formData.webUrl,
     description: formData.description
   })
@@ -71,35 +81,59 @@ router.get("/purchase/:id", isLoggedIn, wrapAsync(async (req, res) => {
 }))
 
 // Save Purchased 
-router.post("/purchase/:id", isLoggedIn, wrapAsync(async (req, res) => {
-  const { id } = req.params;
-  const buyinfo = req.body.purchase;
-  const specialMsgarr = [buyinfo.specialMsg];
+router.post("/purchase/:id", isLoggedIn,
 
-  const imageUrlarr = [buyinfo.imageUrl]
-  const newPurchase = new purchasedWeb({
-    webId: id,
-    sender: buyinfo.sender,
-    receiver: buyinfo.receiver,
-    price: buyinfo.price,
-    imageUrl: imageUrlarr,
-    paymentProofUrl: buyinfo.paymentProofUrl,
-    specialMsg: specialMsgarr,
-    author: req.user._id,
-    webName: buyinfo.webName ,
-  })
+  upload.fields([
+    { name: "images", maxCount: 5 },        // multiple images
+    { name: "paymentImage", maxCount: 1 }   // single image
+  ]),
 
-  try {
-    const save = await newPurchase.save();
-    console.log("Purchase success");
-    req.flash("success", "Purchase Success");
-    res.redirect("/");
-  } catch (err) {
-    console.log(err);
-    res.redirect("/");
-  }
+  wrapAsync(async (req, res) => {
+
+    // let url = req.file.path;
+    // let filename = req.file.filename;
+
+    const imagesArr = req.files.images
+      ? req.files.images.map(file => ({
+        url: file.path,
+        filename: file.filename
+      }))
+      : [];
+
+    const paymentImg = req.files.paymentImage
+      ? {
+        url: req.files.paymentImage[0].path,
+        filename: req.files.paymentImage[0].filename
+      }
+      : null;
+
+    const { id } = req.params;
+    const buyinfo = req.body.purchase;
+    const specialMsgarr = [buyinfo.specialMsg];
+
+    // const imageUrlarr = [buyinfo.imageUrl]
+    const newPurchase = new purchasedWeb({
+      webId: id,
+      sender: buyinfo.sender,
+      receiver: buyinfo.receiver,
+      price: buyinfo.price,
+      images: imagesArr,
+      paymentProofUrl: paymentImg,
+      specialMsg: specialMsgarr,
+      author: req.user._id,
+      webName: buyinfo.webName,
+    })
+
+    try {
+      const save = await newPurchase.save();
+      console.log("Purchase success");
+      req.flash("success", "Purchase Success");
+      res.redirect("/");
+    } catch (err) {
+      console.log(err);
+      res.redirect("/");
+    }
 }))
-
 
 // Get signUp form 
 router.get("/signUpForm", wrapAsync(async (req, res) => {
@@ -116,7 +150,7 @@ router.post("/signUp", wrapAsync(async (req, res) => {
     let { username, password, email } = req.body;
     const newUser = new user({ email, username });
     const registeredUser = await user.register(newUser, password);
-    
+
     // instant login after signUp
     req.login(registeredUser, (err) => {
       if (err) {
@@ -163,10 +197,10 @@ router.get("/logout", isLoggedIn, (req, res, next) => {
 
 
 // render profile page
-router.get("/profile",isLoggedIn, async(req,res)=>{
-  let purchasedLinks = await purchasedWeb.find({author:req.user._id});
-  
-  res.render("profile",{purchasedLinks});
+router.get("/profile", isLoggedIn, async (req, res) => {
+  let purchasedLinks = await purchasedWeb.find({ author: req.user._id });
+
+  res.render("profile", { purchasedLinks });
 })
 
 

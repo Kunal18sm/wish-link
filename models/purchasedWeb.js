@@ -23,13 +23,14 @@ const purchasedWebSchema = new Schema({
     default: "0",
   },
 
-  imageUrl: [{
-    type: String,
-    required: true,
+  images: [{
+    url: String,
+    filename: String
   }],
 
   paymentProofUrl: {
-    type: String,
+    url: String,
+    filename: String
   },
 
   specialMsg: [{

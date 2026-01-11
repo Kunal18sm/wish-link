@@ -15,8 +15,8 @@ const WebSampleSchema = new Schema({
     default:"0",
   },
   imageUrl: {
-    type: String,
-    required: true,
+    url: String,
+    filename: String
   },
   webUrl: {
     type: String,
