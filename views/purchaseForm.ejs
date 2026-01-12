@@ -7,10 +7,11 @@
 
         <div>
           <h1 class="text-5xl font-extrabold mb-6 leading-tight">
-            Let's Create <span class="text-indigo-500">New Website Link</span>.
+            Let's Create <span class="text-indigo-500">New Website Link</span>
           </h1>
 
           <!-- description  -->
+          <% if(selectedWeb.price!=0){ %>
           <p class="text-slate-400 text-lg mb-8">
             Our payment gateway is currently unavailable. In the meantime, you can complete your payment manually by
             scanning the provided QR code.
@@ -21,7 +22,7 @@
             <br><br>
             If the link does not appear in your profile after 24 hours, please contact our support team for assistance.
           </p>
-
+          <% } %>
           <!-- support  -->
           <div class="space-y-6">
             <div class="flex items-center gap-4">
@@ -53,7 +54,7 @@
 
 
         <!-- MAIN FORM -->
-
+        
         <div class="glass-effect p-8 md:p-10 rounded-3xl shadow-2xl">
           <!-- QR Code image  -->
           <% if(selectedWeb.price!=0){ %>
@@ -61,6 +62,8 @@
               <img src="https://miro.medium.com/v2/resize:fit:1400/1*f3oY1PxU9BbzKUyU_v822A.png" alt="QR">
             </div>
             <% } %>
+            <br>
+            <p class="text-slate-400 text-lg mb-8">Purchased links will be shown in your profile.</p> <hr style="opacity: 0.4;">
               <br>
               <form action="/purchase/<%= id %>" method="POST" class="space-y-5" enctype="multipart/form-data">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">

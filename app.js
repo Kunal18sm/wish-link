@@ -18,6 +18,8 @@ const app = express();
 const path = require("path");
 const PORT = 8080;
 
+const methodOverride = require("method-override");
+
 const multer = require("multer")
 const upload = multer({});
 
@@ -25,6 +27,8 @@ app.engine('ejs', ejsMate);
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+
+app.use(methodOverride("_method"));
 
 app.use(express.static("public"));
 app.use(express.static(path.join(__dirname, "public")));
@@ -79,83 +83,3 @@ app.listen(PORT, async (req, res) => {
   connectDb();
 })
 
-
-// router.post("/purchase/:id", isLoggedIn,
-  
-//   upload.fields([
-//     { name: "images", maxCount: 5 },        // multiple images
-//     { name: "paymentImage", maxCount: 1 }   // single image
-//   ]), 
-  
-//   wrapAsync(async (req, res) => {
-  
-//   let url = req.file.path;
-//   let filename = req.file.filename;
-  
-//   const { id } = req.params;
-//   const buyinfo = req.body.purchase;
-//   const specialMsgarr = [buyinfo.specialMsg];
-
-//   // const imageUrlarr = [buyinfo.imageUrl]
-//   const newPurchase = new purchasedWeb({
-//     webId: id,
-//     sender: buyinfo.sender,
-//     receiver: buyinfo.receiver,
-//     price: buyinfo.price,
-//     images: [{url,filename}],
-//     paymentProofUrl: buyinfo.paymentProofUrl,
-//     specialMsg: specialMsgarr,
-//     author: req.user._id,
-//     webName: buyinfo.webName ,
-//   })
-
-//   try {
-//     const save = await newPurchase.save();
-//     console.log("Purchase success");
-//     req.flash("success", "Purchase Success");
-//     res.redirect("/");
-//   } catch (err) {
-//     console.log(err);
-//     res.redirect("/");
-//   }
-// }))
-
-
-
-
-
-
-
-// Save Purchased 
-// router.post("/purchase/:id", isLoggedIn,upload.single("[buyinfo.imageUrl]"), wrapAsync(async (req, res) => {
-  
-//   let url = req.file.path;
-//   let filename = req.file.filename;
-  
-//   const { id } = req.params;
-//   const buyinfo = req.body.purchase;
-//   const specialMsgarr = [buyinfo.specialMsg];
-
-//   const imageUrlarr = [buyinfo.imageUrl]
-//   const newPurchase = new purchasedWeb({
-//     webId: id,
-//     sender: buyinfo.sender,
-//     receiver: buyinfo.receiver,
-//     price: buyinfo.price,
-//     imageUrl: {url,filename},
-//     paymentProofUrl: buyinfo.paymentProofUrl,
-//     specialMsg: specialMsgarr,
-//     author: req.user._id,
-//     webName: buyinfo.webName ,
-//   })
-
-//   try {
-//     const save = await newPurchase.save();
-//     console.log("Purchase success");
-//     req.flash("success", "Purchase Success");
-//     res.redirect("/");
-//   } catch (err) {
-//     console.log(err);
-//     res.redirect("/");
-//   }
-// }))

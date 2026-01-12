@@ -13,48 +13,25 @@ const multer = require("multer");
 const { storage } = require("../cloudConfig.js");
 const upload = multer({ storage });
 
+const { v4: uuidv4 } = require("uuid");
 
-// adding sample data 
-router.post("/home", wrapAsync(async (req, res) => {
-  const testData = new WebSample({
-    webName: "testweb1",
-    price: "1",
-    imageUrl: "testimgurl1",
-    webUrl: "testwebUrl1",
-  })
+const { cloudinary } = require("../cloudConfig.js");
 
-  try {
-    const saving = await testData.save();
-    console.log(saving);
-    console.log("saved data");
-    res.send("saved test data")
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "failed to save" });
-  }
-
-}))
-
+//home route
 router.get("/", wrapAsync(async (req, res) => {
   res.locals.message = req.flash("success");
   let allSamples = await WebSample.find();
   res.render("home", { allSamples });
 }))
 
-// show all samples
-router.get("/home", wrapAsync(async (req, res) => {
-  let allSamples = await WebSample.find();
-  res.render("home", { allSamples });
-}))
-
 // form to add new web
-router.get("/new",isLoggedIn ,isAdmin, wrapAsync(async (req, res) => {
+router.get("/new", isLoggedIn, isAdmin, wrapAsync(async (req, res) => {
   res.render("addNewWeb")
 }))
 
 // add new sample website (ADMIN)
-router.post("/new",upload.single("imageUrl"),wrapAsync(async (req, res) => {
-  
+router.post("/new", isLoggedIn, isAdmin, upload.single("imageUrl"), wrapAsync(async (req, res) => {
+
   let url = req.file.path;
   let filename = req.file.filename;
 
@@ -62,21 +39,21 @@ router.post("/new",upload.single("imageUrl"),wrapAsync(async (req, res) => {
   const newSample = new WebSample({
     webName: formData.webName,
     price: formData.price,
-    imageUrl: {url,filename},
+    imageUrl: { url, filename },
     webUrl: formData.webUrl,
     description: formData.description
   })
   const Saved = await newSample.save();
-  console.log(Saved);
+  req.flash("success","Added new website");
   res.redirect("/");
 }))
 
 // Form to purchase website link
 router.get("/purchase/:id", isLoggedIn, wrapAsync(async (req, res) => {
-  console.log(req.user);
-
   const { id } = req.params;
   const selectedWeb = await WebSample.findById(id);
+
+
   res.render("purchaseForm", { selectedWeb, id });
 }))
 
@@ -89,9 +66,6 @@ router.post("/purchase/:id", isLoggedIn,
   ]),
 
   wrapAsync(async (req, res) => {
-
-    // let url = req.file.path;
-    // let filename = req.file.filename;
 
     const imagesArr = req.files.images
       ? req.files.images.map(file => ({
@@ -108,12 +82,16 @@ router.post("/purchase/:id", isLoggedIn,
       : null;
 
     const { id } = req.params;
+    const selectedWeb = await WebSample.findById(id);
+
     const buyinfo = req.body.purchase;
     const specialMsgarr = [buyinfo.specialMsg];
-
+    const purchaseId = uuidv4();
+    const finalWebUrl = `${selectedWeb.webUrl}/${purchaseId}`;
     // const imageUrlarr = [buyinfo.imageUrl]
     const newPurchase = new purchasedWeb({
-      webId: id,
+      purchaseId: purchaseId,
+      webUrl: finalWebUrl,
       sender: buyinfo.sender,
       receiver: buyinfo.receiver,
       price: buyinfo.price,
@@ -126,20 +104,19 @@ router.post("/purchase/:id", isLoggedIn,
 
     try {
       const save = await newPurchase.save();
-      console.log("Purchase success");
       req.flash("success", "Purchase Success");
       res.redirect("/");
     } catch (err) {
       console.log(err);
       res.redirect("/");
     }
-}))
+  }))
 
 // Get signUp form 
 router.get("/signUpForm", wrapAsync(async (req, res) => {
   if (req.isAuthenticated()) {
-    console.log("chala ja bcdk");
-
+    req.flash("error", "you are already logged in")
+    res.redirect("/");
   }
   res.render("signUp");
 }))
@@ -203,11 +180,61 @@ router.get("/profile", isLoggedIn, async (req, res) => {
   res.render("profile", { purchasedLinks });
 })
 
-
-
-router.get("/all", async (req, res) => {
-  let allSamples = await WebSample.find();
-  res.render("home", { allSamples });
+// requests page
+router.get("/requests", isLoggedIn, isAdmin, async (req, res) => {
+  let userPurchased = await purchasedWeb.find({ adminInterected: false });
+  res.render("requests", { userPurchased });
 })
+
+// request accept
+router.get("/request/accept/:id", isLoggedIn, isAdmin, async (req, res) => {
+  const { id } = req.params;
+  const web = await purchasedWeb.findByIdAndUpdate(id, {
+    isLive: true,
+    adminInterected: true
+  })
+  req.flash("success","Request Accepted")
+  res.redirect("/requests");
+})
+
+// get expired websites 
+router.get("/request/expired", isLoggedIn, isAdmin, async (req, res) => {
+  const tenDaysAgo = new Date();
+  tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+  let userPurchased = await purchasedWeb.find({ date: { $lte: tenDaysAgo } });
+  res.render("requests", { userPurchased });
+})
+
+
+// delete purchased web
+router.delete("/request/delete/:id", isLoggedIn, isAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const toDelete = await purchasedWeb.findById(id);
+    if (!toDelete) {
+      return res.redirect("/request/expired");
+    }
+
+    // delete images from cloudinary
+    await Promise.all(
+      toDelete.images.map(image =>
+        cloudinary.uploader.destroy(image.filename)
+      )
+    );
+
+    // if (toDelete.paymentProofUrl.url) {
+    //   await cloudinary.uploader.destroy(toDelete.paymentProofUrl.url);
+    // }
+
+    await purchasedWeb.findByIdAndDelete(id);
+    req.flash("success","Deleted")
+    res.redirect("/request/expired");
+  } catch (err) {
+    console.error(err);
+    res.redirect("/request/expired");
+  }
+});
+
 
 module.exports = router;

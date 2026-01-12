@@ -1,4 +1,4 @@
-<% if (success && success.length) { %>
+<!-- <% if (success && success.length) { %>
   <div id="flash-message"
     class="fixed top-16 left-1/2 -translate-x-1/2 z-[100] min-w-[300px] text-center px-6 py-3 rounded-xl bg-slate-900/80 border border-indigo-500/50 backdrop-blur-md shadow-[0_0_20px_rgba(99,102,241,0.2)]">
     <span class="text-sm font-medium text-indigo-400 tracking-wide">
@@ -11,6 +11,30 @@
   <div id="flash-message"
     class="fixed top-16 left-1/2 -translate-x-1/2 z-[100] min-w-[300px] text-center px-6 py-3 rounded-xl bg-slate-900/80 border border-indigo-500/50 backdrop-blur-md shadow-[0_0_20px_rgba(99,102,241,0.2)]">
     <span class="text-sm font-medium text-indigo-400 tracking-wide">
+      <%= error %>
+    </span>
+  </div>
+<% } %> -->
+
+<% if (success && success.length) { %>
+  <div id="flash-message"
+    class="fixed top-16 left-1/2 -translate-x-1/2 z-[100] min-w-[320px] text-center px-6 py-4 rounded-2xl 
+           bg-emerald-500/20 border border-emerald-500/40 backdrop-blur-xl 
+           shadow-[0_8px_32px_rgba(16,185,129,0.2)] transition-all duration-500">
+    <span class="text-sm font-bold text-emerald-400 tracking-wide flex items-center justify-center gap-2">
+      <span class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
+      <%= success %>
+    </span>
+  </div>
+<% } %>
+
+<% if (error && error.length) { %>
+  <div id="flash-message"
+    class="fixed top-16 left-1/2 -translate-x-1/2 z-[100] min-w-[320px] text-center px-6 py-4 rounded-2xl 
+           bg-rose-500/20 border border-rose-500/40 backdrop-blur-xl 
+           shadow-[0_8px_32px_rgba(244,63,94,0.2)] transition-all duration-500">
+    <span class="text-sm font-bold text-rose-400 tracking-wide flex items-center justify-center gap-2">
+      <span class="w-2 h-2 bg-rose-400 rounded-full animate-pulse"></span>
       <%= error %>
     </span>
   </div>

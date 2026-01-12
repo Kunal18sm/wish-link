@@ -40,9 +40,13 @@
                               <span class="isnotlive">Lii</span>
                               <% } %>
                           </label>
-                          
-                            <p class="text-slate-200"><%= order.webId %></p>
-                          </div>   
+                            <% if(order.isLive){%>
+                                <a href="<%= order.webUrl %>"  target="_blank" rel="noopener noreferrer"><p class="text-slate-200"><%= order.webUrl %></p></a>
+                            <% } %>
+                            <% if(!order.isLive){%>
+                                <p class="text-slate-200">website is not available</p>
+                            <% } %>
+                        </div>   
                         <% } %>
                         
                     </div>

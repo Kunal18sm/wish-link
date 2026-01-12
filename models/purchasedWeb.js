@@ -3,7 +3,12 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const purchasedWebSchema = new Schema({
-  webId: {
+  purchaseId:{
+    type: String,
+    required: true,
+  },
+
+  webUrl: {
     type: String,
     required: true,
   },
@@ -50,13 +55,24 @@ const purchasedWebSchema = new Schema({
 
   isLive: {
     type: Boolean,
-    default: true,
+    default: false,
   },
 
   author:{
     type: Schema.Types.ObjectId,
     ref: "user",
+  },
+
+  date:{
+    type: Date,
+    default: Date.now,
+  },
+
+  adminInterected: {
+    type: Boolean,
+    default: false,
   }
+
 })
 
 module.exports = mongoose.model("PurchasedWeb", purchasedWebSchema);
