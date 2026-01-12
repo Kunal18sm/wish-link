@@ -10,10 +10,10 @@
         Explore premium, high-quality website for heartfelt wishes.
       </p>
       <div class="flex flex-col md:flex-row justify-center gap-4">
-        <input type="text" placeholder="Search templates (e.g. Birthday Wish, Newyear)..."
+        <input disabled type="text" placeholder="A message for someone special or…"
           class="bg-slate-800 border border-slate-700 px-6 py-3 rounded-xl w-full md:w-96 focus:outline-none focus:ring-2 focus:ring-indigo-500">
         <button
-          class="bg-indigo-600 px-8 py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-indigo-500/20 transition">Search</button>
+          class="bg-indigo-600 px-8 py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-indigo-500/20 transition">Send Smiles</button>
       </div>
     </header>
 
@@ -23,7 +23,7 @@
           <h2 class="text-3xl font-bold">Featured Websites</h2>
           <p class="text-slate-500 mt-2">Our most popular designs this week</p>
         </div>
-        <a href="#" class="text-indigo-400 font-semibold hover:underline">View All</a>
+        <a href="#" class="text-indigo-400 font-semibold hover:underline"></a>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -46,7 +46,7 @@
                 <div class="flex justify-between items-center">
                   <span class="text-indigo-400 font-bold">₹<%= sample.price %></span>
                   <div>
-                    <a href="/purchase/<%= sample.id %>"">
+                    <a href="/web/purchase/<%= sample.id %>"">
                   <button
                     class=" text-xs font-semibold bg-slate-800 px-3 py-1 rounded-md border border-slate-700">Buy
                       </button>

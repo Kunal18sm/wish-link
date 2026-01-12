@@ -5,7 +5,7 @@
 
   <div class="flex items-center gap-4">
     <% if(currUser && currUser.isAdmin) {%>
-      <a href="/new" class="hidden sm:block">
+      <a href="/web/new" class="hidden sm:block">
         <button
           class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-full text-sm font-semibold transition shadow-lg shadow-indigo-500/20">
           Add new
@@ -13,7 +13,7 @@
       </a>
     <% } %>
     <% if(currUser && currUser.isAdmin) {%>
-      <a href="/requests" class="hidden sm:block">
+      <a href="/requests/" class="hidden sm:block">
         <button
           class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-full text-sm font-semibold transition shadow-lg shadow-indigo-500/20">
           Requests
@@ -50,11 +50,11 @@
             </a>
           <% } %>
           <% if(currUser && currUser.isAdmin) {%>
-            <a href="/new"
+            <a href="/web/new"
               class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
               <span>Add new</span>
             </a>
-            <a href="/requests"
+            <a href="/requests/"
               class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
               <span>Requests</span>
             </a>

@@ -6,7 +6,9 @@ const express = require("express");
 const mongoose = require("mongoose");
 const ejsMate = require("ejs-mate");
 const routes = require("./routes/samples.js");
-const ExpressError = require("./utils/ExpressError.js");
+const webRoutes = require("./routes/website.js");
+const adminRoutes = require("./routes/admin.js");
+
 const session = require('express-session');
 const flash = require("connect-flash");
 
@@ -77,6 +79,8 @@ passport.deserializeUser(user.deserializeUser());
 
 
 app.use("/", routes);
+app.use("/requests", adminRoutes);
+app.use("/web",webRoutes);
 
 app.listen(PORT, async (req, res) => {
   console.log(`Listning to port ${PORT}`);

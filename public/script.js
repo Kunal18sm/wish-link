@@ -25,3 +25,16 @@ document.addEventListener('click', () => {
 profileMenu.addEventListener('click', (e) => {
   e.stopPropagation();
 });
+
+
+function copyText() {
+  const text = document.getElementById("wishLink").innerText;
+
+  navigator.clipboard.writeText(text)
+    .then(() => {
+      alert("Text copied ✨");
+    })
+    .catch(() => {
+      alert("Failed to copy");
+    });
+}
