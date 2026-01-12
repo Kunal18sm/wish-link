@@ -26,6 +26,11 @@ const WebSampleSchema = new Schema({
     type: Boolean,
     default: true,
   },
+  soldOut: {
+    type: Number,
+    default:0,
+  },
+
 })
 
 module.exports = mongoose.model("WebSamples", WebSampleSchema);

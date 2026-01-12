@@ -1,6 +1,8 @@
 const express = require("express");
 const WebSample = require("../models/WebSample.js");
 const purchasedWeb = require("../models/purchasedWeb.js");
+const user = require("../models/user.js");
+
 const router = express.Router({ mergeParams: true });
 const wrapAsync = require("../utils/wrapAsync.js");
 const { isLoggedIn } = require("../middleware.js")
@@ -88,9 +90,21 @@ router.post("/purchase/:id", isLoggedIn,
       specialMsg: specialMsgarr,
       author: req.user._id,
       webName: buyinfo.webName,
+    });
+
+    //save details in user collection array
+    const userId = req.user._id;;
+    const saveInUser = await user.findByIdAndUpdate(userId,{
+       $push:{webCollection:{
+        webName: buyinfo.webName,
+        dateOfBuy: new Date(),
+        receiver: buyinfo.receiver,
+        price: buyinfo.price,
+      }}
     })
 
     try {
+      const userSave = await saveInUser.save();
       const save = await newPurchase.save();
       req.flash("success", "Purchase Success");
       res.redirect("/");

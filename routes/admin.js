@@ -5,6 +5,8 @@ const wrapAsync = require("../utils/wrapAsync.js");
 const { isLoggedIn } = require("../middleware.js")
 const { isAdmin } = require("../middleware.js")
 const { cloudinary } = require("../cloudConfig.js");
+const { findOne } = require("../models/user.js");
+const WebSample = require("../models/WebSample.js");
 
 
 
@@ -14,13 +16,22 @@ router.get("/", isLoggedIn, isAdmin,wrapAsync( async (req, res) => {
   res.render("requests", { userPurchased });
 }))
 
-// request accept
+// request accepted
 router.get("/accept/:id", isLoggedIn, isAdmin,wrapAsync(async (req, res) => {
   const { id } = req.params;
   const web = await purchasedWeb.findByIdAndUpdate(id, {
     isLive: true,
     adminInterected: true
   })
+
+  //increasing soldout count
+  const purchasedWebsiteName = web.webName;
+  const updatedSoldCount = await WebSample.findOneAndUpdate(
+    {webName:purchasedWebsiteName},         // current user
+    { $inc: { soldOut: 1 } }, 
+  );
+
+
   req.flash("success","Request Accepted")
   res.redirect("/requests");
 }))

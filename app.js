@@ -82,6 +82,11 @@ app.use("/", routes);
 app.use("/requests", adminRoutes);
 app.use("/web",webRoutes);
 
+// 404 route (catch-all)
+app.use((req, res) => {
+  res.status(404).render("home"); //
+});
+
 app.listen(PORT, async (req, res) => {
   console.log(`Listning to port ${PORT}`);
   connectDb();

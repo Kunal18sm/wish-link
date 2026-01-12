@@ -11,6 +11,12 @@ const userSchema = new Schema({
     type: Boolean,
     default: false
   },
+  webCollection:[{
+    webName:String,
+    dateOfBuy:Date,
+    receiver:String,
+    price:String,
+  }],
 });
 
 userSchema.plugin(passportLocalMongoose);
