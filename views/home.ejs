@@ -46,13 +46,13 @@
                 <div class="flex justify-between items-center">
                   <span class="text-indigo-400 font-bold">₹<%= sample.price %></span>
                   <div>
-                    <a href="/web/purchase/<%= sample.id %>"">
-                  <button
-                    class=" text-xs font-semibold bg-slate-800 px-3 py-1 rounded-md border border-slate-700">Buy
+                    <a id="submitBtn" href="/web/purchase/<%= sample.id %>">
+                      <button 
+                        class=" text-xs font-semibold bg-slate-800 px-3 py-1 rounded-md border border-slate-700">Buy
                       </button>
                     </a>
                     <a href="<%=sample.webUrl %>" target="_blank" rel="noopener noreferrer">
-                      <button
+                      <button 
                         class="text-xs font-semibold bg-slate-800 px-3 py-1 rounded-md border border-slate-700">Preview
                       </button>
                     </a>
@@ -65,5 +65,13 @@
 
       </div>
     </main>
+
+    <script>
+      const btn = document.getElementById("submitBtn");
+      btn.addEventListener("click", function () {
+        btn.disabled = true;
+        btn.innerText = "go.";
+      });
+    </script>
 
   </body>
