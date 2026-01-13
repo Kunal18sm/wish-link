@@ -77,7 +77,7 @@ router.post("/purchase/:id", isLoggedIn,
     const buyinfo = req.body.purchase;
     const specialMsgarr = [buyinfo.specialMsg];
     const purchaseId = uuidv4();
-    const finalWebUrl = `${selectedWeb.webUrl}${selectedWeb.webName}/${purchaseId}`;
+    const finalWebUrl = `${selectedWeb.webUrl}$${purchaseId}`;
     // const imageUrlarr = [buyinfo.imageUrl]
     const newPurchase = new purchasedWeb({
       purchaseId: purchaseId,
