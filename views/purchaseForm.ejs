@@ -45,7 +45,7 @@
                     d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
-              <span>Mumbai, India</span>
+              <span>India</span>
             </div>
           </div>
 
@@ -59,7 +59,7 @@
           <!-- QR Code image  -->
           <% if(selectedWeb.price!=0){ %>
             <div class="QRcodeBox">
-              <img src="https://miro.medium.com/v2/resize:fit:1400/1*f3oY1PxU9BbzKUyU_v822A.png" alt="QR">
+              <img src="https://res.cloudinary.com/dcw90tnk1/image/upload/v1768291694/wishLink_dev/gedbuqpryaj7oqo8c3v1.png" alt="QR">
             </div>
             <% } %>
             <br>
@@ -69,7 +69,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                   
                   <div>
-                    <label class="block text-sm font-medium mb-2 text-slate-400">Price</label>
+                    <label class="block text-sm font-medium mb-2 text-slate-400">Website name</label>
                     <input name="purchase[webName]" class="w-full px-4 py-3 rounded-xl form-input text-white"
                       value=<%= selectedWeb.webName %> readonly >
                   </div>
@@ -97,8 +97,8 @@
                   </div>
 
                   <div>
-                    <label class="block text-sm font-medium mb-2 text-slate-400">Upload Images</label>
-                    <input name="images" type="file" placeholder="image" multiple
+                    <label class="block text-sm font-medium mb-2 text-slate-400">Upload Images (max 5)</label>
+                    <input name="images" id="images" type="file" placeholder="image" multiple
                       class="w-full px-4 py-3 rounded-xl form-input text-white" required >
                   </div>
 
@@ -129,4 +129,12 @@
       </div>
     </main>
 
-  </body>
+    <script>
+      document.getElementById("images").addEventListener("change", function () {
+        if (this.files.length > 5) {
+          alert("Maximum 5 images allowed");
+          this.value = ""; // reset input
+        }
+      });
+    </script>
+</body>
