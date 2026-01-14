@@ -90,9 +90,16 @@
                     <input name="purchase[receiver]" type="text" placeholder="ex. Natasha"
                       class="w-full px-4 py-3 rounded-xl form-input text-white" required>
                   </div>
+
                   <div>
                     <label class="block text-sm font-medium mb-2 text-slate-400">Sender</label>
                     <input name="purchase[sender]" type="text" placeholder="ex. Tom"
+                      class="w-full px-4 py-3 rounded-xl form-input text-white" required>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium mb-2 text-slate-400">Sender</label>
+                    <input name="purchase[imageNeeded]" type="number" placeholder="Images Needed"
                       class="w-full px-4 py-3 rounded-xl form-input text-white" required>
                   </div>
 
@@ -137,7 +144,7 @@
         }
       });
       document.getElementById("images").addEventListener("change", function () {
-        if (this.files.length < 5) {
+        if (this.files.length < selectedWeb.imageNeeded) {
           alert("please upload 5 images");
           this.value = ""; // reset input
         }

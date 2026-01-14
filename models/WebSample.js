@@ -30,6 +30,10 @@ const WebSampleSchema = new Schema({
     type: Number,
     default:0,
   },
+  imageNeeded:{
+    type: Number,
+    default:5,
+  }
 
 })
 

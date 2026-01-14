@@ -33,7 +33,8 @@ router.post("/new", isLoggedIn, isAdmin, upload.single("imageUrl"), wrapAsync(as
     price: formData.price,
     imageUrl: { url, filename },
     webUrl: formData.webUrl,
-    description: formData.description
+    description: formData.description,
+    imageNeeded: formData.imageNeeded,
   })
   const Saved = await newSample.save();
   req.flash("success","Added new website");
