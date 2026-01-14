@@ -99,7 +99,7 @@
 
                   
                   <div>
-                    <label class="block text-sm font-medium mb-2 text-slate-400">Upload Images (max 5)</label>
+                    <label class="block text-sm font-medium mb-2 text-slate-400">Upload <%= selectedWeb.imageNeeded %>Images</label>
                     <input name="images" id="images" type="file" placeholder="image" multiple
                       class="w-full px-4 py-3 rounded-xl form-input text-white" required >
                   </div>
@@ -139,8 +139,8 @@
         }
       });
       document.getElementById("images").addEventListener("change", function () {
-        if (this.files.length < selectedWeb.imageNeeded) {
-          alert("please upload 5 images");
+        if (this.files.length < 3) {
+          alert("please select more images to upload");
           this.value = ""; // reset input
         }
       });
