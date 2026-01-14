@@ -136,6 +136,12 @@
           this.value = ""; // reset input
         }
       });
+      document.getElementById("images").addEventListener("change", function () {
+        if (this.files.length < 5) {
+          alert("please upload 5 images");
+          this.value = ""; // reset input
+        }
+      });
       
       const form = document.getElementById("BuyForm");
       const btn = document.getElementById("submitBtn");
