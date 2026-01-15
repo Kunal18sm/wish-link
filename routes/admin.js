@@ -36,11 +36,9 @@ router.get("/accept/:id", isLoggedIn, isAdmin,wrapAsync(async (req, res) => {
   res.redirect("/requests");
 }))
 
-// get expired websites 
-router.get("/expired", isLoggedIn, isAdmin,wrapAsync( async (req, res) => {
-  const tenDaysAgo = new Date();
-  tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
-  let userPurchased = await purchasedWeb.find({ date: { $lte: tenDaysAgo } });
+// get allLive websites 
+router.get("/allLive", isLoggedIn, isAdmin,wrapAsync( async (req, res) => {
+  let userPurchased = await purchasedWeb.find({ isLive: true });
   res.render("requests", { userPurchased });
 }))
 

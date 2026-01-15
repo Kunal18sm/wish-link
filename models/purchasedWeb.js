@@ -44,10 +44,6 @@ const purchasedWebSchema = new Schema({
     maxlength: 150
   }],
 
-  webUrl: {
-    type: String,
-  },
-
   webName: {
     type: String,
     required: true,
