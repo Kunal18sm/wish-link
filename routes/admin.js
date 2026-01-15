@@ -16,6 +16,7 @@ router.get("/", isLoggedIn, isAdmin,wrapAsync( async (req, res) => {
   res.render("requests", { userPurchased });
 }))
 
+
 // request accepted
 router.get("/accept/:id", isLoggedIn, isAdmin,wrapAsync(async (req, res) => {
   const { id } = req.params;
@@ -35,6 +36,14 @@ router.get("/accept/:id", isLoggedIn, isAdmin,wrapAsync(async (req, res) => {
   req.flash("success","Request Accepted")
   res.redirect("/requests");
 }))
+
+// get expired websites 
+router.get("/expired", isLoggedIn, isAdmin,wrapAsync( async (req, res) => {
+  const tenDaysAgo = new Date();
+  tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+  let userPurchased = await purchasedWeb.find({ date: { $lte: tenDaysAgo } });
+  res.render("requests", { userPurchased });
+}));
 
 // get allLive websites 
 router.get("/allLive", isLoggedIn, isAdmin,wrapAsync( async (req, res) => {
@@ -58,10 +67,6 @@ router.delete("/delete/:id", isLoggedIn, isAdmin, wrapAsync(async (req, res) => 
         cloudinary.uploader.destroy(image.filename)
       )
     );
-
-    // if (toDelete.paymentProofUrl.url) {
-    //   await cloudinary.uploader.destroy(toDelete.paymentProofUrl.url);
-    // }
 
     await purchasedWeb.findByIdAndDelete(id);
     req.flash("success","Deleted")
