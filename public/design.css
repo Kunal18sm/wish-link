@@ -101,3 +101,7 @@ body {
 .request-card:hover {
   border-color: rgba(99, 102, 241, 0.4);
 }
+
+.imageWarning{
+  font-size: small;
+}
