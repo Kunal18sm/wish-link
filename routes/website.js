@@ -79,6 +79,7 @@ router.post("/purchase/:id", isLoggedIn,
     const specialMsgarr = [buyinfo.specialMsg];
     const purchaseId = uuidv4();
     const finalWebUrl = `${selectedWeb.webUrl}${purchaseId}`;
+    const isLive = buyinfo.price=="0"?true:false ;
     // const imageUrlarr = [buyinfo.imageUrl]
     const newPurchase = new purchasedWeb({
       purchaseId: purchaseId,
@@ -91,6 +92,7 @@ router.post("/purchase/:id", isLoggedIn,
       specialMsg: specialMsgarr,
       author: req.user._id,
       webName: buyinfo.webName,
+      isLive: isLive,
     });
 
     //save details in user collection array
