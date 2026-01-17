@@ -37,9 +37,9 @@ router.post("/new", isLoggedIn, isAdmin, upload.single("imageUrl"), wrapAsync(as
     imageNeeded: formData.imageNeeded,
   })
   const Saved = await newSample.save();
-  req.flash("success","Added new website");
+  req.flash("success", "Added new website");
   res.redirect("/");
-})) 
+}))
 
 // Form to purchase website link
 router.get("/purchase/:id", isLoggedIn, wrapAsync(async (req, res) => {
@@ -73,13 +73,18 @@ router.post("/purchase/:id", isLoggedIn,
       : null;
 
     const { id } = req.params;
-    const selectedWeb = await WebSample.findById(id);
+    const selectedWeb = await WebSample.findOneAndUpdate(
+      { _id: id },          // kaunsa document update hoga
+      { $inc: { soldOut: 1 } }, // sirf soldout +1
+      { new: true }         // updated data return karega
+    )
+
 
     const buyinfo = req.body.purchase;
     const specialMsgarr = [buyinfo.specialMsg];
     const purchaseId = uuidv4();
     const finalWebUrl = `${selectedWeb.webUrl}${purchaseId}`;
-    const isLive = buyinfo.price=="0"?true:false ;
+    const isLive = buyinfo.price == "0" ? true : false;
     // const imageUrlarr = [buyinfo.imageUrl]
     const newPurchase = new purchasedWeb({
       purchaseId: purchaseId,
@@ -97,17 +102,18 @@ router.post("/purchase/:id", isLoggedIn,
 
     //save details in user collection array
     const userId = req.user._id;;
-    const saveInUser = await user.findByIdAndUpdate(userId,{
-       $push:{webCollection:{
-        webName: buyinfo.webName,
-        dateOfBuy: new Date(),
-        receiver: buyinfo.receiver,
-        price: buyinfo.price,
-      }}
+    const saveInUser = await user.findByIdAndUpdate(userId, {
+      $push: {
+        webCollection: {
+          webName: buyinfo.webName,
+          dateOfBuy: new Date(),
+          receiver: buyinfo.receiver,
+          price: buyinfo.price,
+        }
+      }
     })
 
     try {
-      const userSave = await saveInUser.save();
       const save = await newPurchase.save();
       req.flash("success", "Purchase Success");
       res.redirect("/");
@@ -115,7 +121,7 @@ router.post("/purchase/:id", isLoggedIn,
       console.log(err);
       res.redirect("/");
     }
-}))
+  }))
 
 
 
