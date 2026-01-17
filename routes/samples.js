@@ -11,7 +11,7 @@ const passport = require("passport");
 //home route
 router.get("/", wrapAsync(async (req, res) => {
   res.locals.message = req.flash("success");
-  let allSamples = await WebSample.find();
+  let allSamples = await WebSample.find().sort({ _id: -1 });
   res.render("home", { allSamples });
 }))
 
