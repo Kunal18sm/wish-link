@@ -8,6 +8,8 @@ const ejsMate = require("ejs-mate");
 const routes = require("./routes/samples.js");
 const webRoutes = require("./routes/website.js");
 const adminRoutes = require("./routes/admin.js");
+const feedbackRouted = require("./routes/feedback.js");
+
 
 const session = require('express-session');
 const flash = require("connect-flash");
@@ -81,6 +83,8 @@ passport.deserializeUser(user.deserializeUser());
 app.use("/", routes);
 app.use("/requests", adminRoutes);
 app.use("/web",webRoutes);
+app.use("/feedback",feedbackRouted);
+
 
 // 404 route (catch-all)
 app.use((req, res) => {

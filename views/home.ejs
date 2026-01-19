@@ -9,18 +9,23 @@
       <p class="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-10">
         Explore premium and high-quality website for heartfelt wishes.
       </p>
-      <div class="flex flex-col md:flex-row justify-center gap-4">
-        <input disabled type="text" placeholder="A message for someone special or…"
-          class="bg-slate-800 border border-slate-700 px-6 py-3 rounded-xl w-full md:w-96 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-        <button
-          class="bg-indigo-600 px-8 py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-indigo-500/20 transition">Send Smiles</button>
-      </div>
-      <br><br><br>
-       <p class="text-emerald-500 text-lg mb-8">All created links will be shown in your profile.</p>
-    </header>
-   
 
-    <main class="max-w-7xl mx-auto px-6 py-12">
+      <form action="/feedback/add" method="POST" class="flex flex-col md:flex-row justify-center gap-4">
+        <input type="text" name="message" placeholder="A message for us..." required
+          class="bg-slate-800 border border-slate-700 px-6 py-3 rounded-xl w-full md:w-96 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+
+        <button type="submit" id="sendfeedback"
+          class="bg-indigo-600 px-8 py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-indigo-500/20 transition">
+          Send feedback
+        </button>
+      </form>
+
+      <br><br><br>
+      <p class="text-emerald-500 text-lg">All created links will be shown in your profile.</p>
+    </header>
+
+
+    <main class="max-w-7xl mx-auto px-6 ">
       <div class="flex justify-between items-end mb-10">
         <div>
           <h2 class="text-3xl font-bold">Featured Websites</h2>
@@ -37,7 +42,8 @@
             <div class="glass-effect rounded-2xl overflow-hidden group hover:scale-[1.02] transition duration-300">
               <div class="h-48 overflow-hidden">
                 <a href="<%= sample.webUrl %>">
-                <img src=<%= sample.imageUrl.url %> alt="SaaS Dashboard" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
+                  <img src=<%=sample.imageUrl.url %> alt="SaaS Dashboard" class="w-full h-full object-cover
+                  group-hover:scale-110 transition duration-500">
                 </a>
               </div>
               <div class="p-6">
@@ -51,12 +57,13 @@
                   <span class="text-indigo-400 font-bold">₹<%= sample.price %></span>
                   <div>
                     <a id="submitBtn" href="/web/purchase/<%= sample.id %>">
-                      <button 
-                        class=" text-xs font-semibold bg-slate-800 px-3 py-1 rounded-md border border-slate-700">Make Link
+                      <button
+                        class=" text-xs font-semibold bg-slate-800 px-3 py-1 rounded-md border border-slate-700">Make
+                        Link
                       </button>
                     </a>
                     <a href="<%=sample.webUrl %>" target="_blank" rel="noopener noreferrer">
-                      <button 
+                      <button
                         class="text-xs font-semibold bg-slate-800 px-3 py-1 rounded-md border border-slate-700">Preview
                       </button>
                     </a>
@@ -76,6 +83,11 @@
         btn.disabled = true;
         btn.innerText = "go.";
       });
+      // const sendfeedback = document.getElementById("sendfeedback");
+      // sendfeedback.addEventListener("click", function () {
+      //   sendfeedback.disabled = true;
+      //   sendfeedback.innerText = "Thank You";
+      // });
     </script>
 
   </body>

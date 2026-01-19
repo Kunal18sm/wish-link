@@ -1,0 +1,44 @@
+<% layout("/layouts/boilerplate") %>
+
+  <body class="text-slate-200 min-h-screen">
+
+    <main class="max-w-4xl mx-auto px-6 py-10 overflow-x-hidden">
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+
+        <div class="lg:col-span-2 space-y-6">
+          <div class="profile-card p-8 rounded-2xl">
+            <h2 class="text-xl font-bold mb-6">feedback</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              <% for(feedback of allFeedbacks){%>
+                <div
+                  class="request-card p-5 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
+
+                  <p id="wishLink" class="text-slate-200 break-words whitespace-normal">
+                    <%= feedback.userName %>
+                  </p>
+                  <p id="wishLink" class="text-slate-200 break-words whitespace-normal">
+                    <%= feedback.email %>
+                  </p>
+                  <p id="wishLink" class="text-slate-200 break-words whitespace-normal">
+                    <%= feedback.feedbackmsg %>
+                  </p>
+                  <form id="deleteForm" action="/feedback/delete/<%= feedback._id %>?_method=DELETE" method="POST">
+                    <button type="submit" id="deleteBtn"
+                      class="flex-1 md:flex-none px-5 py-2 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition font-semibold text-sm">
+                      delete
+                    </button>
+                  </form>
+                  <% } %>
+
+
+
+                </div>
+            </div>
+          </div>
+        </div>
+    </main>
+  </body>
