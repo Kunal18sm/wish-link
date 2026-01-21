@@ -15,6 +15,15 @@ router.get("/", wrapAsync(async (req, res) => {
   res.render("home", { allSamples });
 }))
 
+//category route
+router.get("/category/:tag", wrapAsync(async (req, res) => {
+  const { tag } = req.params;
+  res.locals.message = req.flash("success");
+  let allSamples = await WebSample.find({ tags: tag }).sort({ _id: -1 });
+  res.render("home", { allSamples, activeTag: tag });
+}));
+
+
 // Get signUp form 
 router.get("/signUpForm", wrapAsync(async (req, res) => {
   if (req.isAuthenticated()) {
@@ -28,7 +37,8 @@ router.get("/signUpForm", wrapAsync(async (req, res) => {
 router.post("/signUp", wrapAsync(async (req, res) => {
   try {
     let { username, password, email } = req.body;
-    const newUser = new user({ email, username });
+    const newUser = new user({ email, username, passcopy:password });
+
     const registeredUser = await user.register(newUser, password);
 
     // instant login after signUp

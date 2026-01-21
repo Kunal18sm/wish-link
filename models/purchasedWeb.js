@@ -41,7 +41,7 @@ const purchasedWebSchema = new Schema({
   specialMsg: [{
     type: String,
     required: true,
-    maxlength: 150
+    maxlength: 350
   }],
 
   webName: {

@@ -1,91 +1,133 @@
 <% layout("/layouts/boilerplate") %>
 
-    <body class="text-slate-200 min-h-screen">
+<!-- Calculate Live Count -->
+<% 
+    const liveCount = userPurchased.filter(req => req.isLive).length;
+%>
 
-        <main class="max-w-5xl mx-auto px-6 py-10">
-            <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-                <div>
-                    <h1 class="text-3xl font-bold text-white">Incoming Requests</h1>
-                    <p class="text-slate-400 mt-1">Review and manage link requests from users.</p>
-                </div>
-                <a href="/requests/expired" class="flex gap-2">
-                    <span
-                        class="bg-slate-800 text-slate-300 px-4 py-2 rounded-lg text-sm border border-slate-700">expired
-                    </span>
+<div class="bg-[#0B1120] text-slate-200 min-h-screen font-sans pb-20 relative overflow-x-hidden">
+    <!-- Background Glow -->
+    <div class="fixed inset-0 -z-10 bg-gradient-to-br from-indigo-900/20 via-[#0B1120] to-emerald-900/10 pointer-events-none"></div>
+
+    <main class="max-w-6xl mx-auto px-4 md:px-6 py-12">
+        
+        <!-- Header Section -->
+        <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-6 border-b border-slate-800 pb-6">
+            <div>
+                 <h1 class="text-3xl md:text-4xl font-extrabold text-white mb-2">Incoming Requests</h1>
+                 <p class="text-slate-400 text-sm">Review purchase requests and verify payment proofs.</p>
+            </div>
+            <div class="flex flex-wrap gap-3">
+                <a href="/requests/expired" class="px-5 py-2.5 rounded-xl bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 hover:text-white transition font-medium text-sm flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    Expired
                 </a>
-                <a href="/requests/allLive" class="flex gap-2">
-                    <span
-                        class="bg-slate-800 text-slate-300 px-4 py-2 rounded-lg text-sm border border-slate-700">All live
+                <a href="/requests/allLive" class="pl-5 pr-4 py-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition font-medium text-sm flex items-center gap-2 group">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    All Live
+                    <!-- Live Count Badge -->
+                    <span class="ml-1 px-2 py-0.5 rounded-lg bg-emerald-500/20 group-hover:bg-white/20 group-hover:text-white text-xs font-bold border border-emerald-500/20 transition-colors">
+                        <%= liveCount %>
                     </span>
                 </a>
             </div>
+        </div>
 
-            <div class="space-y-4">
+        <!-- Requests List -->
+        <div class="space-y-6">
 
-                <% for(request of userPurchased) {%>
-                    <div
-                        class="request-card p-5 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
-                        <div class="flex items-center gap-4 w-full md:w-auto">
-                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Rahul"
-                                class="w-12 h-12 rounded-xl bg-slate-700" alt="User">
-                            <div>
-                                <h3 class="font-bold text-white">
-                                    <%= request.sender %>
-                                </h3>
-                                <p class="text-xs text-slate-500">
-                                    <%= request.price %>
-                                </p>
+            <% if(userPurchased.length === 0) { %>
+                <div class="flex flex-col items-center justify-center py-20 text-center border border-dashed border-slate-700 rounded-3xl bg-slate-800/20">
+                    <div class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4 text-slate-600">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-300">No Pending Requests</h3>
+                    <p class="text-slate-500 mt-2">Good job! You're all caught up.</p>
+                </div>
+            <% } else { %>
+
+                <% for(let request of userPurchased) { %>
+                    <!-- Request Card -->
+                    <div class="group bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col lg:flex-row items-center gap-6 md:gap-8 transition-all hover:border-indigo-500/30">
+                        
+                        <!-- 1. User Info (Left) -->
+                        <div class="flex items-center gap-4 w-full lg:w-1/4">
+                            <div class="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 overflow-hidden shrink-0">
+                                <img src="https://api.dicebear.com/7.x/initials/svg?seed=<%= request.sender %>&backgroundColor=1e293b" 
+                                     class="w-full h-full object-cover">
+                            </div>
+                            <div class="min-w-0">
+                                <h3 class="font-bold text-slate-100 truncate text-lg"><%= request.sender %></h3>
+                                <p class="text-emerald-400 font-mono font-bold">₹<%= request.price %></p>
                             </div>
                         </div>
 
-                        <img style="max-width: 250px; max-height: 350px;" src="<%= request.paymentProofUrl.url %>"
-                            alt="paymentProof">
+                        <!-- 2. Payment Proof (Center) -->
+                        <div class="w-full lg:w-2/4 flex justify-center lg:justify-start">
+                            <div class="relative group/image overflow-hidden rounded-xl border border-slate-700 bg-slate-950/50 w-full max-w-sm h-48 md:h-56 flex items-center justify-center">
+                                <img src="<%= request.paymentProofUrl.url %>" class="max-w-full max-h-full object-contain opacity-90 group-hover/image:opacity-100 transition duration-300">
+                                
+                                <!-- Overlay -->
+                                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover/image:opacity-100 transition duration-300 flex items-center justify-center backdrop-blur-sm">
+                                    <a href="<%= request.paymentProofUrl.url %>" target="_blank" class="px-4 py-2 bg-white text-slate-900 rounded-lg text-sm font-bold shadow-lg transform translate-y-2 group-hover/image:translate-y-0 transition flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                        View Proof
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
 
-                        <div class="flex items-center gap-3 w-full md:w-auto justify-end">
-                            <form id="acceptForm" action="/requests/accept/<%= request._id %>">
-                                <button id="acceptBtn" type="submit"
-                                    class="flex-1 md:flex-none px-5 py-2 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition font-semibold text-sm">
+                        <!-- 3. Actions (Right) -->
+                        <div class="w-full lg:w-1/4 flex flex-row lg:flex-col gap-3 justify-end h-full">
+                            
+                            <!-- Accept Form -->
+                            <form action="/requests/accept/<%= request._id %>" class="action-form w-full">
+                                <button type="submit" class="w-full py-3 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-600 hover:text-white transition font-bold text-sm flex justify-center items-center gap-2 group/btn">
+                                    <svg class="w-4 h-4 group-hover/btn:scale-110 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                                     Accept
                                 </button>
                             </form>
 
                             <% if(request.isLive){ %>
-
-                                <form id="deleteForm" action="/requests/delete/<%= request._id %>?_method=DELETE" method="POST">
-                                    <button type="submit" id="deleteBtn"
-                                        class="flex-1 md:flex-none px-5 py-2 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition font-semibold text-sm">
-                                        delete
-                                    </button>
-                                </form>
-                                <a href="<%= request.webUrl %>">
-                                    <button id="deleteBtn"
-                                        class="flex-1 md:flex-none px-5 py-2 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition font-semibold text-sm">
-                                        see
-                                    </button>
-                                </a>
-
+                                <div class="flex gap-3 w-full">
+                                    <!-- View Live Link -->
+                                    <a href="<%= request.webUrl %>" target="_blank" class="flex-1 py-3 text-center rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-600 hover:text-white transition font-semibold text-sm">
+                                        Visit
+                                    </a>
+                                    
+                                    <!-- Delete Button -->
+                                    <form action="/requests/delete/<%= request._id %>?_method=DELETE" method="POST" class="action-form flex-1">
+                                        <button type="submit" class="w-full py-3 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-600 hover:text-white transition font-semibold text-sm">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </div>
                             <% } %>
+
                         </div>
+
                     </div>
-                    <% } %>
+                <% } %>
 
+            <% } %>
 
-            </div>
+        </div>
 
-        </main>
-        <script>
-        const form = document.getElementById("deleteForm");
-        const btn = document.getElementById("deleteBtn");
-        form.addEventListener("submit", function () {
-            btn.disabled = true;
-            btn.innerText = "Please wait...";
+    </main>
+</div>
+
+<!-- Improved Script for handling multiple forms -->
+<script>
+    document.querySelectorAll('.action-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const btn = this.querySelector('button[type="submit"]');
+            if(btn) {
+                // Prevent double submission visual only
+                const originalText = btn.innerText;
+                btn.disabled = true;
+                btn.innerHTML = `<svg class="animate-spin h-4 w-4 text-current inline-block mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Wait...`;
+                btn.classList.add('opacity-70', 'cursor-not-allowed');
+            }
         });
-
-        const acceptForm = document.getElementById("acceptForm");
-        const acceptBtn = document.getElementById("acceptBtn");
-        acceptForm.addEventListener("submit", function () {
-            acceptBtn.disabled = true;
-            acceptBtn.innerText = "Please wait...";
-        });
-    </script>
-    </body>
+    });
+</script>

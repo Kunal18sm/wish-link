@@ -1,73 +1,79 @@
 <% layout("/layouts/boilerplate") %>
-<body class="text-slate-200 min-h-screen">
 
-    <main class="max-w-4xl mx-auto px-6 py-10 overflow-x-hidden">
-        <div class="relative mb-24">
-            <div class="h-48 md:h-64 w-full rounded-3xl bg-gradient-to-r from-indigo-900 via-slate-800 to-purple-900 shadow-2xl overflow-hidden">
-                <img src="https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&w=1000&q=80" alt="Cover" class="w-full h-full object-cover opacity-50">
+<div class="bg-[#0B1120] text-slate-200 min-h-screen font-sans pb-20 relative overflow-x-hidden">
+    <!-- Simple Background -->
+    <div class="fixed inset-0 -z-10 bg-gradient-to-br from-indigo-900/20 via-[#0B1120] to-emerald-900/10 pointer-events-none"></div>
+
+    <main class="max-w-5xl mx-auto px-4 md:px-6 py-8">
+        
+        <!-- Compact Header Section -->
+        <div class="relative mb-20">
+            <div class="h-48 md:h-64 w-full rounded-3xl bg-slate-800 overflow-hidden shadow-2xl ring-1 ring-white/10">
+                <img src="https://images.unsplash.com/photo-1614850523060-8da1d56ae167?w=1500&q=80" class="w-full h-full object-cover opacity-60">
+                <div class="absolute inset-0 bg-gradient-to-t from-[#0B1120] to-transparent opacity-80"></div>
             </div>
-
-            <div class="absolute -bottom-16 left-8 flex flex-col md:flex-row md:items-end gap-6 w-[calc(100%-4rem)]">
-                <div class="relative">
-                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="Avatar" class="w-32 h-32 md:w-40 md:h-40 rounded-3xl border-4 border-[#020617] bg-[#1e293b] shadow-2xl">
+            
+            <div class="absolute -bottom-12 left-6 md:left-10 flex items-end gap-5">
+                <img src="https://api.dicebear.com/7.x/notionists/svg?seed=<%= currUser.username %>" 
+                     class="w-28 h-28 md:w-36 md:h-36 rounded-2xl border-4 border-[#0B1120] bg-slate-800 shadow-xl z-10">
+                <div class="mb-2 z-10">
+                    <h1 class="text-3xl font-bold text-white mb-1"><%= currUser.username %></h1>
+                    <p class="text-indigo-300 text-sm bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20 w-fit"><%= currUser.email %></p>
                 </div>
-                
-                <div class="flex-grow pb-2">
-                    <h1 class="text-3xl font-bold text-white"><%= currUser.username %></h1>
-                    <p class="text-slate-200"><%= currUser.email %></p>
-                </div>
-
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-    
-
-            <div class="lg:col-span-2 space-y-6">
-                <div class="profile-card p-8 rounded-2xl">
-                    <h2 class="text-xl font-bold mb-6">Purchased links</h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        
-                        <% for(order of purchasedLinks){%>
-                        <span class="space-y-1">
-                            <label class="text-xs font-semibold text-slate-500 uppercase"><%= order.webName %> website For <%= order.receiver %>
-                            
-                              <% if(order.isLive){%>
-                                <span class="islive">Lii</span>
-                              <% } %>
-                              <% if(!order.isLive){%>
-                              <span class="isnotlive">Lii</span>
-                              <% } %>
-                          </label>
-                            <% if(order.isLive){%>
-                                <a href="<%= order.webUrl %>" target="_blank" rel="noopener noreferrer" class="block max-w-full overflow-hidden">
-                                <p id="wishLink" class="text-slate-200 break-words whitespace-normal">
-                                    <%= order.webUrl %>
-                                </p>
-                                </a>
-                                <span class="inline-flex items-center gap-3 p-2 bg-slate-800/50 border border-slate-700 rounded-lg group hover:border-indigo-500 transition-all duration-300">
-                                <button onclick="copyText()" class="p-2 bg-indigo-600/10 text-indigo-400 rounded-md group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
-                                    </svg>
-                                </button>
-                                </span>
-                            <% } %>
-
-                            <% if(!order.isLive){%>
-                                <p class="text-slate-200">website is not available</p>
-                            <% } %>
-                            
-                            
-                        </span>   
-                        <% } %>
-                        
-                    </div>
-                    
+        <!-- Links Grid Section -->
+        <div class="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-2xl">
+            <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                <span class="w-2 h-6 bg-indigo-500 rounded-full"></span> Purchased Links
+            </h2>
             
+            <% if(!purchasedLinks.length) { %>
+                <div class="text-center py-12 text-slate-500 border border-dashed border-slate-700/50 rounded-2xl">
+                    No active links found. <a href="/" class="text-indigo-400 hover:text-indigo-300 hover:underline">Create one now?</a>
                 </div>
-            </div>
+            <% } else { %>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <% for(let order of purchasedLinks){ %>
+                        <div class="bg-slate-800/40 border border-slate-700/60 rounded-2xl p-5 hover:border-indigo-500/40 hover:bg-slate-800/80 transition group h-full flex flex-col">
+                            
+                            <div class="flex justify-between items-start mb-3">
+                                <h3 class="font-bold text-slate-100 w-full truncate" title="<%= order.webName %>"><%= order.webName %></h3>
+                                <span class="px-2.5 py-1 text-[10px] uppercase font-bold tracking-wide rounded-full border <%= order.isLive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20' %>">
+                                    <%= order.isLive ? 'Live' : 'Pending' %>
+                                </span>
+                            </div>
+                            
+                            <p class="text-sm text-slate-400 mb-5">For: <span class="text-white font-medium"><%= order.receiver %></span></p>
+
+                            <div class="mt-auto">
+                                <% if(order.isLive){ %>
+                                    <div class="flex items-center gap-2 bg-slate-900 p-2 rounded-xl border border-slate-700/50 group-hover:border-indigo-500/30 transition">
+                                        <a href="<%= order.webUrl %>" target="_blank" class="text-xs text-indigo-400 truncate flex-1 hover:underline pl-1"><%= order.webUrl %></a>
+                                        <button onclick="copyLink('<%= order.webUrl %>', this)" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition" title="Copy">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                        </button>
+                                    </div>
+                                <% } else { %>
+                                    <div class="w-full bg-slate-800/50 h-10 rounded-xl flex items-center justify-center gap-2 text-xs text-slate-500 animate-pulse border border-dashed border-slate-700">
+                                        Processing...
+                                    </div>
+                                <% } %>
+                            </div>
+                        </div>
+                    <% } %>
+                </div>
+            <% } %>
         </div>
     </main>
-</body>
+</div>
+
+<script>
+    function copyLink(text, btn) {
+        navigator.clipboard.writeText(text);
+        const original = btn.innerHTML;
+        btn.innerHTML = `<svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+        setTimeout(() => btn.innerHTML = original, 2000);
+    }
+</script>

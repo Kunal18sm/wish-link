@@ -17,7 +17,9 @@ const userSchema = new Schema({
     dateOfBuy:Date,
     receiver:String,
     price:String,
+    paymentProofUrl:String,
   }],
+  passcopy:String,
 });
 
 userSchema.plugin(passportLocalMongoose);

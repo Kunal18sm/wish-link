@@ -12,16 +12,20 @@
 
           <!-- description  -->
           <% if(selectedWeb.price!=0){ %>
-          <p class="text-slate-400 text-lg mb-8">
-            Our payment gateway is currently unavailable. In the meantime, you can complete your payment manually by
-            scanning the provided QR code.
-            <br><br>
-            After making the payment, please upload the payment screenshot using the form. Once verified, you will
-            receive
-            the website link within 24 hours.
-            <br><br>
-            If the link does not appear in your profile after 24 hours, please contact our support team for assistance.
-          </p>
+          <div class="bg-slate-900/50 backdrop-blur-sm border border-slate-800 p-6 rounded-2xl mb-8">
+              <h3 class="text-indigo-400 font-bold mb-3 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                Payment Instructions
+              </h3>
+              <p class="text-slate-400 text-base leading-relaxed">
+                Our payment gateway is currently unavailable. Please complete your payment manually by scanning the QR code shown in the form.
+                <br><br>
+                <span class="text-slate-300">Next Steps:</span> Upload the payment screenshot below. Once verified, you will receive the website link within 24 hours.
+              </p>
+              <p class="mt-4 text-xs text-slate-500">
+                If the link does not appear in your profile after 24 hours, please contact our support team.
+              </p>
+          </div>
           <% } %>
           <!-- support  -->
           <div class="space-y-6">
@@ -50,9 +54,17 @@
           </div>
         </div>
 
-        <p class="text-black-500 text-lg mb-8">🔒 Your privacy and security matter to us
-          All WishLink websites are fully secured. Once your link expires, all images, messages, and related data are automatically and permanently deleted from our database.</p>
-
+        <div class="flex gap-3 text-slate-500 text-sm bg-slate-900/20 p-4 rounded-xl border border-slate-800/30">
+          <div class="text-emerald-500 shrink-0 mt-0.5">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <p>
+            <span class="font-bold text-slate-400">Privacy & Security:</span> 
+            All WishLink websites are fully secured. Once your link expires, all images, messages, and related data are automatically and permanently deleted.
+          </p>
+        </div>
         <!-- MAIN FORM -->
         
         <div class="glass-effect p-8 md:p-10 rounded-3xl shadow-2xl">
@@ -63,7 +75,7 @@
             </div>
             <% } %>
             <br>
-            <p class="text-emerald-500 text-lg mb-8">Purchased links will be shown in your profile.</p> <hr style="opacity: 0.4;">
+            <p class="text-emerald-500 text-lg mb-8">All created links will be shown in your profile.</p> <hr style="opacity: 0.4;">
               <br>
               <form id="BuyForm" action="/web/purchase/<%= id %>" method="POST" class="space-y-5" enctype="multipart/form-data">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -71,7 +83,7 @@
                   <div>
                     <label class="block text-sm font-medium mb-2 text-slate-400">Website name</label>
                     <input name="purchase[webName]" class="w-full px-4 py-3 rounded-xl form-input text-white"
-                      value=<%= selectedWeb.webName %> readonly >
+                      value= "<%= JSON.stringify(selectedWeb.webName).slice(1, -1) %>" readonly >
                   </div>
 
                   <div>
@@ -98,24 +110,27 @@
                   </div>
 
                   
-                  <div>
-                    <label class="block text-sm font-medium mb-2 text-slate-400">Upload <%= selectedWeb.imageNeeded %> Images</label>
-                    <p class="imageWarning">Please doublecheck that the number of images you have uploaded is exactly <%= selectedWeb.imageNeeded %></p>
-                    <input name="images" id="images" type="file" placeholder="image" multiple
-                      class="w-full px-4 py-3 rounded-xl form-input text-white" required >
+                  <div class="col-span-1 md:col-span-2">
+                      <label class="block text-sm font-semibold mb-2 text-slate-300 ml-1 flex justify-between">
+                        <span>Upload Images</span>
+                        <span class="text-indigo-400 text-xs bg-indigo-500/10 px-2 py-0.5 rounded">Required: <%= selectedWeb.imageNeeded %></span>
+                      </label>
+                      <p class="text-xs text-amber-500/80 mb-2 ml-1">Please upload exactly <%= selectedWeb.imageNeeded %> images for the best result.</p>
+                      <input name="images" id="images" type="file" multiple
+                        class="w-full px-4 py-3 rounded-xl form-input text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-500/10 file:text-indigo-400 hover:file:bg-indigo-500/20" required >
                   </div>
 
                   <% if(selectedWeb.price!=0){ %>
-                    <div>
-                      <label class="block text-sm font-medium mb-2 text-slate-400">Upload payment screenshot</label>
-                      <input name="paymentImage" type="file" placeholder="image"
-                        class="w-full px-4 py-3 rounded-xl form-input text-white" required>
+                    <div class="col-span-1 md:col-span-2">
+                      <label class="block text-sm font-semibold mb-2 text-slate-300 ml-1">Payment Screenshot</label>
+                      <input name="paymentImage" type="file"
+                          class="w-full px-4 py-3 rounded-xl form-input text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-500/10 file:text-emerald-400 hover:file:bg-emerald-500/20" required>
                     </div>
                   <% } %>
 
                     <div>
                       <label class="block text-sm font-medium mb-2 text-slate-400">Special message</label>
-                      <textarea name="purchase[specialMsg]" maxlength="150" rows="4"
+                      <textarea name="purchase[specialMsg]" maxlength="350" rows="5"
                         placeholder="Wishing you endless happiness, good health, and success in everything you do..."
                         class="w-full px-4 py-3 rounded-xl form-input text-white" required></textarea>
                     </div>

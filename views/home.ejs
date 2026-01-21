@@ -1,93 +1,194 @@
 <% layout("/layouts/boilerplate") %>
 
-  <body class="bg-[#0f172a] text-slate-200 antialiased">
+<!-- Add Google Font for a more premium look -->
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+  
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: #0B1120; /* Ensure background matches in overscroll */
+  }
 
-    <header class="max-w-6xl mx-auto px-6 py-20 text-center">
-      <h1 class="text-5xl md:text-7xl font-extrabold mb-6">
-        Wish your loved ones and<br> <span class="gradient-text">Make their day special.</span>
-      </h1>
-      <p class="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-10">
-        Explore premium and high-quality website for heartfelt wishes.
-      </p>
+  /* Smooth scroll behavior */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px; 
+  }
+  ::-webkit-scrollbar-track {
+    background: #0f172a; 
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #334155; 
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #475569; 
+  }
 
-      <form action="/feedback/add" method="POST" class="flex flex-col md:flex-row justify-center gap-4">
-        <input type="text" name="message" placeholder="A message for us..." required
-          class="bg-slate-800 border border-slate-700 px-6 py-3 rounded-xl w-full md:w-96 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+  /* Hide scrollbar for category list but keep functionality */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+</style>
+
+<!-- Main Wrapper (Changed from body to div for better responsiveness in layouts) -->
+<div class="bg-[#0B1120] text-slate-200 antialiased relative min-h-screen w-full overflow-x-hidden selection:bg-indigo-500/30">
+
+  <!-- Background Ambient Glow Effects -->
+  <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+    <div class="absolute top-[-10%] left-[-10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-indigo-600/20 rounded-full blur-[80px] md:blur-[120px] mix-blend-screen animate-pulse"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-emerald-500/10 rounded-full blur-[80px] md:blur-[120px] mix-blend-screen"></div>
+  </div>
+
+  <!-- Header Section -->
+  <header class="relative max-w-6xl mx-auto px-4 md:px-6 pt-16 md:pt-20 pb-10 text-center">
+    
+    <!-- Badge -->
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs md:text-sm font-medium mb-6 md:mb-8 shadow-[0_0_15px_rgba(99,102,241,0.3)]">
+      <span class="relative flex h-2 w-2">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+      </span>
+      Premium Templates Available
+    </div>
+
+    <!-- Responsive Heading -->
+    <h1 class="text-3xl md:text-5xl lg:text-7xl font-extrabold mb-6 md:mb-8 tracking-tight leading-tight text-white break-words">
+      Wish your loved ones and<br class="hidden md:block">
+      <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-emerald-400 block md:inline mt-2 md:mt-0">
+        Make their day special.
+      </span>
+    </h1>
+    
+    <p class="text-slate-400 text-sm md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed px-2 md:px-0">
+      Explore premium, high-quality websites designed for heartfelt wishes. Create memorable moments with just a few clicks.
+    </p>
+
+    <!-- Feedback / Interaction Form -->
+    <div class="relative max-w-xl mx-auto mb-14 w-full">
+      <div class="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl blur opacity-25 transition duration-1000 group-hover:opacity-50 hidden md:block"></div>
+      
+      <form action="/feedback/add" method="POST" class="relative bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 p-2 rounded-2xl flex flex-col md:flex-row gap-3 shadow-2xl">
+        <input type="text" name="message" placeholder="Share your thoughts..." required
+          class="bg-transparent text-slate-200 placeholder-slate-500 px-4 md:px-6 py-3 w-full focus:outline-none text-base md:text-lg rounded-xl border border-slate-700 md:border-none mb-2 md:mb-0" />
 
         <button type="submit" id="sendfeedback"
-          class="bg-indigo-600 px-8 py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-indigo-500/20 transition">
-          Send feedback
+          class="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-xl font-bold transition-all duration-300 shadow-lg shadow-indigo-500/20 flex-shrink-0 whitespace-nowrap active:scale-95 w-full md:w-auto">
+          Send Feedback
         </button>
       </form>
+    </div>
 
-      <br><br><br>
-      <p class="text-emerald-500 text-lg">All created links will be shown in your profile.</p>
-    </header>
+    <!-- Horizontal Category Scroller (Mobile Optimized) -->
+    <div class="relative max-w-7xl mx-auto mt-8 md:mt-12 w-full">
+       <!-- Left & Right Fade Effect -->
+       <div class="absolute left-0 top-0 bottom-0 w-8 md:w-16 bg-gradient-to-r from-[#0B1120] to-transparent z-20 pointer-events-none"></div>
+       <div class="absolute right-0 top-0 bottom-0 w-8 md:w-16 bg-gradient-to-l from-[#0B1120] to-transparent z-20 pointer-events-none"></div>
+       
+       <div class="overflow-x-auto no-scrollbar pb-4 relative z-10" style="-webkit-overflow-scrolling: touch;">
+         <div class="flex flex-nowrap gap-3 px-4 md:px-6 w-max mx-auto md:mx-0 min-w-full justify-start md:justify-center">
+            <% const categories = ["All","Birthday", "Valentine's", "Sorry", "Girlfriend", "Family", "Funny", "Males", "Females", "Single", "Couple", "Anniversary", "Wedding", "Best Friend", "Parents", "Festival", "New Year", "Christmas", "Diwali", "Eid", "Holi"]; %>
+            
+            <% categories.forEach(tag => { %>
+              <a href="/category/<%= tag.toLowerCase() %>" class="group flex items-center px-4 md:px-5 py-2 rounded-full bg-slate-800/50 border border-slate-700 text-slate-400 text-sm md:text-base font-medium hover:border-indigo-500 hover:text-indigo-400 hover:bg-slate-800 transition-all duration-300 whitespace-nowrap select-none backdrop-blur-sm active:scale-95">
+                <%= tag %>
+              </a>
+            <% }) %>
+         </div>
+       </div>
+    </div>
+
+    <div class="mt-8 flex items-center justify-center gap-2 text-sm text-slate-500">
+      <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+      <p>All created links will be instantly visible in your profile.</p>
+    </div>
+  </header>
 
 
-    <main class="max-w-7xl mx-auto px-6 ">
-      <div class="flex justify-between items-end mb-10">
-        <div>
-          <h2 class="text-3xl font-bold">Featured Websites</h2>
-          <p class="text-slate-500 mt-2">Our most popular designs this week</p>
-        </div>
-        <a href="#" class="text-indigo-400 font-semibold hover:underline"></a>
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 md:px-6 pb-24">
+    
+    <!-- Section Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start mb-8 md:mb-12 gap-4 border-b border-slate-800 pb-6">
+      <div>
+        <h2 class="text-2xl md:text-3xl font-bold text-slate-100">Featured Collections</h2>
+        <p class="text-slate-400 mt-2 text-sm md:text-base">Handpicked designs trending this week</p>
       </div>
+    </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <!-- Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
 
-        <!-- cards  -->
-        <% for(let sample of allSamples) { %>
-          <l1>
-            <div class="glass-effect rounded-2xl overflow-hidden group hover:scale-[1.02] transition duration-300">
-              <div class="h-48 overflow-hidden">
-                <a href="<%= sample.webUrl %>">
-                  <img src=<%=sample.imageUrl.url %> alt="SaaS Dashboard" class="w-full h-full object-cover
-                  group-hover:scale-110 transition duration-500">
-                </a>
-              </div>
-              <div class="p-6">
-                <h3 class="text-xl font-bold mb-2">
-                  <%= sample.webName %>
-                </h3>
-                <p class="text-slate-400 text-sm mb-4">
-                  <%= sample.description %>
-                </p>
-                <div class="flex justify-between items-center">
-                  <span class="text-indigo-400 font-bold">₹<%= sample.price %></span>
-                  <div>
-                    <a id="submitBtn" href="/web/purchase/<%= sample.id %>">
-                      <button
-                        class=" text-xs font-semibold bg-slate-800 px-3 py-1 rounded-md border border-slate-700">Make
-                        Link
-                      </button>
-                    </a>
-                    <a href="<%=sample.webUrl %>" target="_blank" rel="noopener noreferrer">
-                      <button
-                        class="text-xs font-semibold bg-slate-800 px-3 py-1 rounded-md border border-slate-700">Preview
-                      </button>
-                    </a>
-                  </div>
-                </div>
-              </div>
+      <!-- Cards Loop -->
+      <% for(let sample of allSamples) { %>
+        <!-- Card Container -->
+        <div class="group relative bg-slate-900 border border-slate-800 rounded-2xl md:rounded-3xl overflow-hidden hover:border-slate-600 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 flex flex-col h-full">
+          
+          <!-- Image Section -->
+          <div class="relative h-48 md:h-56 overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent z-10 opacity-60"></div>
+            <a href="<%= sample.webUrl %>" target="_blank" class="block w-full h-full">
+              <img src="<%= sample.imageUrl.url %>" alt="<%= sample.webName %>" 
+                class="w-full h-full object-cover transform group-hover:scale-105 transition duration-700 ease-in-out">
+            </a>
+            
+            <!-- Price Tag Overlay -->
+            <div class="absolute top-3 right-3 md:top-4 md:right-4 z-20 bg-slate-900/90 backdrop-blur border border-slate-700 px-3 py-1 rounded-full shadow-lg">
+              <span class="text-emerald-400 font-bold text-xs md:text-sm">₹<%= sample.price %></span>
             </div>
-          </l1>
-          <% } %>
+          </div>
 
-      </div>
-    </main>
+          <!-- Content Section -->
+          <div class="p-4 md:p-6 flex flex-col flex-grow">
+            <div class="flex justify-between items-start mb-2">
+              <h3 class="text-lg md:text-xl font-bold text-slate-100 group-hover:text-indigo-400 transition-colors">
+                <%= sample.webName %>
+              </h3>
+            </div>
+            
+            <p class="text-slate-400 text-xs md:text-sm mb-4 md:mb-6 line-clamp-2 flex-grow">
+              <%= sample.description %>
+            </p>
 
-    <script>
-      const btn = document.getElementById("submitBtn");
-      btn.addEventListener("click", function () {
-        btn.disabled = true;
-        btn.innerText = "go.";
+            <!-- Action Buttons -->
+            <div class="grid grid-cols-2 gap-3 mt-auto">
+              <!-- Preview Button -->
+              <a href="<%= sample.webUrl %>" target="_blank" rel="noopener noreferrer"
+                 class="flex items-center justify-center px-4 py-2 md:py-2.5 rounded-xl border border-slate-700 text-slate-300 font-semibold text-xs md:text-sm hover:bg-slate-800 hover:text-white transition active:scale-95">
+                 Preview
+              </a>
+              
+              <!-- Purchase Button -->
+              <a href="/web/purchase/<%= sample.id %>" 
+                 class="submitBtnLink flex items-center justify-center px-4 py-2 md:py-2.5 rounded-xl bg-indigo-600 text-white font-semibold text-xs md:text-sm hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 transition active:scale-95">
+                 Make Link
+              </a>
+            </div>
+          </div>
+        </div>
+      <% } %>
+
+    </div>
+  </main>
+
+  <script>
+    const purchaseLinks = document.querySelectorAll('.submitBtnLink');
+    purchaseLinks.forEach(link => {
+      link.addEventListener("click", function (e) {
+        const btn = this;
+        btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processing...`;
+        btn.classList.add('opacity-75', 'cursor-wait');
       });
-      // const sendfeedback = document.getElementById("sendfeedback");
-      // sendfeedback.addEventListener("click", function () {
-      //   sendfeedback.disabled = true;
-      //   sendfeedback.innerText = "Thank You";
-      // });
-    </script>
+    });
+  </script>
 
-  </body>
+</div>

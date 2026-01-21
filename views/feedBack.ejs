@@ -1,44 +1,78 @@
 <% layout("/layouts/boilerplate") %>
 
-  <body class="text-slate-200 min-h-screen">
+<div class="bg-[#0B1120] text-slate-200 min-h-screen font-sans pb-20 relative overflow-x-hidden">
+    <!-- Background Glow -->
+    <div class="fixed inset-0 -z-10 bg-gradient-to-br from-indigo-900/20 via-[#0B1120] to-rose-900/10 pointer-events-none"></div>
 
-    <main class="max-w-4xl mx-auto px-6 py-10 overflow-x-hidden">
-
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-
-        <div class="lg:col-span-2 space-y-6">
-          <div class="profile-card p-8 rounded-2xl">
-            <h2 class="text-xl font-bold mb-6">feedback</h2>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-              <% for(feedback of allFeedbacks){%>
-                <div
-                  class="request-card p-5 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
-
-                  <p id="wishLink" class="text-slate-200 break-words whitespace-normal">
-                    <%= feedback.userName %>
-                  </p>
-                  <p id="wishLink" class="text-slate-200 break-words whitespace-normal">
-                    <%= feedback.email %>
-                  </p>
-                  <p id="wishLink" class="text-slate-200 break-words whitespace-normal">
-                    <%= feedback.feedbackmsg %>
-                  </p>
-                  <form id="deleteForm" action="/feedback/delete/<%= feedback._id %>?_method=DELETE" method="POST">
-                    <button type="submit" id="deleteBtn"
-                      class="flex-1 md:flex-none px-5 py-2 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition font-semibold text-sm">
-                      delete
-                    </button>
-                  </form>
-                  <% } %>
-
-
-
-                </div>
+    <main class="max-w-7xl mx-auto px-4 md:px-6 py-12">
+        
+        <!-- Page Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start mb-12 gap-4 border-b border-slate-800 pb-6">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-extrabold text-white mb-2">User Feedback</h1>
+                <p class="text-slate-400 text-sm">Review messages and suggestions from users.</p>
             </div>
-          </div>
+            <div class="bg-slate-800/50 px-4 py-2 rounded-full border border-slate-700 text-xs font-mono text-indigo-400">
+                Total: <%= allFeedbacks.length %> Messages
+            </div>
+        </div>
+
+        <!-- Feedback Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+            <% if(allFeedbacks.length === 0) { %>
+                <div class="col-span-full flex flex-col items-center justify-center py-20 text-center border border-dashed border-slate-700 rounded-3xl bg-slate-800/20">
+                    <div class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4 text-slate-600">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-300">No Feedback Yet</h3>
+                    <p class="text-slate-500 mt-2">When users send feedback, it will appear here.</p>
+                </div>
+            <% } else { %>
+
+                <% for(let feedback of allFeedbacks){ %>
+                    <!-- Feedback Card -->
+                    <div class="group bg-slate-900/60 backdrop-blur-md border border-slate-800 hover:border-indigo-500/30 rounded-3xl p-6 flex flex-col shadow-lg transition-all duration-300 hover:-translate-y-1">
+                        
+                        <!-- Header: User Info -->
+                        <div class="flex items-start gap-4 mb-4">
+                            <div class="shrink-0 w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 overflow-hidden">
+                                <img src="https://api.dicebear.com/7.x/initials/svg?seed=<%= feedback.userName %>&backgroundColor=1e293b" 
+                                     alt="Avatar" class="w-full h-full object-cover">
+                            </div>
+                            <div class="min-w-0">
+                                <h3 class="font-bold text-slate-100 truncate" title="<%= feedback.userName %>">
+                                    <%= feedback.userName %>
+                                </h3>
+                                <p class="text-xs text-indigo-400 truncate font-medium">
+                                    <%= feedback.email %>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Message Body -->
+                        <div class="bg-slate-800/30 rounded-2xl p-4 mb-6 flex-grow border border-slate-700/30 relative group-hover:bg-slate-800/50 transition-colors">
+                            <svg class="absolute top-3 left-3 w-4 h-4 text-slate-600 opacity-50" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C19.5693 16 20.017 15.5523 20.017 15V9C20.017 8.44772 19.5693 8 19.017 8H15.017C14.4647 8 14.017 8.44772 14.017 9V11C14.017 11.5523 13.5693 12 13.017 12H12.017V5H22.017V15C22.017 16.6569 20.6739 18 19.017 18H16.017C15.4647 18 15.017 18.4477 15.017 19V21L14.017 21ZM5.0166 21L5.0166 18C5.0166 16.8954 5.91203 16 7.0166 16H10.0166C10.5689 16 11.0166 15.5523 11.0166 15V9C11.0166 8.44772 10.5689 8 10.0166 8H6.0166C5.46432 8 5.0166 8.44772 5.0166 9V11C5.0166 11.5523 4.56889 12 4.0166 12H3.0166V5H13.0166V15C13.0166 16.6569 11.6735 18 10.0166 18H7.0166C6.46432 18 6.0166 18.4477 6.0166 19V21L5.0166 21Z"></path></svg>
+                            <p class="text-sm text-slate-300 leading-relaxed italic pl-6 pt-1">
+                                <%= feedback.feedbackmsg %>
+                            </p>
+                        </div>
+
+                        <!-- Footer / Delete Action -->
+                        <div class="mt-auto border-t border-slate-800 pt-4 flex justify-end">
+                            <form action="/feedback/delete/<%= feedback._id %>?_method=DELETE" method="POST">
+                                <button type="submit" 
+                                    class="flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500/5 text-rose-500 border border-rose-500/10 hover:bg-rose-500 hover:text-white transition-all text-xs font-bold uppercase tracking-wide group-hover:border-rose-500/50">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                <% } %>
+
+            <% } %>
+
         </div>
     </main>
-  </body>
+</div>

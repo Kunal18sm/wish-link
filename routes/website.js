@@ -35,6 +35,7 @@ router.post("/new", isLoggedIn, isAdmin, upload.single("imageUrl"), wrapAsync(as
     webUrl: formData.webUrl,
     description: formData.description,
     imageNeeded: formData.imageNeeded,
+    tags: formData.category,
   })
   const Saved = await newSample.save();
   req.flash("success", "Added new website");
@@ -109,6 +110,7 @@ router.post("/purchase/:id", isLoggedIn,
           dateOfBuy: new Date(),
           receiver: buyinfo.receiver,
           price: buyinfo.price,
+          paymentProofUrl: paymentImg,
         }
       }
     })

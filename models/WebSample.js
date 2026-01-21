@@ -33,7 +33,10 @@ const WebSampleSchema = new Schema({
   imageNeeded:{
     type: Number,
     default:5,
-  }
+  },
+  tags:[{
+    type: String,
+  }]
 
 })
 
