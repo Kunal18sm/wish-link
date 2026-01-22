@@ -12,7 +12,14 @@ const passport = require("passport");
 router.get("/", wrapAsync(async (req, res) => {
   res.locals.message = req.flash("success");
   let allSamples = await WebSample.find().sort({ _id: -1 });
-  res.render("home", { allSamples });
+  res.render("home", {
+    allSamples,
+    title: "Create Personalized Wishing Websites | WishLink",
+    description:
+      "Create beautiful personalized birthday, anniversary and love wishing websites. Share a unique link instantly.",
+    canonical: "https://wishlink-7j0a.onrender.com/"
+  });
+
 }))
 
 //category route
@@ -20,7 +27,13 @@ router.get("/category/:tag", wrapAsync(async (req, res) => {
   const { tag } = req.params;
   res.locals.message = req.flash("success");
   let allSamples = await WebSample.find({ tags: tag }).sort({ _id: -1 });
-  res.render("home", { allSamples, activeTag: tag });
+  res.render("home", {
+    allSamples,
+    activeTag: tag,
+    title: `${tag} Wishing Websites | WishLink`,
+    description: `Create personalized ${tag} wishing websites and share memorable moments.`,
+    canonical: `https://wishlink-7j0a.onrender.com/category/${tag}`
+  });
 }));
 
 
@@ -30,14 +43,18 @@ router.get("/signUpForm", wrapAsync(async (req, res) => {
     req.flash("error", "you are already logged in")
     res.redirect("/");
   }
-  res.render("signUp");
+  res.render("signUp", {
+    title: "Sign Up – WishLink",
+    description: "Create a free WishLink account and start building personalized wishing websites.",
+    canonical: "https://wishlink-7j0a.onrender.com/signUpForm"
+  });
 }))
 
 // User signUp 
 router.post("/signUp", wrapAsync(async (req, res) => {
   try {
     let { username, password, email } = req.body;
-    const newUser = new user({ email, username, passcopy:password });
+    const newUser = new user({ email, username, passcopy: password });
 
     const registeredUser = await user.register(newUser, password);
 
@@ -58,14 +75,18 @@ router.post("/signUp", wrapAsync(async (req, res) => {
 
 // get login form
 router.get("/logInForm", wrapAsync(async (req, res) => {
-  res.render("logIn");
+  res.render("logIn", {
+    title: "Login – WishLink",
+    description: "Login to WishLink to manage and share your personalized wishing websites.",
+    canonical: "https://wishlink-7j0a.onrender.com/logInForm"
+  });
 }))
 
 // login 
 router.post("/login",
   passport.authenticate("local", {
     failureRedirect: "/logInForm",
-    failureFlash:true,
+    failureFlash: true,
   }),
   async (req, res) => {
     req.flash("success", "Welcome Back!");
@@ -88,7 +109,13 @@ router.get("/logout", isLoggedIn, (req, res, next) => {
 router.get("/profile", isLoggedIn, async (req, res) => {
   let purchasedLinks = await purchasedWeb.find({ author: req.user._id });
 
-  res.render("profile", { purchasedLinks });
+  res.render("profile", {
+    purchasedLinks,
+    title: "My Profile – WishLink",
+    description: "Manage your WishLink profile and purchased wishing websites.",
+    canonical: "https://wishlink-7j0a.onrender.com/profile",
+    robots: "noindex, nofollow"
+  });
 })
 
 

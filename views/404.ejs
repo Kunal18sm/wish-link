@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found</title>
+    <style>
+        :root {
+            --primary-glow: #00d4ff;
+            --secondary-glow: #ff007a;
+            --bg-dark: #050505;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            height: 100%;
+            width: 100%;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-dark);
+            color: white;
+            overflow: hidden; /* Canvas particles ko restrict karne ke liye */
+        }
+
+        /* Full-screen Background Canvas */
+        #canvas-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        /* Main Wrapper */
+        .wrapper {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100%;
+            padding: 20px;
+            text-align: center;
+        }
+
+        /* Responsive 404 Text */
+        .error-code {
+            font-size: clamp(8rem, 25vw, 15rem); /* Mobile par chota, Desktop par bada */
+            font-weight: 900;
+            line-height: 1;
+            background: linear-gradient(to bottom, #fff, #444);
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 15px rgba(0, 212, 255, 0.3));
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-30px); }
+        }
+
+        .message-box {
+            max-width: 600px;
+        }
+
+        h2 {
+            font-size: clamp(1.2rem, 5vw, 2.5rem);
+            margin-bottom: 1rem;
+            color: #eee;
+        }
+
+        p {
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
+            color: #888;
+            margin-bottom: 2.5rem;
+            line-height: 1.6;
+        }
+
+        /* Interactive Button */
+        .btn {
+            display: inline-block;
+            padding: 15px 40px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+            text-decoration: none;
+            border: 1px solid var(--primary-glow);
+            border-radius: 8px;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .btn:hover {
+            background: var(--primary-glow);
+            color: #000;
+            box-shadow: 0 0 30px var(--primary-glow);
+            transform: translateY(-3px);
+        }
+
+        /* Media Queries for fine-tuning */
+        @media (max-width: 480px) {
+            .error-code {
+                margin-bottom: 10px;
+            }
+            .btn {
+                width: 100%; /* Mobile par full width button */
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas-bg"></canvas>
+
+    <div class="wrapper">
+        <div class="error-code">404</div>
+        <div class="message-box">
+            <h2>Lost in the Digital Void</h2>
+            <p>The page you are looking for might have been moved, deleted, or never existed in this dimension.</p>
+            <a href="https://wishlink-7j0a.onrender.com/" class="btn">BACK TO REALITY</a>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas-bg');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function initCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            particles = [];
+            for (let i = 0; i < 100; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 2,
+                    speed: Math.random() * 0.5 + 0.1
+                });
+            }
+        }
+
+        function drawParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+            particles.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                p.y -= p.speed;
+                if (p.y < 0) p.y = canvas.height;
+            });
+            requestAnimationFrame(drawParticles);
+        }
+
+        window.addEventListener('resize', initCanvas);
+        initCanvas();
+        drawParticles();
+    </script>
+</body>
+</html>

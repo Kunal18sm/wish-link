@@ -12,14 +12,19 @@ const feedback = require("../models/feedback.js");
 
 
 // get requests page
-router.get("/", isLoggedIn, isAdmin,wrapAsync( async (req, res) => {
+router.get("/", isLoggedIn, isAdmin, wrapAsync(async (req, res) => {
   let userPurchased = await purchasedWeb.find({ adminInterected: false });
-  res.render("requests", { userPurchased });
+  res.render("requests", {
+    userPurchased,
+    title: "Admin Requests – WishLink",
+    description: "Admin panel to manage user purchase requests.",
+    robots: "noindex, nofollow"
+  });
 }))
 
 
 // request accepted
-router.get("/accept/:id", isLoggedIn, isAdmin,wrapAsync(async (req, res) => {
+router.get("/accept/:id", isLoggedIn, isAdmin, wrapAsync(async (req, res) => {
   const { id } = req.params;
   const web = await purchasedWeb.findByIdAndUpdate(id, {
     isLive: true,
@@ -29,27 +34,37 @@ router.get("/accept/:id", isLoggedIn, isAdmin,wrapAsync(async (req, res) => {
   //increasing soldout count
   const purchasedWebsiteName = web.webName;
   const updatedSoldCount = await WebSample.findOneAndUpdate(
-    {webName:purchasedWebsiteName},         // current user
-    { $inc: { soldOut: 1 } }, 
+    { webName: purchasedWebsiteName },         // current user
+    { $inc: { soldOut: 1 } },
   );
 
 
-  req.flash("success","Request Accepted")
+  req.flash("success", "Request Accepted")
   res.redirect("/requests");
 }))
 
 // get expired websites 
-router.get("/expired", isLoggedIn, isAdmin,wrapAsync( async (req, res) => {
+router.get("/expired", isLoggedIn, isAdmin, wrapAsync(async (req, res) => {
   const tenDaysAgo = new Date();
   tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
   let userPurchased = await purchasedWeb.find({ date: { $lte: tenDaysAgo } });
-  res.render("requests", { userPurchased });
+  res.render("requests", {
+    userPurchased,
+    title: "Expired Websites – Admin | WishLink",
+    description: "Admin panel to manage expired websites.",
+    robots: "noindex, nofollow"
+  });
 }));
 
 // get allLive websites 
-router.get("/allLive", isLoggedIn, isAdmin,wrapAsync( async (req, res) => {
+router.get("/allLive", isLoggedIn, isAdmin, wrapAsync(async (req, res) => {
   let userPurchased = await purchasedWeb.find({ isLive: true });
-  res.render("requests", { userPurchased });
+  res.render("requests", {
+    userPurchased,
+    title: "Live Websites – Admin | WishLink",
+    description: "Admin panel to view all live websites.",
+    robots: "noindex, nofollow"
+  });
 }))
 
 // delete purchased web
@@ -70,7 +85,7 @@ router.delete("/delete/:id", isLoggedIn, isAdmin, wrapAsync(async (req, res) => 
     );
 
     await purchasedWeb.findByIdAndDelete(id);
-    req.flash("success","Deleted")
+    req.flash("success", "Deleted")
     res.redirect("/requests/expired");
   } catch (err) {
     console.error(err);

@@ -5,18 +5,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Create Personalized Wishing Websites | WishLink</title>
+    <title>
+        <%= title || "WishLink - Create Personalized Wishing Websites" %>
+    </title>
 
     <meta name="description"
-        content="Create beautiful personalized birthday, anniversary and love wishing websites. Share a unique link with your loved ones instantly using WishLink.">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://wishlink-7j0a.onrender.com/">
+        content="<%= description || 'Create beautiful personalized birthday, anniversary and love wishing websites using WishLink.' %>">
 
-    <meta property="og:title" content="WishLink – Create Personalized Wishing Websites">
-    <meta property="og:description"
-        content="Make birthdays and special days memorable with a personalized wishing website.">
+    <meta name="robots" content="<%= robots || 'index, follow' %>">
+    <link rel="canonical" href="<%= canonical || 'https://wishlink-7j0a.onrender.com/' %>">
+
+    <meta property="og:title" content="<%= ogTitle || title || 'WishLink' %>">
+    <meta property="og:description" content="<%= ogDescription || description %>">
     <meta property="og:image" content="https://wishlink-7j0a.onrender.com/og-image.png">
-    <meta property="og:url" content="https://wishlink-7j0a.onrender.com/">
+    <meta property="og:url" content="<%= canonical || 'https://wishlink-7j0a.onrender.com/' %>">
     <meta property="og:type" content="website">
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -39,7 +41,7 @@
         "url": "https://wishlink-7j0a.onrender.com",
         "description": "Create personalized wishing websites and share memorable moments with loved ones."
     }
-</script>
+    </script>
 
 
 </head>

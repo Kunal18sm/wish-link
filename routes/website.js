@@ -18,7 +18,11 @@ const { v4: uuidv4 } = require("uuid");
 
 // form to add new web
 router.get("/new", isLoggedIn, isAdmin, wrapAsync(async (req, res) => {
-  res.render("addNewWeb")
+  res.render("addNewWeb", {
+    title: "Add New Website – WishLink",
+    description: "Admin panel to add new wishing website templates.",
+    robots: "noindex, nofollow"
+  });
 }))
 
 // save new website
@@ -46,7 +50,14 @@ router.post("/new", isLoggedIn, isAdmin, upload.single("imageUrl"), wrapAsync(as
 router.get("/purchase/:id", isLoggedIn, wrapAsync(async (req, res) => {
   const { id } = req.params;
   const selectedWeb = await WebSample.findById(id);
-  res.render("purchaseForm", { selectedWeb, id });
+  res.render("purchaseForm", {
+    selectedWeb,
+    id,
+    title: `Purchase ${selectedWeb.webName} – WishLink`,
+    description: `Purchase and personalize the ${selectedWeb.webName} wishing website.`,
+    canonical: `https://wishlink-7j0a.onrender.com/web/purchase/${id}`,
+    robots: "noindex, nofollow"
+  });
 }))
 
 // Save Purchased 

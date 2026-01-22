@@ -7,8 +7,13 @@
   </url>
 
   <url>
-    <loc>https://wishlink-7j0a.onrender.com/samples</loc>
-    <priority>0.8</priority>
+    <loc>https://wishlink-7j0a.onrender.com/category/birthday</loc>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://wishlink-7j0a.onrender.com/category/anniversary</loc>
+    <priority>0.9</priority>
   </url>
 
 </urlset>
