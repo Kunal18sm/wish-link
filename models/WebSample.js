@@ -36,8 +36,7 @@ const WebSampleSchema = new Schema({
   },
   tags:[{
     type: String,
-  }]
-
+  }],
 })
 
 module.exports = mongoose.model("WebSamples", WebSampleSchema);

@@ -8,18 +8,21 @@ const userSchema = new Schema({
     unique: true,
     required: true,
   },
-  isAdmin:{
+  isAdmin: {
     type: Boolean,
     default: false
   },
-  webCollection:[{
-    webName:String,
-    dateOfBuy:Date,
-    receiver:String,
-    price:String,
-    paymentProofUrl:String,
+  webCollection: [{
+    webName: String,
+    dateOfBuy: Date,
+    receiver: String,
+    price: String,
+    paymentProofUrl: {
+      url: String,
+      filename: String
+    },
   }],
-  passcopy:String,
+  passcopy: String,
 });
 
 userSchema.plugin(passportLocalMongoose);
