@@ -4,23 +4,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WishLink</title>
+
+    <title>Create Personalized Wishing Websites | WishLink</title>
+
+    <meta name="description"
+        content="Create beautiful personalized birthday, anniversary and love wishing websites. Share a unique link with your loved ones instantly using WishLink.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://wishlink-7j0a.onrender.com/">
+
+    <meta property="og:title" content="WishLink – Create Personalized Wishing Websites">
+    <meta property="og:description"
+        content="Make birthdays and special days memorable with a personalized wishing website.">
+    <meta property="og:image" content="https://wishlink-7j0a.onrender.com/og-image.png">
+    <meta property="og:url" content="https://wishlink-7j0a.onrender.com/">
+    <meta property="og:type" content="website">
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/output.css">
     <link rel="stylesheet" href="/design.css">
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-L0F12E1ENT"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-L0F12E1ENT');
+    </script>
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "WishLink",
+        "url": "https://wishlink-7j0a.onrender.com",
+        "description": "Create personalized wishing websites and share memorable moments with loved ones."
+    }
+</script>
+
+
 </head>
 
 <body class="bg-[#020617] text-slate-200 min-h-screen flex flex-col">
 
     <%- include("../includes/navbar.ejs") %>
 
-    <%- include("../includes/flash.ejs") %>
-    
-    <%- body %>
+        <%- include("../includes/flash.ejs") %>
 
-    <%- include("../includes/footer.ejs") %>
+            <%- body %>
 
-    <script src="/script.js"></script>
+                <%- include("../includes/footer.ejs") %>
+
+                    <script src="/script.js"></script>
 </body>
 
 </html>
