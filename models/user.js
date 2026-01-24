@@ -8,10 +8,12 @@ const userSchema = new Schema({
     unique: true,
     required: true,
   },
+  
   isAdmin: {
     type: Boolean,
     default: false
   },
+
   webCollection: [{
     webName: String,
     dateOfBuy: Date,
@@ -22,7 +24,13 @@ const userSchema = new Schema({
       filename: String
     },
   }],
+
   passcopy: String,
+
+  date:{
+    type: Date,
+    default: Date.now,
+  }, 
 });
 
 userSchema.plugin(passportLocalMongoose);
