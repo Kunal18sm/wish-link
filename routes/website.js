@@ -129,10 +129,10 @@ router.post("/purchase/:id", isLoggedIn,
     try {
       const save = await newPurchase.save();
       req.flash("success", "Purchase Success");
-      res.redirect("/");
+      res.redirect("/profile");
     } catch (err) {
       console.log(err);
-      res.redirect("/");
+      res.redirect("/profile");
     }
   }))
 

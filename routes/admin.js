@@ -68,7 +68,7 @@ router.get("/allLive", isLoggedIn, isAdmin, wrapAsync(async (req, res) => {
 }))
 
 // delete purchased web
-router.delete("/delete/:id", isLoggedIn, isAdmin, wrapAsync(async (req, res) => {
+router.delete("/delete/:id", isLoggedIn, wrapAsync(async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -86,10 +86,10 @@ router.delete("/delete/:id", isLoggedIn, isAdmin, wrapAsync(async (req, res) => 
 
     await purchasedWeb.findByIdAndDelete(id);
     req.flash("success", "Deleted")
-    res.redirect("/requests/expired");
+    res.redirect("/profile");
   } catch (err) {
     console.error(err);
-    res.redirect("/requests/expired");
+    res.redirect("/profile");
   }
 }))
 

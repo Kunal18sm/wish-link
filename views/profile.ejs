@@ -54,7 +54,11 @@
                                         <button onclick="copyLink('<%= order.webUrl %>', this)" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition" title="Copy">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                                         </button>
-                                    </div>
+                                    </div> <br>
+                                    <button  type="button" onclick="openDeleteModal('<%= order._id %>')"
+                                        class="w-full py-3 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-600 hover:text-white transition font-semibold text-sm">
+                                        Delete
+                                    </button>
                                 <% } else { %>
                                     <div class="w-full bg-slate-800/50 h-10 rounded-xl flex items-center justify-center gap-2 text-xs text-slate-500 animate-pulse border border-dashed border-slate-700">
                                         Processing...
@@ -66,10 +70,51 @@
                 </div>
             <% } %>
         </div>
+        <div id="deleteModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
+            <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-[90%] max-w-sm text-center shadow-2xl">
+                <h3 class="text-xl font-bold text-white mb-2">Confirm Delete</h3>
+                <p class="text-slate-400 mb-6">Do you really want to delete this link?</p>
+
+            <div class="flex gap-3">
+                <button onclick="closeDeleteModal()"
+                    class="flex-1 py-2 rounded-xl bg-slate-700 text-white hover:bg-slate-600 transition">
+                    Cancel
+                </button>
+
+            <form id="deleteForm" method="POST" class="flex-1">
+                <button type="submit" id="submitBtn"
+                    class="w-full py-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700 transition">
+                    Yes, Delete
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
     </main>
 </div>
 
 <script>
+    const modal = document.getElementById("deleteModal");
+    const deleteForm = document.getElementById("deleteForm");
+
+    function openDeleteModal(id) {
+        deleteForm.action = `/requests/delete/${id}?_method=DELETE`;
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+    }
+
+    // on click confirm delete btn
+    const btn = document.getElementById("submitBtn");
+        deleteForm.addEventListener("submit", function () {
+        btn.disabled = true;
+        btn.innerText = "Please wait...";
+    });
+
+    function closeDeleteModal() {
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+    }
     function copyLink(text, btn) {
         navigator.clipboard.writeText(text);
         const original = btn.innerHTML;
