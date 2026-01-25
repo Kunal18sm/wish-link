@@ -20,7 +20,6 @@ const purchasedWebSchema = new Schema({
 
   receiver: {
     type: String,
-    required: true,
   },
 
   price: {
