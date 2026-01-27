@@ -23,7 +23,7 @@ router.post("/add", isLoggedIn, wrapAsync((async (req, res) => {
 router.get("/feedbackpage", isLoggedIn, isAdmin, wrapAsync((async (req, res) => {
 
   try {
-    let allFeedbacks = await feedback.find();
+    let allFeedbacks = await feedback.find().sort({ _id: -1 });
     res.render("feedBack", {
       allFeedbacks,
       title: "Feedback Dashboard – WishLink",

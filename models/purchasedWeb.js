@@ -66,6 +66,11 @@ const purchasedWebSchema = new Schema({
   adminInterected: {
     type: Boolean,
     default: false,
+  },
+
+  isTemporary: {
+    type: Boolean,
+    default: true,
   }
 
 })

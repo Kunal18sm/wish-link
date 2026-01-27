@@ -47,7 +47,7 @@ router.get("/accept/:id", isLoggedIn, isAdmin, wrapAsync(async (req, res) => {
 router.get("/expired", isLoggedIn, isAdmin, wrapAsync(async (req, res) => {
   const tenDaysAgo = new Date();
   tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
-  let userPurchased = await purchasedWeb.find({ date: { $lte: tenDaysAgo } });
+  let userPurchased = await purchasedWeb.find({ date: { $lte: tenDaysAgo }, isTemporary: true });
   res.render("requests", {
     userPurchased,
     title: "Expired Websites – Admin | WishLink",
@@ -58,7 +58,7 @@ router.get("/expired", isLoggedIn, isAdmin, wrapAsync(async (req, res) => {
 
 // get allLive websites 
 router.get("/allLive", isLoggedIn, isAdmin, wrapAsync(async (req, res) => {
-  let userPurchased = await purchasedWeb.find({ isLive: true });
+  let userPurchased = await purchasedWeb.find({ isLive: true }).sort({ _id: -1 });
   res.render("requests", {
     userPurchased,
     title: "Live Websites – Admin | WishLink",

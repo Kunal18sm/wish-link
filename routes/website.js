@@ -46,17 +46,36 @@ router.post("/new", isLoggedIn, isAdmin, upload.single("imageUrl"), wrapAsync(as
   res.redirect("/");
 }))
 
-// Form to purchase website link
-router.get("/purchase/:id", isLoggedIn, wrapAsync(async (req, res) => {
+
+// Form to purchase temprary website link
+router.get("/purchase/temporary/:id", isLoggedIn, wrapAsync(async (req, res) => {
   const { id } = req.params;
   const selectedWeb = await WebSample.findById(id);
+  const isTemporary = true;
   res.render("purchaseForm", {
     selectedWeb,
     id,
     title: `Purchase ${selectedWeb.webName} – WishLink`,
     description: `Purchase and personalize the ${selectedWeb.webName} wishing website.`,
     canonical: `https://wishlink-7j0a.onrender.com/web/purchase/${id}`,
-    robots: "noindex, nofollow"
+    robots: "noindex, nofollow",
+    isTemporary
+  });
+}))
+
+// Form to purchase website link
+router.get("/purchase/permanent/:id", isLoggedIn, wrapAsync(async (req, res) => {
+  const { id } = req.params;
+  const selectedWeb = await WebSample.findById(id);
+  const isTemporary = false;
+  res.render("purchaseForm", {
+    selectedWeb,
+    id,
+    title: `Purchase ${selectedWeb.webName} – WishLink`,
+    description: `Purchase and personalize the ${selectedWeb.webName} wishing website.`,
+    canonical: `https://wishlink-7j0a.onrender.com/web/purchase/${id}`,
+    robots: "noindex, nofollow",
+    isTemporary
   });
 }))
 
@@ -92,11 +111,11 @@ router.post("/purchase/:id", isLoggedIn,
     )
 
 
-    const buyinfo = req.body.purchase;
+    const buyinfo = req.body.purchase;    
     const specialMsgarr = [buyinfo.specialMsg];
     const purchaseId = uuidv4();
     const finalWebUrl = `${selectedWeb.webUrl}${purchaseId}`;
-    const isLive = buyinfo.price == "0" ? true : false;
+    const isLive = buyinfo.isTemporary == "true" ? true : false;
     // const imageUrlarr = [buyinfo.imageUrl]
     const newPurchase = new purchasedWeb({
       purchaseId: purchaseId,
@@ -110,6 +129,7 @@ router.post("/purchase/:id", isLoggedIn,
       author: req.user._id,
       webName: buyinfo.webName,
       isLive: isLive,
+      isTemporary: buyinfo.isTemporary,
     });
 
     //save details in user collection array
@@ -134,7 +154,7 @@ router.post("/purchase/:id", isLoggedIn,
       console.log(err);
       res.redirect("/profile");
     }
-  }))
+}))
 
 
 
