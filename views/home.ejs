@@ -100,19 +100,13 @@
            <% const categories = ["All","Birthday", "Valentine's", "Sorry", "Girlfriend", "Family", "Funny", "Males", "Females", "Single", "Couple", "Anniversary", "Wedding", "Best Friend", "Parents", "Festival", "New Year", "Christmas", "Diwali", "Eid", "Holi"]; %>
            
            <% categories.forEach(tag => { %>
-             <a href="/category/<%= tag.toLowerCase() %>" class="px-3 md:px-4 py-1.5 rounded-full bg-slate-900/50 border border-slate-800 text-slate-400 text-xs md:text-sm font-medium hover:border-indigo-500/50 hover:text-indigo-300 hover:bg-indigo-500/10 transition-all duration-300 whitespace-nowrap select-none backdrop-blur-sm active:scale-95">
+             <a href="/category/<%= tag.toLowerCase() %>" class="px-4 md:px-4 py-3 rounded-full bg-slate-900/50 border border-slate-800 text-slate-400 text-xs md:text-sm font-medium hover:border-indigo-500/50 hover:text-indigo-300 hover:bg-indigo-500/10 transition-all duration-300 whitespace-nowrap select-none backdrop-blur-sm active:scale-95">
                <%= tag %>
              </a>
            <% }) %>
          </div>
        </div>
     </div>
-
-    <div class="mt-4 flex items-center justify-center gap-2 text-xs text-slate-500">
-      <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-      <p class="text-emerald-500">Tap on the image to see the template preview.</p>
-    </div>
-  
 </header>
 
 
@@ -127,6 +121,10 @@
       </div>
     </div>
 
+    <div class="mb-8 flex items-center justify-center gap-2 text-xs text-slate-500">
+      <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+      <p class="text-emerald-500">Tap on the image to see the template preview.</p>
+    </div>
     <!-- Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
 
