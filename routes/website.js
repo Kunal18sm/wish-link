@@ -19,7 +19,7 @@ const { v4: uuidv4 } = require("uuid");
 // form to add new web
 router.get("/new", isLoggedIn, isAdmin, wrapAsync(async (req, res) => {
   res.render("addNewWeb", {
-    title: "Add New Website – WishLink",
+    title: "Add New Website – VishLink",
     description: "Admin panel to add new wishing website templates.",
     robots: "noindex, nofollow"
   });
@@ -32,6 +32,18 @@ router.post("/new", isLoggedIn, isAdmin, upload.single("imageUrl"), wrapAsync(as
   let filename = req.file.filename;
 
   const formData = req.body.listing;
+  // Build article object safely
+  let articleData = null;
+
+  if (
+    formData.article &&
+    (formData.article.title?.trim() || formData.article.content?.trim())
+  ) {
+    articleData = {
+      title: formData.article.title?.trim(),
+      content: formData.article.content?.trim()
+    };
+  }
   const newSample = new WebSample({
     webName: formData.webName,
     price: formData.price,
@@ -40,6 +52,7 @@ router.post("/new", isLoggedIn, isAdmin, upload.single("imageUrl"), wrapAsync(as
     description: formData.description,
     imageNeeded: formData.imageNeeded,
     tags: formData.category,
+    article: articleData 
   })
   const Saved = await newSample.save();
   req.flash("success", "Added new website");
@@ -55,7 +68,7 @@ router.get("/purchase/temporary/:id", isLoggedIn, wrapAsync(async (req, res) => 
   res.render("purchaseForm", {
     selectedWeb,
     id,
-    title: `Purchase ${selectedWeb.webName} – WishLink`,
+    title: `Purchase ${selectedWeb.webName} – VishLink`,
     description: `Purchase and personalize the ${selectedWeb.webName} wishing website.`,
     canonical: `https://wishlink-7j0a.onrender.com/web/purchase/${id}`,
     robots: "noindex, nofollow",
@@ -71,7 +84,7 @@ router.get("/purchase/permanent/:id", isLoggedIn, wrapAsync(async (req, res) => 
   res.render("purchaseForm", {
     selectedWeb,
     id,
-    title: `Purchase ${selectedWeb.webName} – WishLink`,
+    title: `Purchase ${selectedWeb.webName} – VishLink`,
     description: `Purchase and personalize the ${selectedWeb.webName} wishing website.`,
     canonical: `https://wishlink-7j0a.onrender.com/web/purchase/${id}`,
     robots: "noindex, nofollow",
@@ -111,7 +124,7 @@ router.post("/purchase/:id", isLoggedIn,
     )
 
 
-    const buyinfo = req.body.purchase;    
+    const buyinfo = req.body.purchase;
     const specialMsgarr = [buyinfo.specialMsg];
     const purchaseId = uuidv4();
     const finalWebUrl = `${selectedWeb.webUrl}${purchaseId}`;
@@ -154,7 +167,7 @@ router.post("/purchase/:id", isLoggedIn,
       console.log(err);
       res.redirect("/profile");
     }
-}))
+  }))
 
 
 

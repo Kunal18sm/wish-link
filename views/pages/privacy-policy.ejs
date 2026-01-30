@@ -1,0 +1,202 @@
+<% layout("layouts/boilerplate") %>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #0B1120;
+      scroll-behavior: smooth;
+    }
+
+    .glass-card {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #34d399 0%, #818cf8 100%);
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .bg-mesh {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .blob {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      background: rgba(16, 185, 129, 0.08);
+      filter: blur(120px);
+      border-radius: 50%;
+    }
+
+    section h2 {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: white;
+      font-weight: 700;
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .section-icon {
+      width: 32px;
+      height: 32px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.875rem;
+      font-weight: 800;
+    }
+  </style>
+  </head>
+
+  <body class="text-slate-300 antialiased selection:bg-emerald-500/30">
+
+    <!-- Background Decoration -->
+    <div class="bg-mesh">
+      <div class="blob" style="top: 10%; right: 5%;"></div>
+      <div class="blob" style="bottom: 10%; left: 5%; background: rgba(79, 70, 229, 0.06);"></div>
+    </div>
+
+    <main class="max-w-4xl mx-auto px-6 pt-24 pb-32">
+
+      <!-- Header -->
+      <section class="text-center mb-16">
+        <span
+          class="inline-block py-1 px-3 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-widest mb-6">
+          Data Protection
+        </span>
+        <h1 class="text-5xl md:text-6xl font-extrabold mb-6 tracking-tight text-white">
+          Privacy <span class="gradient-text">Policy</span>
+        </h1>
+        <p class="text-slate-400 text-lg">
+          Your privacy is our priority. Last Updated: January 2026
+        </p>
+      </section>
+
+      <!-- Policy Content -->
+      <div class="glass-card p-8 md:p-12 rounded-[2.5rem] relative overflow-hidden">
+        <div class="space-y-12">
+
+          <section>
+            <h2>
+              <span class="section-icon">01</span>
+              Information We Collect
+            </h2>
+            <p class="text-slate-400 leading-relaxed mb-4">
+              We collect information to provide better services to our users. This includes:
+            </p>
+            <ul class="space-y-3 list-disc pl-6 text-slate-400">
+              <li><strong>Account Data:</strong> Name and email address when you register.</li>
+              <li><strong>Content Data:</strong> Images, messages, and names you upload to create your personalized
+                links.</li>
+              <li><strong>Usage Data:</strong> Information about how you interact with our links and platform (e.g.,
+                browser type, visit timestamps).</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>
+              <span class="section-icon">02</span>
+              How We Use Your Data
+            </h2>
+            <p class="text-slate-400 leading-relaxed mb-4">
+              Your data is used solely to enhance your experience:
+            </p>
+            <ul class="space-y-3 list-disc pl-6 text-slate-400">
+              <li>To generate and host your custom celebration links.</li>
+              <li>To maintain and improve the security of our platform.</li>
+              <li>To provide customer support and respond to your inquiries.</li>
+              <li>To send important updates regarding your account or service changes.</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>
+              <span class="section-icon">03</span>
+              Data Security & Storage
+            </h2>
+            <p class="text-slate-400 leading-relaxed">
+              We implement industry-standard security measures to protect your data. All user-generated content is
+              stored on secure servers. While we strive to protect your personal
+              information, no method of transmission over the internet is 100% secure, and we cannot guarantee absolute
+              security.
+            </p>
+          </section>
+
+          <section>
+            <h2>
+              <span class="section-icon">04</span>
+              Third-Party Services
+            </h2>
+            <p class="text-slate-400 leading-relaxed">
+              VishLink may use third-party analytics (like Google Analytics) to understand platform performance. These
+              third parties have access to your information only to perform specific tasks on our behalf and are
+              obligated not to disclose or use it for any other purpose.
+            </p>
+          </section>
+
+          <section>
+            <h2>
+              <span class="section-icon">05</span>
+              Your Rights
+            </h2>
+            <p class="text-slate-400 leading-relaxed mb-4">
+              You have full control over your digital footprint on VishLink:
+            </p>
+            <ul class="space-y-3 list-disc pl-6 text-slate-400">
+              <li><strong>Access:</strong> You can request a copy of the data we hold about you.</li>
+              <li><strong>Deletion:</strong> You can delete your created links or account at any time.</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>
+              <span class="section-icon">06</span>
+              Cookies Policy
+            </h2>
+            <p class="text-slate-400 leading-relaxed">
+              We use "cookies" to collect information and improve our services. You can instruct your browser to refuse
+              all cookies or to indicate when a cookie is being sent. However, if you do not accept cookies, you may not
+              be able to use some portions of our platform.
+            </p>
+          </section>
+
+        </div>
+
+        <!-- Decorative blur -->
+        <div class="absolute -top-24 -left-24 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none">
+        </div>
+      </div>
+
+      <!-- Footer Action -->
+      <div class="mt-16 text-center">
+        <p class="text-slate-500 mb-8">Have concerns about your data? We're here to help, please <a class="text-emerald-400" href="/contact">contact</a> us.</p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="/"
+            class="px-8 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-2xl transition">Return to
+            Home</a>
+        </div>
+      </div>
+    </main>
+
+    <footer class="text-center pb-12 text-slate-600 text-sm">
+      <p>&copy; 2026 VishLink. Your trust is our most valuable asset.</p>
+    </footer>
+
+  </body>
+
+  </html>

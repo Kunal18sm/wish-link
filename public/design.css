@@ -1,5 +1,11 @@
+html{
+  overflow-x: hidden !important;
+  margin: 0;padding: 0;
+}
+
 body {
   font-family: 'Inter', sans-serif;
+  overflow-x: hidden !important;
 }
 
 .glass-effect {
@@ -102,6 +108,66 @@ body {
   border-color: rgba(99, 102, 241, 0.4);
 }
 
-.imageWarning{
+.imageWarning {
   font-size: small;
 }
+
+
+
+
+/* 
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: #0B1120;
+  scroll-behavior: smooth;
+}
+
+.glass-card {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.5);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #818cf8 0%, #34d399 100%);
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.bg-mesh {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.blob {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  background: rgba(79, 70, 229, 0.15);
+  filter: blur(120px);
+  border-radius: 50%;
+  animation: move 25s infinite alternate;
+}
+
+@keyframes move {
+  from {
+    transform: translate(-10%, -10%);
+  }
+
+  to {
+    transform: translate(20%, 20%);
+  }
+} */

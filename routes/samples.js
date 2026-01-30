@@ -6,7 +6,7 @@ const user = require("../models/user.js")
 const wrapAsync = require("../utils/wrapAsync.js");
 const { isLoggedIn } = require("../middleware.js")
 const passport = require("passport");
-
+const contactSchema = require("../models/contact.js")
 
 //home route
 router.get("/", wrapAsync(async (req, res) => {
@@ -14,7 +14,7 @@ router.get("/", wrapAsync(async (req, res) => {
   let allSamples = await WebSample.find().sort({ _id: -1 });
   res.render("home", {
     allSamples,
-    title: "Create Personalized Wishing Websites | WishLink",
+    title: "Create Personalized Wishing Websites | VishLink",
     description:
       "Create beautiful personalized birthday, anniversary and love wishing websites. Share a unique link instantly.",
     canonical: "https://wishlink-7j0a.onrender.com/"
@@ -27,10 +27,10 @@ router.get("/category/:tag", wrapAsync(async (req, res) => {
   const { tag } = req.params;
   res.locals.message = req.flash("success");
   let allSamples = await WebSample.find({ tags: tag }).sort({ _id: -1 });
-  res.render("home", {
+  res.render("collection", {
     allSamples,
     activeTag: tag,
-    title: `${tag} Wishing Websites | WishLink`,
+    title: `${tag} Wishing Websites | VishLink`,
     description: `Create personalized ${tag} wishing websites and share memorable moments.`,
     canonical: `https://wishlink-7j0a.onrender.com/category/${tag}`
   });
@@ -44,8 +44,8 @@ router.get("/signUpForm", wrapAsync(async (req, res) => {
     res.redirect("/");
   }
   res.render("signUp", {
-    title: "Sign Up – WishLink",
-    description: "Create a free WishLink account and start building personalized wishing websites.",
+    title: "Sign Up – VishLink",
+    description: "Create a free VishLink account and start building personalized wishing websites.",
     canonical: "https://wishlink-7j0a.onrender.com/signUpForm"
   });
 }))
@@ -63,7 +63,7 @@ router.post("/signUp", wrapAsync(async (req, res) => {
       if (err) {
         return next(err);
       }
-      req.flash("success", "Welcome to WishLink");
+      req.flash("success", "Welcome to VishLink");
       res.redirect("/");
     })
 
@@ -76,8 +76,8 @@ router.post("/signUp", wrapAsync(async (req, res) => {
 // get login form
 router.get("/logInForm", wrapAsync(async (req, res) => {
   res.render("logIn", {
-    title: "Login – WishLink",
-    description: "Login to WishLink to manage and share your personalized wishing websites.",
+    title: "Login – VishLink",
+    description: "Login to VishLink to manage and share your personalized wishing websites.",
     canonical: "https://wishlink-7j0a.onrender.com/logInForm"
   });
 }))
@@ -111,14 +111,52 @@ router.get("/profile", isLoggedIn, async (req, res) => {
 
   res.render("profile", {
     purchasedLinks,
-    title: "My Profile – WishLink",
-    description: "Manage your WishLink profile and purchased wishing websites.",
+    title: "My Profile – VishLink",
+    description: "Manage your VishLink profile and purchased wishing websites.",
     canonical: "https://wishlink-7j0a.onrender.com/profile",
     robots: "noindex, nofollow"
   });
 })
 
 
+
+// footer pages 
+
+router.get("/about", (req, res) => {
+  res.render("pages/about")
+})
+
+router.get("/contact", (req, res) => {
+  res.render("pages/contact")
+})
+
+router.get("/terms", (req, res) => {
+  res.render("pages/terms")
+})
+
+router.get("/privacy-policy", (req, res) => {
+  res.render("pages/privacy-policy")
+})
+
+router.post("/sent", wrapAsync(async (req, res) => {
+  const contactData = req.body.contactData;
+  try {
+    const newcontact = new contactSchema({
+      name: contactData.name,
+      email: contactData.email,
+      subject: contactData.subject,
+      message: contactData.msg
+
+    })
+    await newcontact.save();
+    req.flash("success","Message sent successfully.")
+    res.redirect("/");
+  } catch (error) {
+    res.redirect("/");
+  }
+
+
+}))
 
 
 

@@ -1,0 +1,194 @@
+<% layout("layouts/boilerplate") %>
+
+<style>
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: #0B1120;
+    scroll-behavior: smooth;
+  }
+
+  .glass-card {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #818cf8 0%, #34d399 100%);
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .bg-mesh {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .blob {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    background: rgba(79, 70, 229, 0.1);
+    filter: blur(120px);
+    border-radius: 50%;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0B1120;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+  }
+</style>
+</head>
+
+<body class="text-slate-300 antialiased selection:bg-indigo-500/30">
+
+  <!-- Background Decoration -->
+  <div class="bg-mesh">
+    <div class="blob" style="top: -5%; left: 20%;"></div>
+    <div class="blob" style="bottom: -5%; right: 10%; background: rgba(16, 185, 129, 0.05);"></div>
+  </div>
+
+  <main class="max-w-4xl mx-auto px-6 pt-24 pb-32">
+
+    <!-- Header -->
+    <section class="text-center mb-16">
+      <span
+        class="inline-block py-1 px-3 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold uppercase tracking-widest mb-6">
+        Legal Documentation
+      </span>
+      <h1 class="text-5xl md:text-6xl font-extrabold mb-6 tracking-tight text-white">
+        Terms of <span class="gradient-text">Service</span>
+      </h1>
+      <p class="text-slate-400 text-lg">
+        Last Updated: January 2026
+      </p>
+    </section>
+
+    <!-- Terms Content -->
+    <div class="glass-card p-8 md:p-12 rounded-[2.5rem] relative overflow-hidden">
+      <div class="prose prose-invert max-w-none space-y-10">
+
+        <section>
+          <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-3">
+            <span
+              class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-mono">01</span>
+            Acceptance of Terms
+          </h2>
+          <p class="text-slate-400 leading-relaxed">
+            By accessing or using VishLink, you agree to be bound by these Terms of Service. If you do not agree to all
+            of these terms, please do not use our platform. These terms apply to all visitors, users, and others who
+            access the service.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-3">
+            <span
+              class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-mono">02</span>
+            Use License
+          </h2>
+          <p class="text-slate-400 leading-relaxed mb-4">
+            VishLink grants you a personal, non-exclusive, non-transferable license to create and share digital greeting
+            links. Under this license, you may not:
+          </p>
+          <ul class="space-y-3 list-disc pl-6 text-slate-400">
+            <li>Use the service for any illegal or unauthorized purpose.</li>
+            <li>Attempt to decompile or reverse engineer any software contained on VishLink.</li>
+            <li>Remove any copyright or other proprietary notations from our materials.</li>
+            <li>Use the platform to distribute spam or malicious content.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-3">
+            <span
+              class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-mono">03</span>
+            User-Generated Content
+          </h2>
+          <p class="text-slate-400 leading-relaxed">
+            You are solely responsible for the content you include in your VishLinks, including images, text, and names. VishLink does not claim ownership of your content; however, by using our service, you grant us a non-exclusive, limited license to host and display your content solely for the purpose of providing and serving your links.
+            Free links generated on VishLink may expire after up to 10 days. VishLink is not responsible for any loss of data, access, or availability resulting from the expiration of free links.
+            We reserve the right to remove or disable access to any content that violates our community standards, applicable laws, or legal requirements, without prior notice.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-3">
+            <span
+              class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-mono">04</span>
+            Limitations of Liability
+          </h2>
+          <p class="text-slate-400 leading-relaxed">
+            In no event shall VishLink be liable for any damages (including, without limitation, damages for loss of
+            data or profit, or due to business interruption) arising out of the use or inability to use the materials on
+            our platform.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-3">
+            <span
+              class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-mono">05</span>
+            Privacy Policy
+          </h2>
+          <p class="text-slate-400 leading-relaxed">
+            Your privacy is important to us. Please review our Privacy Policy to understand how we collect, use, and
+            protect your personal information when you use our digital celebration platform.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-3">
+            <span
+              class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-mono">06</span>
+            Service Modifications
+          </h2>
+          <p class="text-slate-400 leading-relaxed">
+            VishLink reserves the right to revise these terms of service at any time without notice. By using this
+            website, you are agreeing to be bound by the then-current version of these terms.
+          </p>
+        </section>
+      </div>
+
+      <!-- Decorative blur -->
+      <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none">
+      </div>
+    </div>
+
+    <!-- Footer Action -->
+    <div class="mt-16 text-center">
+      <p class="text-slate-500 mb-8 italic">If you have any questions regarding these terms, please <a class="text-emerald-400" href="/contact">contact</a> us.</p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="/"
+          class="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl transition shadow-lg shadow-indigo-500/20">Back
+          to Home</a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="text-center pb-12 text-slate-600 text-sm">
+    <p>&copy; 2026 VishLink. All rights reserved.</p>
+  </footer>
+
+</body>
+
+</html>

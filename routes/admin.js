@@ -16,7 +16,7 @@ router.get("/", isLoggedIn, isAdmin, wrapAsync(async (req, res) => {
   let userPurchased = await purchasedWeb.find({ adminInterected: false });
   res.render("requests", {
     userPurchased,
-    title: "Admin Requests – WishLink",
+    title: "Admin Requests – VishLink",
     description: "Admin panel to manage user purchase requests.",
     robots: "noindex, nofollow"
   });
@@ -50,7 +50,7 @@ router.get("/expired", isLoggedIn, isAdmin, wrapAsync(async (req, res) => {
   let userPurchased = await purchasedWeb.find({ date: { $lte: tenDaysAgo }, isTemporary: true });
   res.render("requests", {
     userPurchased,
-    title: "Expired Websites – Admin | WishLink",
+    title: "Expired Websites – Admin | VishLink",
     description: "Admin panel to manage expired websites.",
     robots: "noindex, nofollow"
   });
@@ -61,7 +61,7 @@ router.get("/allLive", isLoggedIn, isAdmin, wrapAsync(async (req, res) => {
   let userPurchased = await purchasedWeb.find({ isLive: true }).sort({ _id: -1 });
   res.render("requests", {
     userPurchased,
-    title: "Live Websites – Admin | WishLink",
+    title: "Live Websites – Admin | VishLink",
     description: "Admin panel to view all live websites.",
     robots: "noindex, nofollow"
   });

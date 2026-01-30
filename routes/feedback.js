@@ -28,7 +28,7 @@ router.get("/feedbackpage", isLoggedIn, wrapAsync((async (req, res) => {
     let allFeedbacks = await feedback.find().sort({ _id: -1 });
     res.render("feedBack", {
       allFeedbacks,
-      title: "Feedback Dashboard – WishLink",
+      title: "Feedback Dashboard – VishLink",
       description: "Admin feedback management panel.",
       robots: "noindex, nofollow",
       currUser

@@ -3,7 +3,7 @@
   <body class="bg-[#020617] text-slate-200 min-h-screen flex flex-col">
 
     <main class="flex-grow flex items-center justify-center px-6 py-12">
-      <div class="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <div class="max-w-5xl w-full flex flex-col gap-12 items-center">
 
         <div>
           <h1 class="text-5xl font-extrabold mb-6 leading-tight">
@@ -27,31 +27,6 @@
               </p>
           </div>
           <% } %>
-          <!-- support  -->
-          <div class="space-y-6">
-            <div class="flex items-center gap-4">
-              <div class="p-3 bg-indigo-500/10 rounded-lg text-indigo-400">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <span>wishlink1806@gmail.com</span>
-            </div>
-            <div class="flex items-center gap-4">
-              <div class="p-3 bg-purple-500/10 rounded-lg text-purple-400">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <span>India</span>
-            </div>
-          </div>
         </div>
 
         <div class="flex gap-3 text-slate-500 text-sm bg-slate-900/20 p-4 rounded-xl border border-slate-800/30">
@@ -79,9 +54,12 @@
             <p class="text-emerald-500 text-lg mb-2">All created links will be shown in your profile.</p>         
             
           <% if( isTemporary ){ %>
-            <label class="block text-sm font-medium mb-8 text-slate-400">This link will expire in 10 days.</label>
+            <div class="mt-4 inline-flex items-center mb-4 gap-2 px-4 py-2 bg-amber-500/10 text-amber-500 rounded-full text-xs font-black uppercase tracking-widest border border-amber-500/20">
+              <span class="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
+                This Link expires in 10 days
+            </div>          
           <% } %>
-            
+
             <hr style="opacity: 0.4;">
               <br>
               <form id="BuyForm" action="/web/purchase/<%= id %>" method="POST" class="space-y-5" enctype="multipart/form-data">
@@ -157,8 +135,22 @@
 
               </form>
         </div>
+        <% if(selectedWeb.article){ %>
+        <article class="bg-slate-900/30 border border-slate-800/50 p-6 md:p-10 rounded-3xl">
+          <h2 class="text-2xl md:text-3xl font-bold text-white mb-6 flex items-center gap-4">
+            <span class="w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400 shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 0 20 20" fill="currentColor"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10.392A7.969 7.969 0 015.5 14c1.255 0 2.443.29 3.5.804V4.804zM11 4.804A7.968 7.968 0 0114.5 4c1.255 0 2.443.29 3.5.804v10.392a7.969 7.969 0 00-3.5-.804c-1.255 0-2.443.29-3.5.804V4.804z" /></svg>
+            </span>
+            <%= selectedWeb.article.title %>
+          </h2>
+          <p class="text-slate-400 leading-relaxed text-base md:text-lg">
+            <%- selectedWeb.article.content %>
+          </p>
+        </article>
+        <% } %>
       </div>
     </main>
+    
 
     <script>
       document.getElementById("images").addEventListener("change", function () {

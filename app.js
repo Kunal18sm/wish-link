@@ -79,10 +79,10 @@ passport.serializeUser(user.serializeUser());
 passport.deserializeUser(user.deserializeUser());
 
 app.use((req, res, next) => {
-  res.locals.title = "WishLink – Create Personalized Wishing Websites";
+  res.locals.title = "VishLink – Create Personalized Wishing Websites";
 
   res.locals.description =
-    "Create beautiful personalized birthday, anniversary and love wishing websites using WishLink.";
+    "Create beautiful personalized birthday, anniversary and love wishing websites using VishLink.";
 
   res.locals.canonical =
     "https://wishlink-7j0a.onrender.com" + req.originalUrl;
@@ -109,7 +109,7 @@ app.use("/feedback",feedbackRouted);
 // 404 route (catch-all)
 app.use((req, res) => {
   res.status(404).render("404", {
-    title: "Page Not Found – WishLink",
+    title: "Page Not Found – VishLink",
     description: "The page you are looking for does not exist.",
     canonical: "https://wishlink-7j0a.onrender.com/404"
   });

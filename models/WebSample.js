@@ -6,13 +6,13 @@ const WebSampleSchema = new Schema({
     type: String,
     required: true,
   },
-  description:{
+  description: {
     type: String,
     default: "New Website",
   },
   price: {
     type: String,
-    default:"0",
+    default: "0",
   },
   imageUrl: {
     url: String,
@@ -28,15 +28,20 @@ const WebSampleSchema = new Schema({
   },
   soldOut: {
     type: Number,
-    default:0,
+    default: 0,
   },
-  imageNeeded:{
+  imageNeeded: {
     type: Number,
-    default:5,
+    default: 5,
   },
-  tags:[{
+  tags: [{
     type: String,
   }],
+
+  article: {
+    title: String,
+    content: String
+  }
 })
 
 module.exports = mongoose.model("WebSamples", WebSampleSchema);
