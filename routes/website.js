@@ -120,7 +120,7 @@ router.post("/purchase/:id", isLoggedIn,
     const specialMsgarr = [buyinfo.specialMsg];
     const purchaseId = uuidv4();
     const finalWebUrl = `${selectedWeb.webUrl}${purchaseId}`;
-    const isLive = buyinfo.price <= 20 ? true : false;
+    const isLive = buyinfo.price <= 20 || buyinfo.price==null ? true : false;
     // const imageUrlarr = [buyinfo.imageUrl]
     const newPurchase = new purchasedWeb({
       purchaseId: purchaseId,
