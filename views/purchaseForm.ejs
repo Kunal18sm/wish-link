@@ -1,0 +1,202 @@
+<% layout("/layouts/boilerplate") %>
+
+  <body class="bg-[#020617] text-slate-200 min-h-screen flex flex-col">
+
+    <main class="flex-grow flex items-center justify-center px-6 py-12">
+      <div class="max-w-5xl w-full flex flex-col gap-12 items-center">
+
+        <div>
+          <h1 class="text-5xl font-extrabold mb-6 leading-tight">
+            Let's Create <span class="text-indigo-500">New Website Link</span>
+          </h1>
+
+          <!-- description  -->
+          <% if(!isTemporary || selectedWeb.priceForTemporary!=0 ){ %>
+          <div class="bg-slate-900/50 backdrop-blur-sm border border-slate-800 p-6 rounded-2xl mb-8">
+              <h3 class="text-indigo-400 font-bold mb-3 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                Payment Instructions
+              </h3>
+              <p class="text-slate-400 text-base leading-relaxed">
+                Our payment gateway is currently unavailable. Please complete your payment manually by scanning the QR code shown in the form.
+                <br><br>
+                <span class="text-slate-300">Next Steps:</span> Upload the payment screenshot below. Once verified, you will receive the website link within 24 hours.
+              </p>
+              <p class="mt-4 text-xs text-slate-500">
+                If the link does not appear in your profile after 24 hours, please contact our support team.
+              </p>
+          </div>
+          <% } %>
+        </div>
+
+        <div class="flex gap-3 text-slate-500 text-sm bg-slate-900/20 p-4 rounded-xl border border-slate-800/30">
+          <div class="text-emerald-500 shrink-0 mt-0.5">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <p>
+            <span class="font-bold text-slate-400">Privacy & Security:</span> 
+            All VishLink websites are fully secure. When a link is deleted or expires, all associated images, messages, and data are permanently removed from our systems. We do not share, transfer, or sell user data to any third party. All submitted details remain securely stored with us and are protected at all times.
+          </p>
+        </div>
+        <% if(isTemporary) { %> 
+          <div class="flex flex-col items-center">
+            <div class="mt-4 inline-flex items-center mb-4 gap-2 px-4 py-2 bg-amber-500/10 text-amber-500 rounded-full text-xs font-black uppercase tracking-widest border border-amber-500/20">
+              <span class="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
+                This link will expire in 10 days.
+            </div> 
+            <div class="mt-4 inline-flex items-center mb-4 gap-2 px-4 py-2 text-sm rounded-2xl text-xs font-medium uppercase tracking-widest text-slate-400 border border-slate-500 leading-relaxed">
+              To generate a permanent link, please return to the template and select the “Permanent Link” option.
+            </div> 
+          </div>
+        <% } %>
+        <!-- MAIN FORM -->
+        
+        <div class="glass-effect p-8 md:p-10 rounded-3xl shadow-2xl">
+          <!-- QR Code image  -->
+          <% if( !isTemporary || selectedWeb.priceForTemporary!=0 ){ %>
+            <div class="QRcodeBox">
+              <img src="https://res.cloudinary.com/dcw90tnk1/image/upload/v1768291694/wishLink_dev/gedbuqpryaj7oqo8c3v1.png" alt="QR">
+            </div>
+        
+          <% } %>
+            <br>
+            <p class="text-emerald-500 text-lg mb-2">All created links will be shown in your profile.</p>         
+
+          <% if( !isTemporary ){ %>
+            <div class="mt-4 mb-4 inline-flex items-center gap-2 px-4 py-2 
+            bg-amber-500/5 text-amber-600 
+            rounded-xl text-xs font-medium 
+            tracking-wide border border-amber-500/10">
+              The created link will appear on your profile within 24–48 hours after payment verification.
+            </div>
+          <% } %>
+
+            <hr style="opacity: 0.4;">
+              <br>
+              <form id="BuyForm" action="/web/purchase/<%= id %>" method="POST" class="space-y-5" enctype="multipart/form-data">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  
+                  <div>
+                    <label class="block text-sm font-medium mb-2 text-slate-400">Website name</label>
+                    <input name="purchase[webName]" class="w-full px-4 py-3 rounded-xl form-input text-white"
+                      value= "<%= JSON.stringify(selectedWeb.webName).slice(1, -1) %>" readonly >
+                  </div>
+                  
+
+                  <!-- 💲💲 if there is price for some temporary links 💲💲 -->
+
+                  <% if( isTemporary && selectedWeb.priceForTemporary!=0 ){ %>
+                  <div>
+                    <label class="block text-sm font-medium mb-2 text-slate-400">Price in ₹ Rupee</label>
+                    <input name="purchase[price]" class="w-full px-4 py-3 rounded-xl form-input text-white"
+                      value=<%=selectedWeb.priceForTemporary %> readonly >
+                  </div>
+                  <% } %>
+                  
+                  <!-- 💲💲 price for permanent links 💲💲 -->
+                  <% if( !isTemporary ){ %>
+                  <div>
+                    <label class="block text-sm font-medium mb-2 text-slate-400">Price in ₹</label>
+                    <input name="purchase[price]" class="w-full px-4 py-3 rounded-xl form-input text-white"
+                      value=<%=selectedWeb.priceForPermanent %> readonly >
+                  </div>
+                  <% } %>
+
+                  <% if( !isTemporary ){ %>
+                    <input type="hidden" name="purchase[isTemporary]" value="false">
+                  <% } %>
+
+                  <% if( isTemporary ){ %>
+                    <input type="hidden" name="purchase[isTemporary]" value="true">
+                  <% } %>
+
+                  <div>
+                    <label class="block text-sm font-medium mb-2 text-slate-400">Receiver</label>
+                    <input name="purchase[receiver]" type="text" placeholder="ex. Natasha"
+                      class="w-full px-4 py-3 rounded-xl form-input text-white" required>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium mb-2 text-slate-400">Sender</label>
+                    <input name="purchase[sender]" type="text" placeholder="ex. Tom"
+                      class="w-full px-4 py-3 rounded-xl form-input text-white" required>
+                  </div>
+
+                  <% if(selectedWeb.imageNeeded != 0){ %>
+                  <div class="col-span-1 md:col-span-2">
+                      <label class="block text-sm font-semibold mb-2 text-slate-300 ml-1 flex justify-between">
+                        <span>Upload Images</span>
+                        <span class="text-indigo-400 text-xs bg-indigo-500/10 px-2 py-0.5 rounded">Required: <%= selectedWeb.imageNeeded %></span>
+                      </label>
+                      <p class="text-xs text-amber-500/80 mb-2 ml-1">Please upload exactly <%= selectedWeb.imageNeeded %> images for the best result.</p>
+                      <input name="images" id="images" type="file" multiple
+                        class="w-full px-4 py-3 rounded-xl form-input text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-500/10 file:text-indigo-400 hover:file:bg-indigo-500/20" required >
+                  </div>
+                  <% } %>
+
+                  <% if( !isTemporary || selectedWeb.priceForTemporary!=0 ){ %>
+                    <div class="col-span-1 md:col-span-2">
+                      <label class="block text-sm font-semibold mb-2 text-slate-300 ml-1">Payment Screenshot</label>
+                      <input name="paymentImage" type="file"
+                          class="w-full px-4 py-3 rounded-xl form-input text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-500/10 file:text-emerald-400 hover:file:bg-emerald-500/20" required>
+                    </div>
+                  <% } %>
+
+                    <div>
+                      <label class="block text-sm font-medium mb-2 text-slate-400">Special message</label>
+                      <textarea name="purchase[specialMsg]" maxlength="350" rows="5"
+                        placeholder="Wishing you endless happiness, good health, and success in everything you do..."
+                        class="w-full px-4 py-3 rounded-xl form-input text-white" required></textarea>
+                    </div>
+
+                </div>
+
+                <button type="submit" id="submitBtn"
+                  class="w-full gradient-bg py-4 rounded-xl font-bold text-white shadow-lg shadow-indigo-500/30 hover:opacity-90 transition transform hover:-translate-y-1">
+                  Create Link
+                </button>
+
+              </form>
+        </div>
+        <% if(selectedWeb.articleTitle){ %>
+        <article class="bg-slate-900/30 border border-slate-800/50 p-6 md:p-10 rounded-3xl">
+          <h2 class="text-2xl md:text-3xl font-bold text-white mb-6 flex items-center gap-4">
+            <span class="w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400 shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 0 20 20" fill="currentColor"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10.392A7.969 7.969 0 015.5 14c1.255 0 2.443.29 3.5.804V4.804zM11 4.804A7.968 7.968 0 0114.5 4c1.255 0 2.443.29 3.5.804v10.392a7.969 7.969 0 00-3.5-.804c-1.255 0-2.443.29-3.5.804V4.804z" /></svg>
+            </span>
+            <%= selectedWeb.articleTitle %>
+          </h2>
+          <p class="text-slate-400 leading-relaxed text-base md:text-lg">
+            <%- selectedWeb.articleContent %>
+          </p>
+        </article>
+        <% } %>
+      </div>
+    </main>
+    
+
+    <script>
+      document.getElementById("images").addEventListener("change", function () {
+        if (this.files.length > 5) {
+          alert("Maximum 5 images allowed");
+          this.value = ""; // reset input
+        }
+      });
+      document.getElementById("images").addEventListener("change", function () {
+        if (this.files.length < 3) {
+          alert("please select more images to upload");
+          this.value = ""; // reset input
+        }
+      });
+      
+      const form = document.getElementById("BuyForm");
+      const btn = document.getElementById("submitBtn");
+      form.addEventListener("submit", function () {
+        btn.disabled = true;
+        btn.innerText = "Please wait...";
+      });
+
+    </script>
+</body>

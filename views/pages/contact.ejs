@@ -1,0 +1,179 @@
+<% layout("/layouts/boilerplate") %>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0B1120;
+            scroll-behavior: smooth;
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #818cf8 0%, #34d399 100%);
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .input-field {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            border-color: #6366f1;
+            background: rgba(30, 41, 59, 0.8);
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        .bg-mesh {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .blob {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: rgba(79, 70, 229, 0.12);
+            filter: blur(100px);
+            border-radius: 50%;
+        }
+
+        /* Success Message Animation */
+        #success-toast {
+            transform: translateY(100px);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #success-toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="text-slate-300 antialiased selection:bg-indigo-500/30">
+
+    <!-- Background Decoration -->
+    <div class="bg-mesh">
+        <div class="blob" style="top: 10%; right: -5%;"></div>
+        <div class="blob" style="bottom: 10%; left: -5%; background: rgba(16, 185, 129, 0.06);"></div>
+    </div>
+
+    <main class="max-w-6xl mx-auto px-6 pt-24 pb-32">
+        
+        <!-- Header -->
+        <section class="text-center mb-16">
+            <span class="inline-block py-1 px-3 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-widest mb-6">
+                Get In Touch
+            </span>
+            <h1 class="text-5xl md:text-6xl font-extrabold mb-6 tracking-tight text-white">
+                Let's Start a <span class="gradient-text">Conversation</span>
+            </h1>
+            <p class="text-slate-400 text-lg max-w-2xl mx-auto">
+                Have a question, feedback, or a brilliant idea? We'd love to hear from you. Our team is here to help you create digital magic.
+            </p>
+        </section>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
+            
+            <!-- Contact Info Sidebar -->
+            <div class="space-y-6">
+                <div class="glass-card p-8 rounded-3xl">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center border border-indigo-500/20">
+                            <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        </div>
+                        <div>
+                            <h4 class="text-white font-bold">Email Us</h4>
+                            <p class="text-sm text-slate-500">Response within 24 hours</p>
+                        </div>
+                    </div>
+                    <a href="mailto:wishlink1806@gmail.com" class="text-indigo-400 font-medium hover:text-indigo-300 transition">wishlink1806@gmail.com</a>
+                </div>
+
+                <div class="glass-card p-8 rounded-3xl">
+                    <h4 class="text-white font-bold mb-4">Follow Our Journey</h4>
+                    <div class="flex gap-4">
+                        <a href="https://www.instagram.com/vish_link18/#" class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center hover:bg-pink-600 transition duration-300 text-white">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Container -->
+            <div class="lg:col-span-2">
+                <div class="glass-card p-8 md:p-12 rounded-[2.5rem] relative overflow-hidden">
+                    <form action="/sent" method="POST" id="contact-form" class="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-slate-300 ml-1">Full Name</label>
+                            <input name="contactData[name]" type="text" required placeholder="John Doe" class="input-field w-full px-5 py-4 rounded-2xl text-white placeholder:text-slate-600">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-slate-300 ml-1">Email Address</label>
+                            <input name="contactData[email]" type="email" required placeholder="john@example.com" class="input-field w-full px-5 py-4 rounded-2xl text-white placeholder:text-slate-600">
+                        </div>
+                        <div class="md:col-span-2 space-y-2">
+                            <label class="text-sm font-semibold text-slate-300 ml-1">Subject</label>
+                            <input name="contactData[subject]" type="text" required placeholder="How can we help you?" class="input-field w-full px-5 py-4 rounded-2xl text-white placeholder:text-slate-600">
+                        </div>
+                        <div class="md:col-span-2 space-y-2">
+                            <label class="text-sm font-semibold text-slate-300 ml-1">Your Message</label>
+                            <textarea name="contactData[msg]" rows="5" required placeholder="Tell us about your project..." class="input-field w-full px-5 py-4 rounded-2xl text-white placeholder:text-slate-600"></textarea>
+                        </div>
+                        <div class="md:col-span-2 pt-4">
+                            <button type="submit" class="w-full md:w-auto px-12 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl transition transform hover:scale-[1.02] active:scale-95 shadow-lg shadow-indigo-500/20">
+                                Send Message
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- Decorative blur inside card -->
+                    <div class="absolute -top-24 -right-24 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Success Toast (Custom Alert) -->
+    <div id="success-toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 opacity-0 pointer-events-none z-50">
+        <div class="bg-emerald-500 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-3 font-bold">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            Message sent successfully!
+        </div>
+    </div>
+
+    <footer class="text-center pb-12 text-slate-600 text-sm">
+        <p>&copy; 2026 VishLink. We typically respond within 2 business day.</p>
+    </footer>
+
+    <!-- <script>
+        document.getElementById('contact-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Show custom success toast
+            const toast = document.getElementById('success-toast');
+            toast.classList.add('show');
+            
+            // Reset form
+            this.reset();
+
+            // Hide after 3 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        });
+    </script> -->
+</body>
+</html>

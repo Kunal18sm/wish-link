@@ -1,0 +1,227 @@
+<% layout("/layouts/boilerplate") %>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0B1120;
+            scroll-behavior: smooth;
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(99, 102, 241, 0.4);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.5);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #818cf8 0%, #34d399 100%);
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .bg-mesh {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .blob {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: rgba(79, 70, 229, 0.15);
+            filter: blur(120px);
+            border-radius: 50%;
+            animation: move 25s infinite alternate;
+        }
+
+        @keyframes move {
+            from {
+                transform: translate(-10%, -10%);
+            }
+
+            to {
+                transform: translate(20%, 20%);
+            }
+        }
+    </style>
+
+    <body class="text-slate-300 overflow-x-hidden antialiased selection:bg-indigo-500/30">
+
+        <!-- Background Decoration -->
+        <div class="bg-mesh">
+            <div class="blob" style="top: -10%; left: -10%;"></div>
+            <div class="blob"
+                style="bottom: -10%; right: -10%; background: rgba(16, 185, 129, 0.08); animation-delay: -5s;"></div>
+        </div>
+
+        <main class="max-w-6xl mx-auto px-6 pt-24 pb-32">
+
+            <!-- Hero Section -->
+            <section class="text-center mb-24">
+                <span
+                    class="inline-block py-1 px-3 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold uppercase tracking-widest mb-6">
+                    Redefining Celebrations
+                </span>
+                <h1 class="text-5xl md:text-7xl font-extrabold mb-8 tracking-tight text-white">
+                    About <span class="gradient-text">VishLink</span>
+                </h1>
+                <p class="text-slate-400 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed">
+                    We craft digital emotions. VishLink is dedicated to giving your special moments a unique digital
+                    identity that stays memorable forever.
+                </p>
+            </section>
+
+            <!-- Mission & Vision Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-24">
+                <div class="glass-card p-10 rounded-[2rem]">
+                    <div
+                        class="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center mb-8 border border-indigo-500/20">
+                        <svg class="w-7 h-7 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-4">Our Mission</h3>
+                    <p class="text-slate-400 text-lg leading-relaxed">
+                        To express your deepest emotions through elegant code and thoughtful design. We aim to empower
+                        everyone—regardless of technical skill—to create stunning digital surprises for their loved
+                        ones.
+                    </p>
+                </div>
+
+                <div class="glass-card p-10 rounded-[2rem]">
+                    <div
+                        class="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center mb-8 border border-emerald-500/20">
+                        <svg class="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-4">Our Vision</h3>
+                    <p class="text-slate-400 text-lg leading-relaxed">
+                        To become the world's most intuitive "Personalized Celebration" platform, where every generated
+                        link serves as a bridge for joy, connection, and lasting smiles.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Stats Section -->
+            <section class="border-y border-slate-800/50 py-16 mb-24 bg-slate-900/20">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
+                    <div class="group">
+                        <div class="text-4xl font-extrabold text-white mb-2 group-hover:scale-110 transition-transform">
+                            50+</div>
+                        <div class="text-slate-500 text-xs uppercase tracking-[0.2em] font-bold">Links Created</div>
+                    </div>
+                    <div class="group">
+                        <div class="text-4xl font-extrabold text-white mb-2 group-hover:scale-110 transition-transform">
+                            10+</div>
+                        <div class="text-slate-500 text-xs uppercase tracking-[0.2em] font-bold">Templates</div>
+                    </div>
+                    <div class="group">
+                        <div class="text-4xl font-extrabold text-white mb-2 group-hover:scale-110 transition-transform">
+                            24/7</div>
+                        <div class="text-slate-500 text-xs uppercase tracking-[0.2em] font-bold">Uptime</div>
+                    </div>
+                    <div class="group">
+                        <div class="text-4xl font-extrabold text-white mb-2 group-hover:scale-110 transition-transform">
+                            99%</div>
+                        <div class="text-slate-500 text-xs uppercase tracking-[0.2em] font-bold">Satisfaction</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Features/Why Section -->
+            <div class="max-w-4xl mx-auto text-center mb-32">
+                <h2 class="text-3xl md:text-4xl font-bold text-white mb-12">Why Choose VishLink?</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+                    <div class="flex items-start gap-4 p-4 rounded-2xl hover:bg-slate-800/30 transition-colors">
+                        <div class="shrink-0 mt-1">
+                            <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                    d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-white mb-1">Instant Creation</h4>
+                            <p class="text-sm text-slate-500">Generate and share links in under 60 seconds.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-4 p-4 rounded-2xl hover:bg-slate-800/30 transition-colors">
+                        <div class="shrink-0 mt-1">
+                            <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                    d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-white mb-1">Fully Responsive</h4>
+                            <p class="text-sm text-slate-500">Optimized for every screen, from mobile to desktop.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-4 p-4 rounded-2xl hover:bg-slate-800/30 transition-colors">
+                        <div class="shrink-0 mt-1">
+                            <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                    d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-white mb-1">Secure & Private</h4>
+                            <p class="text-sm text-slate-500">Industry-standard encryption for your data.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Call to Action -->
+            <div
+                class="relative p-12 md:p-16 rounded-[3rem] bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 text-center overflow-hidden shadow-2xl shadow-indigo-500/20 group">
+                <div class="relative z-10">
+                    <h2 class="text-3xl md:text-5xl font-extrabold text-white mb-6">Ready to create magic?</h2>
+                    <p class="text-indigo-100 text-lg mb-10 max-w-lg mx-auto leading-relaxed">
+                        Join thousands of users making their friends and family feel special with a personalized
+                        VishLink.
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <a href="/"
+                            class="px-10 py-4 bg-indigo-500/20 text-white border border-white/20 rounded-2xl font-bold backdrop-blur-md hover:bg-white/10 transition">
+                            View Templates
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Animated decorative elements for CTA -->
+                <div class="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
+                    <div
+                        class="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white rounded-full blur-3xl group-hover:scale-125 transition duration-1000">
+                    </div>
+                    <div
+                        class="absolute bottom-[-20%] left-[-10%] w-64 h-64 bg-purple-400 rounded-full blur-3xl group-hover:scale-125 transition duration-1000 delay-150">
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <footer class="text-center pb-12 text-slate-600 text-sm">
+            <p>&copy; 2026 VishLink. Made with ❤️ for digital celebrations.</p>
+        </footer>
+
+    </body>
+
+    </html>
