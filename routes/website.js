@@ -33,7 +33,7 @@ router.post("/new", isLoggedIn, isAdmin, upload.single("imageUrl"), wrapAsync(as
 
   const formData = req.body.formData;
   // Build article object safely
-  
+
   const newSample = new WebSample({
     webName: formData.webName,
     priceForTemporary: formData.priceForTemporary,
@@ -42,7 +42,7 @@ router.post("/new", isLoggedIn, isAdmin, upload.single("imageUrl"), wrapAsync(as
     webUrl: formData.webUrl,
     description: formData.description,
     imageNeeded: formData.imageNeeded,
-    tags:  Array.isArray(formData.category) ? formData.category : [formData.category],
+    tags: Array.isArray(formData.category) ? formData.category : [formData.category],
     articleTitle: formData.title,
     articleContent: formData.content,
   })
@@ -117,10 +117,11 @@ router.post("/purchase/:id", isLoggedIn,
 
 
     const buyinfo = req.body.purchase;
+    const price = buyinfo.price ? buyinfo.price : 0;
     const specialMsgarr = [buyinfo.specialMsg];
     const purchaseId = uuidv4();
     const finalWebUrl = `${selectedWeb.webUrl}${purchaseId}`;
-    const isLive = buyinfo.price <= 20 || buyinfo.price==null ? true : false;
+    const isLive = buyinfo.price <= 20 || buyinfo.price == null ? true : false;
     // const imageUrlarr = [buyinfo.imageUrl]
     const newPurchase = new purchasedWeb({
       purchaseId: purchaseId,
@@ -145,7 +146,7 @@ router.post("/purchase/:id", isLoggedIn,
           webName: buyinfo.webName,
           dateOfBuy: new Date(),
           receiver: buyinfo.receiver,
-          price: buyinfo.price,
+          price: price,
           paymentProofUrl: paymentImg,
         }
       }

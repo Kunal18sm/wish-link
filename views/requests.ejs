@@ -57,7 +57,10 @@
                                      class="w-full h-full object-cover">
                             </div>
                             <div class="min-w-0">
-                                <h3 class="font-bold text-slate-100 truncate text-lg"><%= request.sender %></h3>
+                                <h3 class="font-bold text-slate-100 truncate text-lg"> <%= request.webName %></h3>
+                            
+                                <p class=" text-slate-100 truncate text-lg">Sender: <%= request.sender %></p>
+                                <p class=" text-slate-100 truncate text-lg">Receiver: <%= request.receiver %></p>
                                 <p class="text-emerald-400 font-mono font-bold">₹<%= request.price %></p>
                             </div>
                         </div>

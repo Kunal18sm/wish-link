@@ -108,14 +108,29 @@ router.get("/logout", isLoggedIn, (req, res, next) => {
 // render profile page
 router.get("/profile", isLoggedIn, async (req, res) => {
   let purchasedLinks = await purchasedWeb.find({ author: req.user._id });
-
+  const viewHistory = false;
   res.render("profile", {
-    purchasedLinks,
+    purchasedLinks,viewHistory,
     title: "My Profile – VishLink",
     description: "Manage your VishLink profile and purchased wishing websites.",
     canonical: "https://wishlink-7j0a.onrender.com/profile",
     robots: "noindex, nofollow"
   });
+})
+
+// render all creation page
+router.get("/viewHistory", isLoggedIn, async (req, res) => {
+  // let purchasedLinks = await purchasedWeb.find({ author: req.user._id });
+  let purchasedLinks = await req.user.webCollection ;
+  const viewHistory = true;
+  res.render("profile", {
+    purchasedLinks, viewHistory,
+    title: "My Profile – VishLink",
+    description: "Manage your VishLink profile and purchased wishing websites.",
+    canonical: "https://wishlink-7j0a.onrender.com/profile",
+    robots: "noindex, nofollow"
+  });
+
 })
 
 
