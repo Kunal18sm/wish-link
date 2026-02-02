@@ -8,7 +8,9 @@ const { cloudinary } = require("../cloudConfig.js");
 const { findOne } = require("../models/user.js");
 const WebSample = require("../models/WebSample.js");
 const feedback = require("../models/feedback.js");
-
+const user = require("../models/user.js");
+const { render } = require("ejs");
+const mongoose = require("mongoose");
 
 
 // get requests page
@@ -93,5 +95,71 @@ router.delete("/delete/:id", isLoggedIn, wrapAsync(async (req, res) => {
   }
 }))
 
+// edit permanent link
+router.get("/edit/:id", isLoggedIn, isAdmin, wrapAsync(async (req, res) => {
+  let userPurchased = await purchasedWeb.findById(req.params.id);
+  res.render("edit", { userPurchased });
+}))
 
+router.post("/updateLink/:id", isAdmin, wrapAsync(async (req, res) => {
+  const { id } = req.params;
+  const permanent = req.body.purchase;
+
+  const web = await purchasedWeb.findByIdAndUpdate(id, {
+    webUrl: permanent.url,
+  })
+
+  const userId = permanent.author;
+  console.log("userId:", userId);
+  console.log("userId type:", typeof userId);
+  // const test = await user.findOne({
+  //   _id: userId,
+  //   "webCollection.purchasedId": new mongoose.Types.ObjectId(id)
+  // });
+
+  // console.log(test ? "MATCH FOUND" : "NO MATCH");
+
+  const result = await user.updateOne(
+    {
+      _id: userId,
+      "webCollection.purchasedId": new mongoose.Types.ObjectId(id)
+    },
+    {
+      $set: {
+        "webCollection.$.permanentLink": permanent.url
+      }
+    }
+  );
+
+  // console.log(result);
+
+  req.flash("success", "Purchase Success");
+  res.redirect("/requests");
+}))
+
+router.get("/userProfile/:id",isAdmin,wrapAsync(async(req,res)=>{
+  const {id} = req.params;
+  let purchasedLinks = await purchasedWeb.find({ author: id });
+    const viewHistory = false;
+    res.render("profile", {
+      purchasedLinks,viewHistory,
+      title: "My Profile – VishLink",
+      description: "Manage your VishLink profile and purchased wishing websites.",
+      canonical: "https://wishlink-7j0a.onrender.com/profile",
+      robots: "noindex, nofollow"
+    });
+}))
+
+router.get("/userProfileHistory/:id",isAdmin,wrapAsync(async(req,res)=>{
+  const {id} = req.params;
+  let purchasedLinks = await purchasedWeb.find({ author: id });
+    const viewHistory = true;
+    res.render("profile", {
+      purchasedLinks,viewHistory,
+      title: "My Profile – VishLink",
+      description: "Manage your VishLink profile and purchased wishing websites.",
+      canonical: "https://wishlink-7j0a.onrender.com/profile",
+      robots: "noindex, nofollow"
+    });
+}))
 module.exports = router;

@@ -121,7 +121,7 @@ router.post("/purchase/:id", isLoggedIn,
     const specialMsgarr = [buyinfo.specialMsg];
     const purchaseId = uuidv4();
     const finalWebUrl = `${selectedWeb.webUrl}${purchaseId}`;
-    const isLive = buyinfo.price <= 20 || buyinfo.price == null ? true : false;
+    const isLive = buyinfo.price <= 15 || buyinfo.price == null ? true : false;
     // const imageUrlarr = [buyinfo.imageUrl]
     const newPurchase = new purchasedWeb({
       purchaseId: purchaseId,
@@ -138,6 +138,8 @@ router.post("/purchase/:id", isLoggedIn,
       isTemporary: buyinfo.isTemporary,
     });
 
+    const save = await newPurchase.save();
+
     //save details in user collection array
     const userId = req.user._id;;
     const saveInUser = await user.findByIdAndUpdate(userId, {
@@ -148,18 +150,15 @@ router.post("/purchase/:id", isLoggedIn,
           receiver: buyinfo.receiver,
           price: price,
           paymentProofUrl: paymentImg,
+          purchasedId: save._id,
+          permanentLink:"",
         }
       }
     })
 
-    try {
-      const save = await newPurchase.save();
-      req.flash("success", "Purchase Success");
-      res.redirect("/profile");
-    } catch (err) {
-      console.log(err);
-      res.redirect("/profile");
-    }
+    req.flash("success", "Purchase Success");
+    res.redirect("/profile");
+
   }))
 
 

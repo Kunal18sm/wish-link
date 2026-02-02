@@ -19,9 +19,14 @@ const userSchema = new Schema({
     dateOfBuy: Date,
     receiver: String,
     price: Number,
+    permanentLink: String,
     paymentProofUrl: {
       url: String,
       filename: String
+    },
+    purchasedId:{
+      type: Schema.Types.ObjectId,
+      ref: "purchasedWeb",
     },
   }],
 

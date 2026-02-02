@@ -133,10 +133,7 @@ router.get("/viewHistory", isLoggedIn, async (req, res) => {
 
 })
 
-
-
 // footer pages 
-
 router.get("/about", (req, res) => {
   res.render("pages/about")
 })

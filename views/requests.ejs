@@ -52,15 +52,19 @@
                         
                         <!-- 1. User Info (Left) -->
                         <div class="flex items-center gap-4 w-full lg:w-1/4">
-                            <div class="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 overflow-hidden shrink-0">
-                                <img src="https://api.dicebear.com/7.x/initials/svg?seed=<%= request.sender %>&backgroundColor=1e293b" 
-                                     class="w-full h-full object-cover">
-                            </div>
+                            
+                            <a href="/requests/edit/<%= request.id %>">
+                                <div class="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 overflow-hidden shrink-0">
+                                    <img src="https://api.dicebear.com/7.x/initials/svg?seed=<%= request.sender %>&backgroundColor=1e293b" 
+                                        class="w-full h-full object-cover">
+                                </div>
+                            </a>
+
                             <div class="min-w-0">
                                 <h3 class="font-bold text-slate-100 truncate text-lg"> <%= request.webName %></h3>
                             
-                                <p class=" text-slate-100 truncate text-lg">Sender: <%= request.sender %></p>
-                                <p class=" text-slate-100 truncate text-lg">Receiver: <%= request.receiver %></p>
+                                <a href="/requests/userProfile/<%= request.author %>"><p class=" text-slate-100 truncate text-lg">Sender: <%= request.sender %></p></a>
+                                <a href="/requests/userProfileHistory/<%= request.author %>"><p class=" text-slate-100 truncate text-lg">Receiver: <%= request.receiver %></p></a>
                                 <p class="text-emerald-400 font-mono font-bold">₹<%= request.price %></p>
                             </div>
                         </div>
@@ -91,7 +95,7 @@
                                 </button>
                             </form>
 
-                            <% if(request.isLive){ %>
+                            
                                 <div class="flex gap-3 w-full">
                                     <!-- View Live Link -->
                                     <a href="<%= request.webUrl %>" target="_blank" class="flex-1 py-3 text-center rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-600 hover:text-white transition font-semibold text-sm">
@@ -99,13 +103,16 @@
                                     </a>
                                     
                                     <!-- Delete Button -->
+                                    <% if(request.isTemporary){ %>
                                     <form action="/requests/delete/<%= request._id %>?_method=DELETE" method="POST" class="action-form flex-1">
                                         <button type="submit" class="w-full py-3 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-600 hover:text-white transition font-semibold text-sm">
                                             Delete
                                         </button>
                                     </form>
+                                    <% } %>
+
                                 </div>
-                            <% } %>
+                            
 
                         </div>
 

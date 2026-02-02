@@ -1,0 +1,88 @@
+<% layout("/layouts/boilerplate") %>
+
+  <body class="bg-[#020617] text-slate-200 min-h-screen flex flex-col">
+
+    <main class="flex-grow flex items-center justify-center px-6 py-12">
+      <div class="max-w-5xl w-full flex flex-col gap-12 items-center">
+
+        <div>
+          <h1 class="text-5xl font-extrabold mb-6 leading-tight">
+            Let's Edit <span class="text-indigo-500">New Website Link</span>
+          </h1>
+        </div>
+
+            <hr style="opacity: 0.4;">
+              <br>
+              <form id="BuyForm" action="/requests/updateLink/<%- userPurchased.id %>" method="POST" class="space-y-5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  
+                  <div>
+                    <label class="block text-sm font-medium mb-2 text-slate-400">Website name</label>
+                    <input name="purchase[webName]" class="w-full px-4 py-3 rounded-xl form-input text-white"
+                      value= "<%= JSON.stringify(userPurchased.webName).slice(1, -1) %>" readonly >
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium mb-2 text-slate-400">author id</label>
+                    <input name="purchase[author]" class="w-full px-4 py-3 rounded-xl form-input text-white"
+                      value= "<%= userPurchased.author %>" readonly >
+                  </div>
+                  
+
+                  <!-- 💲💲 if there is price for some temporary links 💲💲 -->
+
+                  <div>
+                    <label class="block text-sm font-medium mb-2 text-slate-400">Price in ₹ Rupee</label>
+                    <input name="purchase[price]" class="w-full px-4 py-3 rounded-xl form-input text-white"
+                      value=<%= userPurchased.price %> readonly >
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium mb-2 text-slate-400">Sender</label>
+                    <input name="purchase[price]" class="w-full px-4 py-3 rounded-xl form-input text-white"
+                      value=<%= userPurchased.sender %> readonly >
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium mb-2 text-slate-400">Link</label>
+                    <input name="purchase[url]" type="text" placeholder="ex. Natasha"
+                      class="w-full px-4 py-3 rounded-xl form-input text-white" required>
+                  </div>
+
+        
+                <button type="submit" id="submitBtn"
+                  class="w-full gradient-bg py-4 rounded-xl font-bold text-white shadow-lg shadow-indigo-500/30 hover:opacity-90 transition transform hover:-translate-y-1">
+                  Update Permanent Link
+                </button>
+
+              </form>
+        </div>
+
+
+      </div>
+    </main>
+    
+
+    <script>
+      document.getElementById("images").addEventListener("change", function () {
+        if (this.files.length > 5) {
+          alert("Maximum 5 images allowed");
+          this.value = ""; // reset input
+        }
+      });
+      document.getElementById("images").addEventListener("change", function () {
+        if (this.files.length < 3) {
+          alert("please select more images to upload");
+          this.value = ""; // reset input
+        }
+      });
+      
+      const form = document.getElementById("BuyForm");
+      const btn = document.getElementById("submitBtn");
+      form.addEventListener("submit", function () {
+        btn.disabled = true;
+        btn.innerText = "Please wait...";
+      });
+
+    </script>
+</body>
