@@ -150,16 +150,23 @@ router.get("/userProfile/:id",isAdmin,wrapAsync(async(req,res)=>{
     });
 }))
 
-router.get("/userProfileHistory/:id",isAdmin,wrapAsync(async(req,res)=>{
-  const {id} = req.params;
-  let purchasedLinks = await purchasedWeb.find({ author: id });
-    const viewHistory = true;
-    res.render("profile", {
-      purchasedLinks,viewHistory,
-      title: "My Profile – VishLink",
-      description: "Manage your VishLink profile and purchased wishing websites.",
-      canonical: "https://wishlink-7j0a.onrender.com/profile",
-      robots: "noindex, nofollow"
-    });
-}))
+router.get("/userProfileHistory/:id", isAdmin, wrapAsync(async (req, res) => {
+  const { id } = req.params;
+
+  const userdata = await user.findById(id);
+
+  const purchasedLinks = userdata.webCollection; // user ke andar ka data
+  const viewHistory = true;
+
+  res.render("profile", {
+    purchasedLinks,
+    viewHistory,
+    title: "My Profile – VishLink Admin",
+    description: "Manage your VishLink profile and purchased wishing websites.",
+    canonical: "https://wishlink-7j0a.onrender.com/profile",
+    robots: "noindex, nofollow"
+  });
+}));
+
+
 module.exports = router;

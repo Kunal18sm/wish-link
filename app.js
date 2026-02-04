@@ -16,7 +16,7 @@ const flash = require("connect-flash");
 
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
-const user = require("./models/user.js")
+const user = require("./models/user.js");
 
 const app = express();
 const path = require("path");
@@ -98,6 +98,35 @@ app.use((req, res, next) => {
 
   next();
 });
+
+// copy data from old database 
+// const secondConn = mongoose.createConnection(process.env.MongoDB_URLS);
+// const SecondUser = secondConn.model("purchasedWeb", PurchasedWeb.schema);
+
+// app.get("/copy-users", async (req, res) => {
+//   try {
+//     const users = await PurchasedWeb.find({}).select("+hash +salt").lean();
+//     await SecondUser.deleteMany({});
+//     await SecondUser.insertMany(users);
+//     console.log("done");
+    
+//     res.send("Copied successfully");
+//   } catch (err) {
+//     console.log(err);
+    
+//     res.send(err.message);
+//   }
+// });
+
+// drop database 
+// app.get("/drop-old-db", async (req, res) => {
+//   if (req.query.confirm !== "YES") {
+//     return res.send("Add ?confirm=YES to delete DB");
+//   }
+
+//   await mongoose.connection.dropDatabase();
+//   res.send("Database dropped");
+// });
 
 
 app.use("/", routes);
