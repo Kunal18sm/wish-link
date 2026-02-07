@@ -158,8 +158,23 @@
                   Create Link
                 </button>
 
+                <% if(isTemporary) { %>
+                  <div class="flex flex-col items-center">
+                    <div class=" inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-500 rounded-full text-xs font-black uppercase tracking-widest border border-amber-500/20">
+                    <span class="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
+                      This link will expire in 10 days.
+                    </div>
+                  </div>
+                <% } %>
               </form>
         </div>
+        <% if(isTemporary) { %> 
+          <div class="flex flex-col items-center"> 
+            <div class="mt-4 inline-flex items-center mb-4 gap-2 px-4 py-2 text-sm rounded-2xl text-xs font-medium uppercase tracking-widest text-slate-400 border border-slate-500 leading-relaxed">
+              To generate a permanent link, please return to the template and select the “Permanent Link” option.
+            </div> 
+          </div>
+        <% } %>
         <div class="mt-4 inline-flex items-center mb-4 gap-2 px-4 py-2 text-sm rounded-2xl text-xs font-medium uppercase tracking-widest text-slate-400 bg-slate-900/20 p-4 rounded-xl border border-slate-800/30">
           <p>For any assistance or support, feel free to contact us directly on <a style="color: rgba(241, 39, 191, 0.781);" href="https://www.instagram.com/vish_link18/#">Instagram</a>.</p>
         </div>

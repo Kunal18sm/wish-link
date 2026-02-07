@@ -72,7 +72,7 @@
 
                                 <% if(viewHistory) { %>
                                     <span class="px-2.5 py-1 text-[10px] uppercase font-bold tracking-wide rounded-full border <%= order.isLive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20' %>">
-                                    <%= new Date(order.dateOfBuy).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) %>
+                                    <%= new Date(order.dateOfBuy).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata'}) %>
                                     </span>
                                 <% } %>
                             </div>
