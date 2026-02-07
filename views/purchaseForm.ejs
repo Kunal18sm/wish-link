@@ -157,15 +157,6 @@
                   class="w-full gradient-bg py-4 rounded-xl font-bold text-white shadow-lg shadow-indigo-500/30 hover:opacity-90 transition transform hover:-translate-y-1">
                   Create Link
                 </button>
-
-                <% if(isTemporary) { %>
-                  <div class="flex flex-col items-center">
-                    <div class=" inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-500 rounded-full text-xs font-black uppercase tracking-widest border border-amber-500/20">
-                    <span class="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
-                      This link will expire in 10 days.
-                    </div>
-                  </div>
-                <% } %>
               </form>
         </div>
         <% if(isTemporary) { %> 
