@@ -4,7 +4,7 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js",   
+    "start": "node app.js",
     "dev": "nodemon app.js",
     "build:css": "npx tailwindcss -i ./public/output.css -o ./public/style.css --minify",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -20,6 +20,7 @@
     "ejs-mate": "^4.0.0",
     "express": "^5.2.1",
     "express-session": "^1.18.2",
+    "joi": "^18.0.2",
     "method-override": "^3.0.0",
     "mongoose": "^9.1.2",
     "multer": "^2.0.2",

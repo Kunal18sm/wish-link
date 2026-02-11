@@ -9,7 +9,7 @@ const routes = require("./routes/samples.js");
 const webRoutes = require("./routes/website.js");
 const adminRoutes = require("./routes/admin.js");
 const feedbackRouted = require("./routes/feedback.js");
-
+const gameRoutes = require("./routes/game.js");
 
 const session = require('express-session');
 const flash = require("connect-flash");
@@ -133,6 +133,7 @@ app.use("/", routes);
 app.use("/requests", adminRoutes);
 app.use("/web",webRoutes);
 app.use("/feedback",feedbackRouted);
+app.use("/game",gameRoutes);
 
 
 // 404 route (catch-all)

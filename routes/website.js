@@ -6,13 +6,15 @@ const user = require("../models/user.js");
 const router = express.Router({ mergeParams: true });
 const wrapAsync = require("../utils/wrapAsync.js");
 const { isLoggedIn } = require("../middleware.js")
-const { isAdmin } = require("../middleware.js")
+const { isAdmin, validatepurchase } = require("../middleware.js")
 
 const multer = require("multer");
 const { storage } = require("../cloudConfig.js");
 const upload = multer({ storage });
 
 const { v4: uuidv4 } = require("uuid");
+
+
 
 
 
@@ -57,6 +59,7 @@ router.get("/purchase/temporary/:id", isLoggedIn, wrapAsync(async (req, res) => 
   const { id } = req.params;
   const selectedWeb = await WebSample.findById(id);
   const isTemporary = true;
+  const winnerCount = req.user.winnerCount || 0;
   res.render("purchaseForm", {
     selectedWeb,
     id,
@@ -64,7 +67,7 @@ router.get("/purchase/temporary/:id", isLoggedIn, wrapAsync(async (req, res) => 
     description: `Purchase and personalize the ${selectedWeb.webName} wishing website.`,
     canonical: `https://wishlink-7j0a.onrender.com/web/purchase/${id}`,
     robots: "noindex, nofollow",
-    isTemporary
+    isTemporary, winnerCount
   });
 }))
 
@@ -73,6 +76,7 @@ router.get("/purchase/permanent/:id", isLoggedIn, wrapAsync(async (req, res) => 
   const { id } = req.params;
   const selectedWeb = await WebSample.findById(id);
   const isTemporary = false;
+  const winnerCount = 0;
   res.render("purchaseForm", {
     selectedWeb,
     id,
@@ -80,7 +84,7 @@ router.get("/purchase/permanent/:id", isLoggedIn, wrapAsync(async (req, res) => 
     description: `Purchase and personalize the ${selectedWeb.webName} wishing website.`,
     canonical: `https://wishlink-7j0a.onrender.com/web/purchase/${id}`,
     robots: "noindex, nofollow",
-    isTemporary
+    isTemporary, winnerCount
   });
 }))
 
@@ -92,7 +96,10 @@ router.post("/purchase/:id", isLoggedIn,
     { name: "paymentImage", maxCount: 1 }   // single image
   ]),
 
+  validatepurchase,
+
   wrapAsync(async (req, res) => {
+
 
     const imagesArr = req.files.images
       ? req.files.images.map(file => ({
@@ -151,10 +158,17 @@ router.post("/purchase/:id", isLoggedIn,
           price: price,
           paymentProofUrl: paymentImg,
           purchasedId: save._id,
-          permanentLink:"",
+          permanentLink: "",
         }
       }
     })
+
+    // decreasing game reward points 
+    const userData = await user.findById(userId);
+    if (userData.winnerCount && userData.winnerCount > 0) {
+      userData.winnerCount -= 1;
+      await userData.save();
+    }
 
     req.flash("success", "Purchase Success");
     res.redirect("/profile");

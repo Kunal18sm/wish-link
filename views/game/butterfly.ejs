@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Heavenly Phoenix Adventure</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sky-top: #caf0f8;
+            --sky-bottom: #ffffff;
+            --heaven-gold: #ffd700;
+            --heaven-blue: #00b4d8;
+            --phoenix-orange: #fb8500;
+            --marble-white: #f8f9fa;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #e9ecef;
+            font-family: 'Nunito', sans-serif;
+            touch-action: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            height: 95vh;
+            box-shadow: 0 30px 60px rgba(0, 180, 216, 0.2);
+            border: 10px solid #fff;
+            border-radius: 45px;
+            overflow: hidden;
+            background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom));
+        }
+
+        canvas {
+            display: block;
+        }
+
+        /* Heavenly UI Overlay */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: var(--heaven-blue);
+            text-align: center;
+            z-index: 20;
+            padding: 30px;
+            box-sizing: border-box;
+            transition: opacity 0.5s ease;
+        }
+
+        .hidden { display: none !important; }
+
+        h1 {
+            font-family: 'Fredoka One', cursive;
+            font-size: 3rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, var(--heaven-blue), var(--phoenix-orange));
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--heaven-gold) 0%, #ffb703 100%);
+            border: none;
+            color: #fff;
+            padding: 18px 45px;
+            font-size: 1.2rem;
+            font-weight: 900;
+            cursor: pointer;
+            border-radius: 50px;
+            margin: 15px 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 25px rgba(255, 183, 3, 0.4);
+            width: 85%;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            filter: brightness(1.05);
+        }
+
+        .score-form-container {
+            background: rgba(255, 255, 255, 0.7);
+            padding: 20px;
+            border-radius: 30px;
+            border: 2px solid var(--heaven-gold);
+            width: 90%;
+            margin-bottom: 15px;
+        }
+
+        .status-ui {
+            position: absolute;
+            top: 30px;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .ui-pill {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border: 2px solid #fff;
+            padding: 10px 22px;
+            border-radius: 30px;
+            font-weight: 900;
+            color: var(--heaven-blue);
+            font-size: 1.1rem;
+            box-shadow: 0 8px 20px rgba(0, 180, 216, 0.15);
+        }
+
+        #level-up-msg {
+            position: absolute;
+            top: 40%;
+            width: 100%;
+            text-align: center;
+            color: var(--heaven-gold);
+            font-family: 'Fredoka One', cursive;
+            font-size: 4rem;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 15;
+            text-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .pop-animation { animation: popIn 1.8s forwards; }
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.5); }
+            20% { opacity: 1; transform: scale(1.1); }
+            80% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(1.5); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- Floating UI -->
+        <div class="status-ui">
+            <div class="ui-pill">🔥 Score: <span id="score-val">0</span></div>
+            <div class="ui-pill">⭐ Level: <span id="level-val">1</span></div>
+        </div>
+
+        <div id="level-up-msg">MAJESTIC!</div>
+        
+        <!-- Start Screen -->
+        <div id="start-menu" class="overlay">
+            <h1>Phoenix<br>Rise</h1>
+            <p style="color: #48cae4; font-weight: 700;">Sunhere pakshi ko unchai tak le jayein!</p>
+            <button class="btn" onclick="startGame()">Start Journey</button>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-menu" class="overlay hidden">
+            <h1>Flight Halted</h1>
+            <h2 id="final-score-text" style="font-size: 2.2rem; margin: 10px 0; color: #fb8500;">Score: 0</h2>
+            
+            <div class="score-form-container">
+                <form id="manual-form" action="/game/submit-score" method="POST">
+                    <p style="margin-bottom: 15px; font-weight: 800; color: #0077b6;">Outstanding</p>
+                    <input type="hidden" name="score" id="hidden-score">
+                    <input type="hidden" name="level" id="hidden-level">
+                    <button type="submit" class="btn" style="margin: 0; padding: 12px; background: #00b4d8;">Save Score</button>
+                </form>
+            </div>
+
+            <button class="btn" onclick="resetGame()" style="background: none; border: 2px solid #ccc; color: #999; box-shadow: none;">Retry Flight</button>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreVal = document.getElementById('score-val');
+        const levelVal = document.getElementById('level-val');
+        const levelMsg = document.getElementById('level-up-msg');
+        
+        function resizeCanvas() {
+            const container = document.getElementById('game-container');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let gameRunning = false;
+        let score = 0;
+        let frames = 0;
+        let gameSpeed = 3.2;
+        let currentLevel = 1;
+
+        // Background Assets
+        const clouds = Array.from({ length: 10 }, () => ({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height * 0.8,
+            w: Math.random() * 120 + 60,
+            h: 30,
+            speed: Math.random() * 0.4 + 0.1
+        }));
+
+        const phoenix = {
+            x: 100,
+            y: canvas.height / 2,
+            radius: 18,
+            velocity: 0,
+            gravity: 0.26,
+            jump: 5.2,
+            angle: 0,
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                
+                // Tilt based on falling/jumping
+                this.angle = Math.min(Math.max(this.velocity * 0.06, -0.6), 0.6);
+                ctx.rotate(this.angle);
+
+                const flap = Math.sin(frames * 0.25) * 20;
+
+                // --- Drawing the Phoenix (Side View) ---
+                
+                // Tail Feathers (Jaadui poonchh)
+                ctx.fillStyle = "rgba(255, 215, 0, 0.4)";
+                for(let i=0; i<3; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(-10, 0);
+                    ctx.bezierCurveTo(-30, 10 + i*10, -50, 5 + flap, -60, 15 + i*5);
+                    ctx.strokeStyle = "rgba(251, 133, 0, 0.6)";
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+
+                // Wings
+                const drawWing = (scale, opacity, isBack) => {
+                    ctx.globalAlpha = opacity;
+                    const wingGrad = ctx.createLinearGradient(0, -30, 40, 30);
+                    wingGrad.addColorStop(0, "#ffd700");
+                    wingGrad.addColorStop(1, "#fb8500");
+                    ctx.fillStyle = wingGrad;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    // Wing shape with flapping animation
+                    ctx.bezierCurveTo(10, -40 - flap, 50, -20, 10, 5);
+                    ctx.fill();
+                    ctx.strokeStyle = "#fff";
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                };
+
+                // Back Wing
+                ctx.save(); ctx.scale(0.9, 0.9); drawWing(1, 0.6, true); ctx.restore();
+                
+                // Body
+                ctx.globalAlpha = 1;
+                const bodyGrad = ctx.createLinearGradient(-15, 0, 15, 0);
+                bodyGrad.addColorStop(0, "#fb8500");
+                bodyGrad.addColorStop(1, "#ffd700");
+                ctx.fillStyle = bodyGrad;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 18, 7, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Head
+                ctx.beginPath();
+                ctx.arc(15, -4, 6, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Beak
+                ctx.fillStyle = "#ffb703";
+                ctx.beginPath();
+                ctx.moveTo(20, -4);
+                ctx.lineTo(28, -2);
+                ctx.lineTo(20, 0);
+                ctx.fill();
+
+                // Front Wing
+                drawWing(1.1, 1, false);
+
+                ctx.restore();
+            },
+
+            update() {
+                if (!gameRunning) return;
+                this.velocity += this.gravity;
+                this.y += this.velocity;
+
+                if (this.y + this.radius > canvas.height || this.y - this.radius < 0) endGame();
+            },
+
+            flap() {
+                this.velocity = -this.jump;
+            }
+        };
+
+        const pillars = {
+            list: [],
+            width: 85,
+            gap: 185,
+
+            draw() {
+                this.list.forEach(p => {
+                    this.drawDivinePillar(p.x, 0, this.width, p.y, true);
+                    this.drawDivinePillar(p.x, p.y + this.gap, this.width, canvas.height - (p.y + this.gap), false);
+                });
+            },
+
+            drawDivinePillar(x, y, w, h, isTop) {
+                // Marble Texture
+                const grad = ctx.createLinearGradient(x, 0, x + w, 0);
+                grad.addColorStop(0, "#f8f9fa");
+                grad.addColorStop(0.5, "#ffffff");
+                grad.addColorStop(1, "#dee2e6");
+                
+                ctx.fillStyle = grad;
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = "rgba(255, 215, 0, 0.15)";
+                
+                // Pillar shape
+                ctx.beginPath();
+                ctx.roundRect(x, y, w, h, isTop ? [0, 0, 10, 10] : [10, 10, 0, 0]);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // Gold Top/Bottom Cap
+                ctx.fillStyle = "#ffd700";
+                ctx.fillRect(x - 5, isTop ? h - 15 : y, w + 10, 15);
+                
+                // Pillar Details
+                ctx.strokeStyle = "rgba(0,0,0,0.04)";
+                for(let i=20; i<w; i+=25) {
+                    ctx.beginPath();
+                    ctx.moveTo(x+i, y); ctx.lineTo(x+i, y+h);
+                    ctx.stroke();
+                }
+            },
+
+            update() {
+                if (!gameRunning) return;
+                
+                if (frames % 90 === 0) {
+                    this.list.push({
+                        x: canvas.width,
+                        y: Math.random() * (canvas.height - this.gap - 240) + 120,
+                        scored: false,
+                        vDir: Math.random() > 0.5 ? 1 : -1
+                    });
+                }
+
+                for (let i = this.list.length - 1; i >= 0; i--) {
+                    let p = this.list[i];
+                    p.x -= gameSpeed;
+                    
+                    if(currentLevel >= 2) {
+                        p.y += (p.vDir * (0.6 + currentLevel * 0.12));
+                        if(p.y < 90 || p.y > canvas.height - this.gap - 90) p.vDir *= -1;
+                    }
+
+                    // Collision
+                    if (phoenix.x + 15 > p.x && phoenix.x - 15 < p.x + this.width &&
+                        (phoenix.y - 10 < p.y || phoenix.y + 10 > p.y + this.gap)) endGame();
+
+                    if (p.x + this.width < phoenix.x && !p.scored) {
+                        score++;
+                        p.scored = true;
+                        scoreVal.innerText = score;
+                        gameSpeed += 0.08;
+                        if(score % 10 === 0) {
+                            currentLevel++;
+                            levelVal.innerText = currentLevel;
+                            levelMsg.classList.add('pop-animation');
+                            setTimeout(() => levelMsg.classList.remove('pop-animation'), 1800);
+                        }
+                    }
+                    if (p.x + this.width < -120) this.list.splice(i, 1);
+                }
+            }
+        };
+
+        function drawBackground() {
+            // Draw Floating Clouds
+            ctx.fillStyle = "rgba(255,255,255,0.7)";
+            clouds.forEach(c => {
+                c.x -= c.speed;
+                if(c.x + c.w < -50) c.x = canvas.width + 100;
+                ctx.beginPath();
+                ctx.ellipse(c.x, c.y, c.w/2, c.h, 0, 0, Math.PI*2);
+                ctx.fill();
+            });
+        }
+
+        function loop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackground();
+            pillars.update();
+            pillars.draw();
+            phoenix.update();
+            phoenix.draw();
+            frames++;
+            requestAnimationFrame(loop);
+        }
+
+        window.startGame = () => {
+            document.getElementById('start-menu').classList.add('hidden');
+            gameRunning = true;
+        };
+
+        function endGame() {
+            if (!gameRunning) return;
+            gameRunning = false;
+            document.getElementById('hidden-score').value = score;
+            document.getElementById('hidden-level').value = currentLevel;
+            document.getElementById('final-score-text').innerText = "Score: " + score;
+            document.getElementById('game-over-menu').classList.remove('hidden');
+        }
+
+        window.resetGame = () => {
+            score = 0; frames = 0; gameSpeed = 3.2; currentLevel = 1;
+            pillars.list = []; phoenix.y = canvas.height / 2; phoenix.velocity = 0;
+            scoreVal.innerText = "0"; levelVal.innerText = "1";
+            document.getElementById('game-over-menu').classList.add('hidden');
+            gameRunning = true;
+        };
+
+        const act = (e) => { if (gameRunning) phoenix.flap(); };
+        window.addEventListener('keydown', (e) => { if(e.code==='Space' || e.code==='ArrowUp') act(); });
+        canvas.addEventListener('mousedown', act);
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); act(); }, {passive: false});
+
+        loop();
+    </script>
+</body>
+</html>

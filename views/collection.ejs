@@ -51,94 +51,156 @@
   </div>
 
   <!-- Header Section -->
-  <header class="relative max-w-5xl mx-auto px-4 md:px-6 pt-10 md:pt-14 pb-6 text-center">
-    
-    <!-- Background Glow Effect (New) -->
-    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-64 bg-indigo-500/20 blur-[100px] -z-10 rounded-full pointer-events-none"></div>
+  <header class="relative max-w-7xl mx-auto px-4 md:px-6 pt-8 pb-10 text-center flex flex-col items-center">
+  
+  <!-- 1. Announcement Badge -->
+  <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] md:text-xs font-medium mb-6">
+    <span class="flex h-2 w-2 relative">
+      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+      <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+    </span>
+    Featured Digital Surprises
+  </div>
 
-    <!-- Badge -->
-    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] md:text-xs font-medium mb-5 mt-4 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
-      <span class="relative flex h-2 w-2">
-        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-        <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-      </span>
-      Premium Templates Available
+  <!-- 2. Optimized Slidable Image Banner -->
+  <div class="w-full max-w-4xl mb-8">
+    <div class="relative w-full rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-950 group">
+      <!-- Slider Wrapper -->
+      <div id="banner-slider" class="flex transition-transform duration-700 ease-in-out h-42 sm:h-40 md:h-48">
+
+        <!-- Slide 1 -->
+        <div class="min-w-full relative flex items-center justify-center overflow-hidden bg-purple-900/20">
+          <a href="/game/" class="relative block w-[90%] md:w-[60%] aspect-[11/16]">
+
+            <!-- Background blur -->
+            <img
+              src="https://res.cloudinary.com/drzq6kjgp/image/upload/v1770794063/Gemini_Generated_Image_4qzfxy4qzfxy4qzf_l5tidy.png"
+              class="absolute inset-0 w-full h-full object-cover blur-md opacity-20 scale-110"
+              aria-hidden="true"
+            >
+            <!-- Main image -->
+            <img
+              src="https://res.cloudinary.com/drzq6kjgp/image/upload/v1770794063/Gemini_Generated_Image_4qzfxy4qzfxy4qzf_l5tidy.png"
+              class="relative z-10 w-full h-full object-contain"
+              alt="Slide 1"
+            >
+            <!-- Gradient -->
+            <div class="absolute inset-0 z-20 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end p-4">
+              <p class="text-white text-xs md:text-sm font-semibold">
+                Play and Win 
+              </p>
+            </div>
+
+          </a>
+        </div>
+
+        <!-- Slide 2 -->
+        <div class="min-w-full relative flex items-center justify-center overflow-hidden bg-indigo-900/20">
+          <a href="/category/birthday" class="relative block w-[90%] md:w-[60%] aspect-[11/16]">
+
+            <!-- Background blur -->
+            <img
+              src="https://res.cloudinary.com/dcw90tnk1/image/upload/v1768805703/wishLink_dev/zehl3lsqfj0gdsaguevn.jpg"
+              class="absolute inset-0 w-full h-full object-cover blur-md opacity-20 scale-110"
+              aria-hidden="true"
+            >
+            <!-- Main image -->
+            <img
+              src="https://res.cloudinary.com/dcw90tnk1/image/upload/v1768805703/wishLink_dev/zehl3lsqfj0gdsaguevn.jpg"
+              class="relative z-10 w-full h-full object-contain"
+              alt="Slide 1"
+            >
+            <!-- Gradient -->
+            <div class="absolute inset-0 z-20 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end p-4">
+              <p class="text-white text-xs md:text-sm font-semibold">
+                Best-Selling Birthday Templates
+              </p>
+            </div>
+
+          </a>
+        </div>
+
+        <!-- Slide 3 -->
+        <div class="min-w-full relative flex items-center justify-center overflow-hidden bg-purple-900/20">
+          <a href="/category/valentine's" class="relative block w-[90%] md:w-[60%] aspect-[11/16]">
+
+            <!-- Background blur -->
+            <img
+              src="https://res.cloudinary.com/drzq6kjgp/image/upload/v1770793447/Gemini_Generated_Image_4qzfxy4qzfxy4qzf_cz2hgg.png"
+              class="absolute inset-0 w-full h-full object-cover blur-md opacity-20 scale-110"
+              aria-hidden="true"
+            >
+            <!-- Main image -->
+            <img
+              src="https://res.cloudinary.com/dcw90tnk1/image/upload/v1769509941/thumbnailV_k7rfkr.jpg"
+              class="relative z-10 w-full h-full object-contain"
+              alt="Slide 1"
+            >
+            <!-- Gradient -->
+            <div class="absolute inset-0 z-20 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end p-4">
+              <p class="text-white text-xs md:text-sm font-semibold">
+                Valentine’s Day Special
+              </p>
+            </div>
+
+          </a>
+        </div>
+
+       
+
+      </div>
+
+      <!-- Compact Navigation Dots -->
+      <div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-30">
+        <button onclick="moveSlide(0)" class="banner-dot w-1.5 h-1.5 rounded-full bg-white/30 transition-all"></button>
+        <button onclick="moveSlide(1)" class="banner-dot w-1.5 h-1.5 rounded-full bg-white/30 transition-all"></button>
+        <button onclick="moveSlide(2)" class="banner-dot w-1.5 h-1.5 rounded-full bg-white/30 transition-all"></button>
+      </div>
     </div>
+  </div>
 
-    <!-- Responsive Heading (Compact Size) -->
-    <h1 class="text-3xl md:text-5xl lg:text-6xl font-extrabold mb-4 tracking-tight leading-tight text-white break-words">
-      Celebrate Every Moment,<br class="hidden md:block">
-      <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-emerald-400 block md:inline mt-1 md:mt-0 drop-shadow-sm">
-        Make It Unforgettable.
-      </span>
-    </h1>
-    
-    <!-- Description -->
-    <p class="text-slate-400 text-sm md:text-lg max-w-xl mx-auto mb-6 leading-relaxed px-2">
-      Create stunning, heartfelt websites for your loved ones in just a few clicks.
-    </p>
-
-    <div>
-      <form action="/feedback/add" method="POST"
-      id="feedbackform"
-      class="relative mb-4 bg-slate-900/80 backdrop-blur-xl border border-slate-700/50
-              p-3 md:p-4 rounded-2xl
-              flex items-center gap-3 shadow-2xl">
-
-      <input
-          type="text"
-          name="message"
-          placeholder="Share your Feedback..."
-          required
-          class="bg-transparent text-slate-200 placeholder-slate-500 px-4 md:px-6 py-3
-              flex-1
-              focus:outline-none focus:ring-2 focus:ring-indigo-500/40
-              text-base md:text-lg rounded-xl border border-slate-700 md:border-slate-700/50" />
-
-      <!-- Button -->
-      <button
-          type="submit"
-          id="sendfeedback"
-          class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl
-              text-sm font-semibold transition-all duration-300
-              shadow-md shadow-indigo-500/30
-              active:scale-95 whitespace-nowrap">
-          Send 
+  <!-- 4. Feedback Form -->
+  <div class="w-full max-w-2xl mx-auto mb-4">
+    <form action="/feedback/add" method="POST" id="feedbackform"
+      class="relative bg-slate-900/50 backdrop-blur-xl border border-slate-700/50 p-2 rounded-2xl flex items-center gap-2 shadow-xl focus-within:border-indigo-500/50 transition-colors">
+      <input type="text" name="message" placeholder="Share your story..." required
+        class="bg-transparent text-slate-200 placeholder-slate-500 px-4 py-2 flex-1 focus:outline-none text-sm md:text-base" />
+      <button type="submit" id="sendfeedback"
+        class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all active:scale-95 shadow-lg shadow-indigo-500/20 whitespace-nowrap">
+        Send
       </button>
+    </form>
+  </div>
 
-      </form>
-    </div>
-
-    <!-- Feedback Button (Modern Pill Style) -->
-    <div class="mb-8 flex justify-center">
-      <a href="/feedback/feedbackpage"
+  <!-- 5. User Feedback Link (More subtle) -->
+  <div class="mb-10">
+    <a href="/feedback/feedbackpage"
          class="group relative inline-flex items-center justify-center px-6 py-2 text-sm font-medium text-white transition-all duration-300 bg-slate-900 border border-slate-700 rounded-full hover:bg-slate-800 hover:border-indigo-500 hover:shadow-[0_0_20px_rgba(99,102,241,0.3)] active:scale-95">
-          <span class="mr-2">View Feedbacks</span>
+          <span class="mr-2">View User Stories</span>
           <svg class="w-4 h-4 text-indigo-400 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
       </a>   
-    </div>
+  </div>
 
-    <!-- Horizontal Category Scroller -->
-    <div class="relative max-w-4xl mx-auto w-full group">
-       <!-- Left & Right Fade Effect -->
-       <div class="absolute left-0 top-0 bottom-0 w-8 md:w-16 bg-gradient-to-r from-[#0B1120] to-transparent z-20 pointer-events-none"></div>
-       <div class="absolute right-0 top-0 bottom-0 w-8 md:w-16 bg-gradient-to-l from-[#0B1120] to-transparent z-20 pointer-events-none"></div>
-       
-       <div class="overflow-x-auto no-scrollbar py-1 relative z-10" style="-webkit-overflow-scrolling: touch;">
-         <div class="flex flex-nowrap gap-2 px-4 w-max mx-auto md:mx-0 min-w-full justify-start md:justify-center">
-           <% const categories = ["All","Free" ,"Birthday", "Valentine's", "Sorry", "Girlfriend", "Family", "Funny", "Males", "Females", "Single", "Couple", "Anniversary", "Wedding", "Best Friend", "Parents", "Festival", "New Year", "Christmas", "Diwali", "Eid", "Holi"]; %>
-           
-           <% categories.forEach(tag => { %>
-             <a href="/category/<%= tag.toLowerCase() %>" class="px-4 md:px-4 py-3 rounded-full bg-slate-900/50 border border-slate-800 text-slate-400 text-xs md:text-sm font-medium hover:border-indigo-500/50 hover:text-indigo-300 hover:bg-indigo-500/10 transition-all duration-300 whitespace-nowrap select-none backdrop-blur-sm active:scale-95">
-               <%= tag %>
-             </a>
-           <% }) %>
-         </div>
+  
+  <!-- 6. Category Scroller -->
+  <div class="mb-4">
+    <span class="text-white-500 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] opacity-60">Browse Categories</span>
+  </div>
+  <div class="w-full max-w-5xl overflow-hidden">
+     <div class="overflow-x-auto no-scrollbar py-2">
+       <div class="flex flex-nowrap gap-2 px-4 w-max mx-auto">
+         <% const categories = ["All","Free", "Birthday", "Valentine's", "Sorry", "Family", "Couple", "Anniversary", "Wedding", "Best Friend", "Festival", "New Year"]; %>
+         <% categories.forEach(tag => { %>
+           <a href="/category/<%= tag.toLowerCase() %>" class="px-4 py-2 rounded-full bg-slate-900/40 border border-slate-800/60 text-slate-500 text-[11px] md:text-xs font-medium hover:border-indigo-500/40 hover:text-indigo-300 transition-all whitespace-nowrap">
+             <%= tag %>
+           </a>
+         <% }) %>
        </div>
-    </div>
-</header>
+     </div>
+  </div>
+  </header>
 
 
   <!-- Main Content -->
@@ -217,6 +279,30 @@
   </main>
 
   <script>
+    let activeSlide = 0;
+    const sliderEl = document.getElementById('banner-slider');
+    const dotEls = document.querySelectorAll('.banner-dot');
+
+    function moveSlide(index) {
+      activeSlide = index;
+      sliderEl.style.transform = `translateX(-${index * 100}%)`;
+      dotEls.forEach((dot, i) => {
+        dot.style.background = i === activeSlide ? '#6366f1' : 'rgba(255,255,255,0.2)';
+        dot.style.width = i === activeSlide ? '16px' : '6px';
+      });
+    }
+
+    let autoSlide = setInterval(() => {
+      activeSlide = (activeSlide + 1) % 3;
+      moveSlide(activeSlide);
+    }, 5000);
+
+    // Initialize
+    moveSlide(0);
+
+    // Stop auto on click
+    dotEls.forEach(dot => dot.addEventListener('click', () => clearInterval(autoSlide)));
+
     const purchaseLinks = document.querySelectorAll('.submitBtnLink');
     purchaseLinks.forEach(link => {
       link.addEventListener("click", function (e) {

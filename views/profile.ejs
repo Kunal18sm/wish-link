@@ -25,15 +25,15 @@
 
         <!-- Links Grid Section -->
         <div class="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-2xl">
-            <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                <span class="w-2 h-6 bg-indigo-500 rounded-full"></span> Purchased Links
+            <h2 class="text-2xl font-bold text-sm text-white mb-6 flex items-center gap-2">
+                <span class="w-2 h-6 bg-indigo-500 rounded-full"></span> Created Links
                 <% if(!viewHistory) { %>
                 <a href="/viewHistory"
                     class=" ml-1  bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl
                         text-sm font-semibold transition-all duration-300
                         shadow-md shadow-indigo-500/30
                         active:scale-95 whitespace-nowrap">
-                    View Your Creations 
+                    Creation History 
                 </a>
                 <% } %>
                 <% if(viewHistory) { %> 
@@ -46,6 +46,7 @@
                 </a>
                 <% } %>
             </h2>
+            <p class="text-indigo-300 mb-4 text-sm bg-indigo-500/10 px-3 py-1 ">Winning Credits - <%= currUser.winnerCount ? currUser.winnerCount : 0 %> </p> 
             
             <% if(!purchasedLinks.length) { %>
                 <div class="text-center py-12 text-slate-500 border border-dashed border-slate-700/50 rounded-2xl">

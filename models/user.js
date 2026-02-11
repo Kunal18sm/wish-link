@@ -30,11 +30,16 @@ const userSchema = new Schema({
     },
   }],
 
-
   date:{
     type: Date,
     default: Date.now,
   }, 
+
+  winnerCount: {
+    type: Number,
+    default: 0,
+  }
+  
 });
 
 userSchema.plugin(passportLocalMongoose);
