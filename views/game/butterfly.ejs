@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="hi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Heavenly Phoenix Adventure</title>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap"
+        rel="stylesheet">
     <style>
         :root {
             --sky-top: #caf0f8;
@@ -66,7 +68,9 @@
             transition: opacity 0.5s ease;
         }
 
-        .hidden { display: none !important; }
+        .hidden {
+            display: none !important;
+        }
 
         h1 {
             font-family: 'Fredoka One', cursive;
@@ -75,7 +79,7 @@
             background: linear-gradient(45deg, var(--heaven-blue), var(--phoenix-orange));
             background-clip: text;
             -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
         }
 
         .btn {
@@ -93,7 +97,7 @@
             width: 85%;
             text-transform: uppercase;
             letter-spacing: 2px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .btn:hover {
@@ -143,18 +147,37 @@
             pointer-events: none;
             opacity: 0;
             z-index: 15;
-            text-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
 
-        .pop-animation { animation: popIn 1.8s forwards; }
+        .pop-animation {
+            animation: popIn 1.8s forwards;
+        }
+
         @keyframes popIn {
-            0% { opacity: 0; transform: scale(0.5); }
-            20% { opacity: 1; transform: scale(1.1); }
-            80% { opacity: 1; transform: scale(1); }
-            100% { opacity: 0; transform: scale(1.5); }
+            0% {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+
+            20% {
+                opacity: 1;
+                transform: scale(1.1);
+            }
+
+            80% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: scale(1.5);
+            }
         }
     </style>
 </head>
+
 <body>
 
     <div id="game-container">
@@ -165,7 +188,7 @@
         </div>
 
         <div id="level-up-msg">MAJESTIC!</div>
-        
+
         <!-- Start Screen -->
         <div id="start-menu" class="overlay">
             <h1>Phoenix<br>Rise</h1>
@@ -177,29 +200,41 @@
         <div id="game-over-menu" class="overlay hidden">
             <h1>Flight Halted</h1>
             <h2 id="final-score-text" style="font-size: 2.2rem; margin: 10px 0; color: #fb8500;">Score: 0</h2>
-            
+
             <div class="score-form-container">
                 <form id="manual-form" action="/game/submit-score" method="POST">
                     <p style="margin-bottom: 15px; font-weight: 800; color: #0077b6;">Outstanding</p>
                     <input type="hidden" name="score" id="hidden-score">
                     <input type="hidden" name="level" id="hidden-level">
-                    <button type="submit" class="btn" style="margin: 0; padding: 12px; background: #00b4d8;">Save Score</button>
+                    <button type="submit" class="btn" style="margin: 0; padding: 12px; background: #00b4d8;">Save
+                        Score</button>
                 </form>
             </div>
 
-            <button class="btn" onclick="resetGame()" style="background: none; border: 2px solid #ccc; color: #999; box-shadow: none;">Retry Flight</button>
+            <button class="btn" onclick="resetGame()"
+                style="background: none; border: 2px solid #ccc; color: #999; box-shadow: none;">Retry Flight</button>
         </div>
 
         <canvas id="gameCanvas"></canvas>
     </div>
-
+    <audio id="bg-music" autoplay loop>
+        <source src="/game/gameBackground.mp3" type="audio/mp3">
+    </audio>
     <script>
+        const backaudio = document.getElementById("bg-music");
+        backaudio.volume = .6;
+
+        document.addEventListener("click", () => {
+            backaudio.muted = false;
+            backaudio.play();
+        }, { once: true });
+        
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreVal = document.getElementById('score-val');
         const levelVal = document.getElementById('level-val');
         const levelMsg = document.getElementById('level-up-msg');
-        
+
         function resizeCanvas() {
             const container = document.getElementById('game-container');
             canvas.width = container.clientWidth;
@@ -235,7 +270,7 @@
             draw() {
                 ctx.save();
                 ctx.translate(this.x, this.y);
-                
+
                 // Tilt based on falling/jumping
                 this.angle = Math.min(Math.max(this.velocity * 0.06, -0.6), 0.6);
                 ctx.rotate(this.angle);
@@ -243,13 +278,13 @@
                 const flap = Math.sin(frames * 0.25) * 20;
 
                 // --- Drawing the Phoenix (Side View) ---
-                
+
                 // Tail Feathers (Jaadui poonchh)
                 ctx.fillStyle = "rgba(255, 215, 0, 0.4)";
-                for(let i=0; i<3; i++) {
+                for (let i = 0; i < 3; i++) {
                     ctx.beginPath();
                     ctx.moveTo(-10, 0);
-                    ctx.bezierCurveTo(-30, 10 + i*10, -50, 5 + flap, -60, 15 + i*5);
+                    ctx.bezierCurveTo(-30, 10 + i * 10, -50, 5 + flap, -60, 15 + i * 5);
                     ctx.strokeStyle = "rgba(251, 133, 0, 0.6)";
                     ctx.lineWidth = 2;
                     ctx.stroke();
@@ -262,7 +297,7 @@
                     wingGrad.addColorStop(0, "#ffd700");
                     wingGrad.addColorStop(1, "#fb8500");
                     ctx.fillStyle = wingGrad;
-                    
+
                     ctx.beginPath();
                     ctx.moveTo(0, 0);
                     // Wing shape with flapping animation
@@ -275,7 +310,7 @@
 
                 // Back Wing
                 ctx.save(); ctx.scale(0.9, 0.9); drawWing(1, 0.6, true); ctx.restore();
-                
+
                 // Body
                 ctx.globalAlpha = 1;
                 const bodyGrad = ctx.createLinearGradient(-15, 0, 15, 0);
@@ -290,7 +325,7 @@
                 ctx.beginPath();
                 ctx.arc(15, -4, 6, 0, Math.PI * 2);
                 ctx.fill();
-                
+
                 // Beak
                 ctx.fillStyle = "#ffb703";
                 ctx.beginPath();
@@ -336,11 +371,11 @@
                 grad.addColorStop(0, "#f8f9fa");
                 grad.addColorStop(0.5, "#ffffff");
                 grad.addColorStop(1, "#dee2e6");
-                
+
                 ctx.fillStyle = grad;
                 ctx.shadowBlur = 20;
                 ctx.shadowColor = "rgba(255, 215, 0, 0.15)";
-                
+
                 // Pillar shape
                 ctx.beginPath();
                 ctx.roundRect(x, y, w, h, isTop ? [0, 0, 10, 10] : [10, 10, 0, 0]);
@@ -350,19 +385,19 @@
                 // Gold Top/Bottom Cap
                 ctx.fillStyle = "#ffd700";
                 ctx.fillRect(x - 5, isTop ? h - 15 : y, w + 10, 15);
-                
+
                 // Pillar Details
                 ctx.strokeStyle = "rgba(0,0,0,0.04)";
-                for(let i=20; i<w; i+=25) {
+                for (let i = 20; i < w; i += 25) {
                     ctx.beginPath();
-                    ctx.moveTo(x+i, y); ctx.lineTo(x+i, y+h);
+                    ctx.moveTo(x + i, y); ctx.lineTo(x + i, y + h);
                     ctx.stroke();
                 }
             },
 
             update() {
                 if (!gameRunning) return;
-                
+
                 if (frames % 90 === 0) {
                     this.list.push({
                         x: canvas.width,
@@ -375,10 +410,10 @@
                 for (let i = this.list.length - 1; i >= 0; i--) {
                     let p = this.list[i];
                     p.x -= gameSpeed;
-                    
-                    if(currentLevel >= 2) {
+
+                    if (currentLevel >= 2) {
                         p.y += (p.vDir * (0.6 + currentLevel * 0.12));
-                        if(p.y < 90 || p.y > canvas.height - this.gap - 90) p.vDir *= -1;
+                        if (p.y < 90 || p.y > canvas.height - this.gap - 90) p.vDir *= -1;
                     }
 
                     // Collision
@@ -390,7 +425,7 @@
                         p.scored = true;
                         scoreVal.innerText = score;
                         gameSpeed += 0.08;
-                        if(score % 10 === 0) {
+                        if (score % 10 === 0) {
                             currentLevel++;
                             levelVal.innerText = currentLevel;
                             levelMsg.classList.add('pop-animation');
@@ -407,9 +442,9 @@
             ctx.fillStyle = "rgba(255,255,255,0.7)";
             clouds.forEach(c => {
                 c.x -= c.speed;
-                if(c.x + c.w < -50) c.x = canvas.width + 100;
+                if (c.x + c.w < -50) c.x = canvas.width + 100;
                 ctx.beginPath();
-                ctx.ellipse(c.x, c.y, c.w/2, c.h, 0, 0, Math.PI*2);
+                ctx.ellipse(c.x, c.y, c.w / 2, c.h, 0, 0, Math.PI * 2);
                 ctx.fill();
             });
         }
@@ -448,11 +483,12 @@
         };
 
         const act = (e) => { if (gameRunning) phoenix.flap(); };
-        window.addEventListener('keydown', (e) => { if(e.code==='Space' || e.code==='ArrowUp') act(); });
+        window.addEventListener('keydown', (e) => { if (e.code === 'Space' || e.code === 'ArrowUp') act(); });
         canvas.addEventListener('mousedown', act);
-        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); act(); }, {passive: false});
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); act(); }, { passive: false });
 
         loop();
     </script>
 </body>
+
 </html>
