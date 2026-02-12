@@ -1,483 +1,500 @@
 <% layout("/layouts/boilerplate") %>
 
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
-  
-  body {
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    background-color: #0B1120;
-    overflow-x: hidden;
-  }
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 
-  /* Custom Scrollbar */
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  /* Smooth snap scrolling */
-  .snap-x {
-    scroll-snap-type: x mandatory;
-  }
-  .snap-start {
-    scroll-snap-align: start;
-  }
-
-  /* Desktop hover effect for buttons */
-  @media (min-width: 1024px) {
-    .scroll-container:hover .nav-btn {
-      opacity: 1;
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #0B1120;
+      overflow-x: hidden;
     }
-  }
 
-  .no-scrollbar::-webkit-scrollbar { display: none; }
-  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    /* Custom Scrollbar */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
 
-</style>
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
 
-<div class="bg-[#0B1120] text-slate-200 antialiased relative min-h-screen w-full selection:bg-indigo-500/30">
+    /* Smooth snap scrolling */
+    .snap-x {
+      scroll-snap-type: x mandatory;
+    }
 
-  <!-- Background Glows -->
-  <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-    <div class="absolute top-[-10%] left-[-10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-indigo-600/15 rounded-full blur-[100px] animate-pulse"></div>
-    <div class="absolute bottom-[-10%] right-[-10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-emerald-500/10 rounded-full blur-[100px]"></div>
-  </div>
+    .snap-start {
+      scroll-snap-align: start;
+    }
 
-  <!-- Header Section -->
-<header class="relative max-w-7xl mx-auto px-4 md:px-6 pt-8 pb-10 text-center flex flex-col items-center">
-  
-  <!-- 1. Announcement Badge -->
-  <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] md:text-xs font-medium mb-6">
-    <span class="flex h-2 w-2 relative">
-      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-      <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-    </span>
-    Featured Digital Surprises
-  </div>
+    /* Desktop hover effect for buttons */
+    @media (min-width: 1024px) {
+      .scroll-container:hover .nav-btn {
+        opacity: 1;
+      }
+    }
 
-  <!-- 2. Optimized Slidable Image Banner -->
-  <div class="w-full max-w-4xl mb-8">
-    <div class="relative w-full rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-950 group">
-      <!-- Slider Wrapper -->
-      <div id="banner-slider"
-     class="flex transition-transform duration-700 ease-in-out
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+
+  <div class="bg-[#0B1120] text-slate-200 antialiased relative min-h-screen w-full selection:bg-indigo-500/30">
+
+    <!-- Background Glows -->
+    <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+      <div
+        class="absolute top-[-10%] left-[-10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-indigo-600/15 rounded-full blur-[100px] animate-pulse">
+      </div>
+      <div
+        class="absolute bottom-[-10%] right-[-10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-emerald-500/10 rounded-full blur-[100px]">
+      </div>
+    </div>
+
+    <!-- Header Section -->
+    <header class="relative max-w-7xl mx-auto px-4 md:px-6 pt-8 pb-10 text-center flex flex-col items-center">
+
+      <!-- 1. Announcement Badge -->
+      <div
+        class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] md:text-xs font-medium mb-6">
+        <span class="flex h-2 w-2 relative">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+        </span>
+        Featured Digital Surprises
+      </div>
+
+      <!-- 2. Optimized Slidable Image Banner -->
+      <div class="w-full max-w-4xl mb-8">
+        <div class="relative w-full rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-950 group">
+          <!-- Slider Wrapper -->
+          <div id="banner-slider" class="flex transition-transform duration-700 ease-in-out
             h-auto py-5 lg:py-8">
 
-  <!-- Slide 1 -->
-  <div class="min-w-full relative flex items-center justify-center bg-purple-900/20">
-    <a href="/game/"
-       class="relative block
-              w-[80%] sm:w-[65%] md:w-[50%] lg:w-[10%]
-              aspect-[11/16]">
+            <!-- Slide 1 -->
+            <div class="min-w-full relative flex items-center justify-center bg-purple-900/20">
+              <a href="/game/" class="relative block
+                  w-[80%] sm:w-[65%] md:w-[50%] lg:w-[10%]
+                  aspect-[11/16]">
 
-      <!-- Background blur -->
-      <img
-        src="https://res.cloudinary.com/drzq6kjgp/image/upload/v1770794063/Gemini_Generated_Image_4qzfxy4qzfxy4qzf_l5tidy.png"
-        class="absolute inset-0 w-full h-full object-cover blur-xl opacity-25 scale-110"
-        aria-hidden="true"
-      >
+                <!-- Background blur -->
+                <img
+                  src="https://res.cloudinary.com/drzq6kjgp/image/upload/v1770794063/Gemini_Generated_Image_4qzfxy4qzfxy4qzf_l5tidy.png"
+                  class="absolute inset-0 w-full h-full object-cover blur-xl opacity-25 scale-110" aria-hidden="true">
 
-      <!-- Main image -->
-      <img
-        src="https://res.cloudinary.com/drzq6kjgp/image/upload/v1770794063/Gemini_Generated_Image_4qzfxy4qzfxy4qzf_l5tidy.png"
-        class="relative z-10 w-full h-full object-cover rounded-xl"
-        alt="Slide 1"
-      >
+                <!-- Main image -->
+                <img
+                  src="https://res.cloudinary.com/drzq6kjgp/image/upload/v1770794063/Gemini_Generated_Image_4qzfxy4qzfxy4qzf_l5tidy.png"
+                  class="relative z-10 w-full h-full object-cover rounded-xl" alt="Slide 1">
 
-      <!-- Text overlay -->
-      <div class="absolute inset-0 z-20
-                  bg-gradient-to-t from-black/90 via-black/40 to-transparent
-                  flex items-end p-4">
-        <p class="text-white text-sm md:text-base lg:text-base font-semibold drop-shadow-xl">
-          Play and Win
-        </p>
-      </div>
-    </a>
-  </div>
-
-  <!-- Slide 2 -->
-  <div class="min-w-full relative flex items-center justify-center bg-indigo-900/20">
-    <a href="/category/birthday"
-       class="relative block
-              w-[80%] sm:w-[65%] md:w-[50%] lg:w-[10%]
-              aspect-[11/16]">
-
-      <img
-        src="https://res.cloudinary.com/dcw90tnk1/image/upload/v1768805703/wishLink_dev/zehl3lsqfj0gdsaguevn.jpg"
-        class="absolute inset-0 w-full h-full object-cover blur-xl opacity-25 scale-110"
-        aria-hidden="true"
-      >
-
-      <img
-        src="https://res.cloudinary.com/dcw90tnk1/image/upload/v1768805703/wishLink_dev/zehl3lsqfj0gdsaguevn.jpg"
-        class="relative z-10 w-full h-full object-cover rounded-xl"
-        alt="Slide 2"
-      >
-
-      <div class="absolute inset-0 z-20
-                  bg-gradient-to-t from-black/90 via-black/40 to-transparent
-                  flex items-end p-4">
-        <p class="text-white text-sm md:text-base lg:text-base font-semibold drop-shadow-xl">
-          Best-Selling Birthday Templates
-        </p>
-      </div>
-    </a>
-  </div>
-
-  <!-- Slide 3 -->
-  <div class="min-w-full relative flex items-center justify-center bg-purple-900/20">
-    <a href="/category/valentine's"
-       class="relative block
-              w-[80%] sm:w-[65%] md:w-[50%] lg:w-[10%]
-              aspect-[11/16]">
-
-      <img
-        src="https://res.cloudinary.com/drzq6kjgp/image/upload/v1770793447/Gemini_Generated_Image_4qzfxy4qzfxy4qzf_cz2hgg.png"
-        class="absolute inset-0 w-full h-full object-cover blur-xl opacity-25 scale-110"
-        aria-hidden="true"
-      >
-
-      <img
-        src="https://res.cloudinary.com/dcw90tnk1/image/upload/v1769509941/thumbnailV_k7rfkr.jpg"
-        class="relative z-10 w-full h-full object-cover rounded-xl"
-        alt="Slide 3"
-      >
-
-      <div class="absolute inset-0 z-20
-                  bg-gradient-to-t from-black/90 via-black/40 to-transparent
-                  flex items-end p-4">
-        <p class="text-white text-sm md:text-base lg:text-base font-semibold drop-shadow-xl">
-          Valentine’s Day Special
-        </p>
-      </div>
-    </a>
-  </div>
-
-</div>
-
-
-      <!-- Compact Navigation Dots -->
-      <div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-30">
-        <button onclick="moveSlide(0)" class="banner-dot w-1.5 h-1.5 rounded-full bg-white/30 transition-all"></button>
-        <button onclick="moveSlide(1)" class="banner-dot w-1.5 h-1.5 rounded-full bg-white/30 transition-all"></button>
-        <button onclick="moveSlide(2)" class="banner-dot w-1.5 h-1.5 rounded-full bg-white/30 transition-all"></button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 3. Headline & Subtext (Slightly more compact) -->
-  <div class="mb-8">
-    <h1 class="text-2xl md:text-5xl lg:text-6xl font-extrabold mb-3 tracking-tight leading-tight text-white break-words">
-      Celebrate Every Moment,<br class="hidden md:block">
-      <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-emerald-400">
-        Make It Unforgettable.
-      </span>
-    </h1>
-    <p class="text-slate-400 text-sm md:text-base max-w-xl mx-auto">
-      Create stunning, heartfelt websites for your loved ones in just a few clicks.
-    </p>
-  </div>
-
-  <!-- 4. Feedback Form -->
-  <div class="w-full max-w-2xl mx-auto mb-4">
-    <form action="/feedback/add" method="POST" id="feedbackform"
-      class="relative bg-slate-900/50 backdrop-blur-xl border border-slate-700/50 p-2 rounded-2xl flex items-center gap-2 shadow-xl focus-within:border-indigo-500/50 transition-colors">
-      <input type="text" name="message" placeholder="Share your Story..." required
-        class="bg-transparent text-slate-200 placeholder-slate-500 px-4 py-2 flex-1 focus:outline-none text-sm md:text-base" />
-      <button type="submit" id="sendfeedback"
-        class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all active:scale-95 shadow-lg shadow-indigo-500/20 whitespace-nowrap">
-        Send
-      </button>
-    </form>
-  </div>
-
-  <!-- 5. User Feedback Link (More subtle) -->
-  <div class="mb-10">
-    <a href="/feedback/feedbackpage"
-         class="group relative inline-flex items-center justify-center px-6 py-2 text-sm font-medium text-white transition-all duration-300 bg-slate-900 border border-slate-700 rounded-full hover:bg-slate-800 hover:border-indigo-500 hover:shadow-[0_0_20px_rgba(99,102,241,0.3)] active:scale-95">
-          <span class="mr-2">View User Stories</span>
-          <svg class="w-4 h-4 text-indigo-400 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-          </svg>
-      </a>   
-  </div>
-
-  
-  <!-- 6. Category Scroller -->
-  <div class="mb-4">
-    <span class="text-white-500 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] opacity-60">Browse Categories</span>
-  </div>
-  <div class="w-full max-w-5xl overflow-hidden">
-     <div class="overflow-x-auto no-scrollbar py-2">
-       <div class="flex flex-nowrap gap-2 px-4 w-max mx-auto">
-         <% const categories = ["All","Free", "Birthday", "Valentine's", "Sorry", "Family", "Couple", "Anniversary", "Wedding", "Best Friend", "Festival", "New Year"]; %>
-         <% categories.forEach(tag => { %>
-           <a href="/category/<%= tag.toLowerCase() %>" class="px-4 py-2 rounded-full bg-slate-900/40 border border-slate-800/60 text-slate-500 text-[11px] md:text-xs font-medium hover:border-indigo-500/40 hover:text-indigo-300 transition-all whitespace-nowrap">
-             <%= tag %>
-           </a>
-         <% }) %>
-       </div>
-     </div>
-  </div>
-</header>
-
-  <!-- Main Content -->
-  <main class="max-w-7xl mx-auto px-4 md:px-6 mb-20">
-    
-    <div class="flex items-center justify-between mb-8 border-b border-slate-800/60 pb-6">
-      <div>
-        <h2 class="text-2xl md:text-3xl font-bold text-white">Top Templates</h2>
-        <p class="text-slate-500 text-sm mt-1">Scroll or swipe to see more</p>
-      </div>
-      
-      <!-- Desktop Nav Controls -->
-      <div class="hidden md:flex gap-3">
-        <button id="prevBtn" class="p-3 rounded-full bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-indigo-500 transition-all active:scale-90">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-        </button>
-        <button id="nextBtn" class="p-3 rounded-full bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-indigo-500 transition-all active:scale-90">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-        </button>
-      </div>
-    </div>
-    <div class="mb-8 flex items-center justify-center gap-2 text-xs text-slate-500">
-      <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-      <p class="text-emerald-500">Tap on the image to see the template preview.</p>
-    </div>
-    <!-- HORIZONTAL SCROLL CONTAINER -->
-    <div class="relative scroll-container">
-      <!-- Gradient Fades (Desktop only) -->
-      <div class="hidden lg:block absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-[#0B1120] to-transparent z-10 pointer-events-none"></div>
-      <div class="hidden lg:block absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-[#0B1120] to-transparent z-10 pointer-events-none"></div>
-
-      <div id="templateScroller" class="flex overflow-x-auto no-scrollbar gap-4 md:gap-6 pb-10 snap-x snap-mandatory" style="-webkit-overflow-scrolling: touch;">
-        
-        <% for(let sample of allSamples) { %>
-          <div class="flex-none w-[85vw] sm:w-[45vw] md:w-[40vw] lg:w-[30vw] xl:w-[24vw] snap-start group">
-            <div class="bg-slate-900/50 border border-slate-800 rounded-3xl overflow-hidden transition-all duration-500 hover:border-indigo-500/50 hover:shadow-[0_0_30px_rgba(99,102,241,0.1)] flex flex-col h-full backdrop-blur-sm">
-              
-              <!-- Image -->
-              <div class="relative h-48 md:h-56 overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent  opacity-60"></div>
-                <a href="<%= sample.webUrl %>" target="_blank" class="block w-full h-full">
-                  <img src="<%= sample.imageUrl.url %>" alt="<%= sample.webName %>" 
-                    class="w-full h-full object-cover transform group-hover:scale-105 transition duration-700 ease-in-out">
-                </a>
-                <div class="absolute bottom-4 left-1 right-4 w-full flex items-center justify-between ">
-                  <span class="ml-1 px-3 py-1 bg-white/10 backdrop-blur-md border border-white/20 text-white text-[10px] font-bold rounded-lg uppercase tracking-wider">
-                    Live Preview
-                  </span>
-
-                  <% if(sample.priceForPermanent && sample.priceForTemporary===0 ) { %>
-                    <span class="mr-2 px-3 py-1 bg-emerald-500 text-white-400 border border-emerald-500/20 text-[10px] font-medium rounded-md tracking-wide">
-                      Free
-                    </span>
-                  <% } %>
+                <!-- Text overlay -->
+                <div class="absolute inset-0 z-20
+                bg-gradient-to-t from-black/90 via-black/40 to-transparent
+                flex items-end justify-center p-2">
+                  <p class="px-3 py-1 text-sm md:text-base font-semibold
+                      text-white
+                      bg-black/50
+                      rounded-md shadow-lg">
+                    Play and Win Free Template
+                  </p>
                 </div>
-              </div>
+              </a>
+            </div>
 
-              <!-- Info -->
-              <div class="p-5 md:p-6 flex flex-col flex-grow">
-                <h3 class="text-xl font-bold text-white mb-2 group-hover:text-indigo-400 transition-colors">
-                  <%= sample.webName %>
-                </h3>
-                <p class="text-slate-400 text-sm line-clamp-2 mb-6 h-10">
-                  <%= sample.description %>
-                </p>
+            <!-- Slide 2 -->
+            <div class="min-w-full relative flex items-center justify-center bg-indigo-900/20">
+              <a href="/category/birthday" class="relative block
+                  w-[80%] sm:w-[65%] md:w-[50%] lg:w-[10%]
+                  aspect-[11/16]">
 
-                <div class="grid grid-cols-2 gap-3 mt-auto">
-                  <a href="/web/purchase/permanent/<%= sample.id %>" class="flex items-center justify-center py-2.5 rounded-xl border border-slate-700 text-slate-300 font-semibold text-xs hover:bg-slate-800 transition">
-                    Permanent link
+                <img
+                  src="https://res.cloudinary.com/dcw90tnk1/image/upload/v1768805703/wishLink_dev/zehl3lsqfj0gdsaguevn.jpg"
+                  class="absolute inset-0 w-full h-full object-cover blur-xl opacity-25 scale-110" aria-hidden="true">
+
+                <img
+                  src="https://res.cloudinary.com/dcw90tnk1/image/upload/v1768805703/wishLink_dev/zehl3lsqfj0gdsaguevn.jpg"
+                  class="relative z-10 w-full h-full object-cover rounded-xl" alt="Slide 2">
+                <div class="absolute inset-0 z-20
+                bg-gradient-to-t from-black/90 via-black/40 to-transparent
+                flex items-end justify-center p-2">
+                  <p class="px-3 py-1 text-sm md:text-base font-semibold
+                      text-white
+                      bg-black/50
+                      rounded-md shadow-lg">
+                    Best-Selling Birthday Templates
+                  </p>
+                </div>
+              </a>
+            </div>
+
+            <!-- Slide 3 -->
+            <div class="min-w-full relative flex items-center justify-center bg-purple-900/20">
+              <a href="/category/valentine's" class="relative block
+                  w-[80%] sm:w-[65%] md:w-[50%] lg:w-[10%]
+                  aspect-[11/16]">
+
+                <img
+                  src="https://res.cloudinary.com/drzq6kjgp/image/upload/v1770793447/Gemini_Generated_Image_4qzfxy4qzfxy4qzf_cz2hgg.png"
+                  class="absolute inset-0 w-full h-full object-cover blur-xl opacity-25 scale-110" aria-hidden="true">
+
+                <img src="https://res.cloudinary.com/dcw90tnk1/image/upload/v1769509941/thumbnailV_k7rfkr.jpg"
+                  class="relative z-10 w-full h-full object-cover rounded-xl" alt="Slide 3">
+
+                <div class="absolute inset-0 z-20
+                bg-gradient-to-t from-black/90 via-black/40 to-transparent
+                flex items-end justify-center p-2">
+                  <p class="px-3 py-1 text-sm md:text-base font-semibold
+                      text-white
+                      bg-black/50
+                      rounded-md shadow-lg">
+                    Valentine’s Day Special
+                  </p>
+                </div>
+              </a>
+            </div>
+
+          </div>
+
+
+          <!-- Compact Navigation Dots -->
+
+        </div>
+        <div class="mt-2 absolute bottom-8 left-1/2 -translate-x-1/2 
+            flex gap-1.5 z-40">
+          <button onclick="moveSlide(0)"
+            class="banner-dot w-1.5 h-1.5 rounded-full bg-white/30 transition-all"></button>
+          <button onclick="moveSlide(1)"
+            class="banner-dot w-1.5 h-1.5 rounded-full bg-white/30 transition-all"></button>
+          <button onclick="moveSlide(2)"
+            class="banner-dot w-1.5 h-1.5 rounded-full bg-white/30 transition-all"></button>
+        </div>
+      </div>
+
+      <!-- 4. Feedback Form -->
+      <div class="mt-2 w-full max-w-2xl mx-auto mb-4">
+        <form action="/feedback/add" method="POST" id="feedbackform"
+          class="relative bg-slate-900/50 backdrop-blur-xl border border-slate-700/50 p-2 rounded-2xl flex items-center gap-2 shadow-xl focus-within:border-indigo-500/50 transition-colors">
+          <input type="text" name="message" placeholder="Share your feedback or story..." required
+            class="bg-transparent text-slate-200 placeholder-slate-500 px-4 py-2 flex-1 focus:outline-none text-sm md:text-base" />
+          <button type="submit" id="sendfeedback"
+            class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all active:scale-95 shadow-lg shadow-indigo-500/20 whitespace-nowrap">
+            Send
+          </button>
+        </form>
+      </div>
+
+      <!-- 5. User Feedback Link (More subtle) -->
+      <div class="mb-10">
+        <a href="/feedback/feedbackpage"
+          class="group relative inline-flex items-center justify-center px-6 py-2 text-sm font-medium text-white transition-all duration-300 bg-slate-900 border border-slate-700 rounded-full hover:bg-slate-800 hover:border-indigo-500 hover:shadow-[0_0_20px_rgba(99,102,241,0.3)] active:scale-95">
+          <span class="mr-2">View User Stories</span>
+          <svg class="w-4 h-4 text-indigo-400 group-hover:translate-x-1 transition-transform" fill="none"
+            viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </a>
+      </div>
+
+
+      <!-- 6. Category Scroller -->
+      <div class="mb-4">
+        <span class="text-white-500 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] opacity-60">Browse
+          Categories</span>
+      </div>
+      <div class="w-full max-w-5xl overflow-hidden">
+        <div class="overflow-x-auto no-scrollbar py-2">
+          <div class="flex flex-nowrap gap-2 px-4 w-max mx-auto">
+            <% const categories=["All","Free", "Birthday" , "Valentine's" , "Sorry" , "Family" , "Couple"
+              , "Anniversary" , "Wedding" , "Best Friend" , "Festival" , "New Year" ]; %>
+              <% categories.forEach(tag=> { %>
+                <a href="/category/<%= tag.toLowerCase() %>"
+                  class="px-4 py-2 rounded-full bg-slate-900/40 border border-slate-800/60 text-slate-500 text-[11px] md:text-xs font-medium hover:border-indigo-500/40 hover:text-indigo-300 transition-all whitespace-nowrap">
+                  <%= tag %>
+                </a>
+                <% }) %>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 md:px-6 mb-20">
+
+      <div class="flex items-center justify-between mb-8 border-b border-slate-800/60 pb-6">
+        <div>
+          <h2 class="text-2xl md:text-3xl font-bold text-white">Top Templates</h2>
+          <p class="text-slate-500 text-sm mt-1">Scroll or swipe to see more</p>
+        </div>
+
+        <!-- Desktop Nav Controls -->
+        <div class="hidden md:flex gap-3">
+          <button id="prevBtn"
+            class="p-3 rounded-full bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-indigo-500 transition-all active:scale-90">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <button id="nextBtn"
+            class="p-3 rounded-full bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-indigo-500 transition-all active:scale-90">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="mb-8 flex items-center justify-center gap-2 text-xs text-slate-500">
+        <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        <p class="text-emerald-500">Tap on the image to see the template preview.</p>
+      </div>
+      <!-- HORIZONTAL SCROLL CONTAINER -->
+      <div class="relative scroll-container">
+        <!-- Gradient Fades (Desktop only) -->
+        <div
+          class="hidden lg:block absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-[#0B1120] to-transparent z-10 pointer-events-none">
+        </div>
+        <div
+          class="hidden lg:block absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-[#0B1120] to-transparent z-10 pointer-events-none">
+        </div>
+
+        <div id="templateScroller" class="flex overflow-x-auto no-scrollbar gap-4 md:gap-6 pb-10 snap-x snap-mandatory"
+          style="-webkit-overflow-scrolling: touch;">
+
+          <% for(let sample of allSamples) { %>
+            <div class="flex-none w-[85vw] sm:w-[45vw] md:w-[40vw] lg:w-[30vw] xl:w-[24vw] snap-start group">
+              <div
+                class="bg-slate-900/50 border border-slate-800 rounded-3xl overflow-hidden transition-all duration-500 hover:border-indigo-500/50 hover:shadow-[0_0_30px_rgba(99,102,241,0.1)] flex flex-col h-full backdrop-blur-sm">
+
+                <!-- Image -->
+                <div class="relative h-48 md:h-56 overflow-hidden">
+                  <div
+                    class="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent  opacity-60">
+                  </div>
+                  <a href="<%= sample.webUrl %>" target="_blank" class="block w-full h-full">
+                    <img src="<%= sample.imageUrl.url %>" alt="<%= sample.webName %>"
+                      class="w-full h-full object-cover transform group-hover:scale-105 transition duration-700 ease-in-out">
                   </a>
-                  <a href="/web/purchase/temporary/<%= sample.id %>" class="submitBtnLink flex items-center justify-center py-2.5 rounded-xl bg-indigo-600 text-white font-semibold text-xs hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 transition">
-                    Make Link
-                  </a>
+                  <div class="absolute bottom-4 left-1 right-4 w-full flex items-center justify-between ">
+                    <span
+                      class="ml-1 px-3 py-1 bg-white/10 backdrop-blur-md border border-white/20 text-white text-[10px] font-bold rounded-lg uppercase tracking-wider">
+                      Live Preview
+                    </span>
+
+                    <% if(sample.priceForPermanent && sample.priceForTemporary===0 ) { %>
+                      <span
+                        class="mr-2 px-3 py-1 bg-emerald-500 text-white-400 border border-emerald-500/20 text-[10px] font-medium rounded-md tracking-wide">
+                        Free
+                      </span>
+                      <% } %>
+                  </div>
+                </div>
+
+                <!-- Info -->
+                <div class="p-5 md:p-6 flex flex-col flex-grow">
+                  <h3 class="text-xl font-bold text-white mb-2 group-hover:text-indigo-400 transition-colors">
+                    <%= sample.webName %>
+                  </h3>
+                  <p class="text-slate-400 text-sm line-clamp-2 mb-6 h-10">
+                    <%= sample.description %>
+                  </p>
+
+                  <div class="grid grid-cols-2 gap-3 mt-auto">
+                    <a href="/web/purchase/permanent/<%= sample.id %>"
+                      class="flex items-center justify-center py-2.5 rounded-xl border border-slate-700 text-slate-300 font-semibold text-xs hover:bg-slate-800 transition">
+                      Permanent link
+                    </a>
+                    <a href="/web/purchase/temporary/<%= sample.id %>"
+                      class="submitBtnLink flex items-center justify-center py-2.5 rounded-xl bg-indigo-600 text-white font-semibold text-xs hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 transition">
+                      Make Link
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        <% } %>
+            <% } %>
+        </div>
       </div>
-    </div>
-  </main>
+    </main>
 
-  <article class="max-w-4xl mx-auto mt-4 p-10 mb-6 text-slate-300 leading-relaxed">
+    <article class="max-w-4xl mx-auto mt-4 p-10 mb-6 text-slate-300 leading-relaxed">
 
-    <h1 class="text-3xl md:text-4xl font-bold text-white mb-6">
-      The Evolution of Gifting: Why Digital Surprises Are the Future of Celebrations
-    </h1>
+      <h1 class="text-3xl md:text-4xl font-bold text-white mb-6">
+        The Evolution of Gifting: Why Digital Surprises Are the Future of Celebrations
+      </h1>
 
-    <p class="mb-6">
-      In today’s fast-paced digital world, the way people celebrate special moments has changed dramatically.
-      Traditional gifts and greeting cards still hold emotional value, but they are no longer the only way to
-      express love, appreciation, and connection. With technology becoming an integral part of daily life,
-      digital celebrations are emerging as a meaningful and creative alternative.
-    </p>
+      <p class="mb-6">
+        In today’s fast-paced digital world, the way people celebrate special moments has changed dramatically.
+        Traditional gifts and greeting cards still hold emotional value, but they are no longer the only way to
+        express love, appreciation, and connection. With technology becoming an integral part of daily life,
+        digital celebrations are emerging as a meaningful and creative alternative.
+      </p>
 
-    <h2 class="text-2xl font-semibold text-white mt-10 mb-4">
-      The Shift from Physical Gifts to Digital Experiences
-    </h2>
+      <h2 class="text-2xl font-semibold text-white mt-10 mb-4">
+        The Shift from Physical Gifts to Digital Experiences
+      </h2>
 
-    <p class="mb-6">
-      Physical gifts such as flowers, chocolates, or printed cards often come with limitations. They can be
-      affected by distance, delivery delays, and short-term usefulness. Digital experiences, on the other hand,
-      remove these barriers completely. A digital celebration can be shared instantly, accessed from anywhere,
-      and preserved for years.
-    </p>
+      <p class="mb-6">
+        Physical gifts such as flowers, chocolates, or printed cards often come with limitations. They can be
+        affected by distance, delivery delays, and short-term usefulness. Digital experiences, on the other hand,
+        remove these barriers completely. A digital celebration can be shared instantly, accessed from anywhere,
+        and preserved for years.
+      </p>
 
-    <p class="mb-6">
-      Digital surprises are not just replacements for physical gifts — they are experiences. A thoughtfully
-      designed digital page filled with photos, music, and personal messages creates a deeper emotional impact
-      than a simple text message or social media post.
-    </p>
+      <p class="mb-6">
+        Digital surprises are not just replacements for physical gifts — they are experiences. A thoughtfully
+        designed digital page filled with photos, music, and personal messages creates a deeper emotional impact
+        than a simple text message or social media post.
+      </p>
 
-    <h2 class="text-2xl font-semibold text-white mt-10 mb-4">
-      Why Personalization Matters in Modern Celebrations
-    </h2>
+      <h2 class="text-2xl font-semibold text-white mt-10 mb-4">
+        Why Personalization Matters in Modern Celebrations
+      </h2>
 
-    <p class="mb-6">
-      One of the biggest advantages of digital gifting is personalization. Generic wishes feel impersonal,
-      whereas customized digital content reflects effort and intention. Personalization allows individuals to
-      tailor designs, messages, and layouts according to the recipient’s personality and the occasion.
-    </p>
+      <p class="mb-6">
+        One of the biggest advantages of digital gifting is personalization. Generic wishes feel impersonal,
+        whereas customized digital content reflects effort and intention. Personalization allows individuals to
+        tailor designs, messages, and layouts according to the recipient’s personality and the occasion.
+      </p>
 
-    <p class="mb-6">
-      Whether it’s a birthday, anniversary, graduation, or a simple appreciation message, a personalized digital
-      experience shows emotional involvement and creativity. This level of customization is difficult to
-      achieve with traditional gifting methods.
-    </p>
+      <p class="mb-6">
+        Whether it’s a birthday, anniversary, graduation, or a simple appreciation message, a personalized digital
+        experience shows emotional involvement and creativity. This level of customization is difficult to
+        achieve with traditional gifting methods.
+      </p>
 
-    <h2 class="text-2xl font-semibold text-white mt-10 mb-4">
-      Sustainability and Convenience in the Digital Age
-    </h2>
+      <h2 class="text-2xl font-semibold text-white mt-10 mb-4">
+        Sustainability and Convenience in the Digital Age
+      </h2>
 
-    <p class="mb-6">
-      Digital celebrations are also environmentally friendly. By reducing paper usage, packaging waste, and
-      transportation, digital gifting supports sustainable practices. At the same time, it offers unmatched
-      convenience — no shipping, no delays, and no geographical restrictions.
-    </p>
+      <p class="mb-6">
+        Digital celebrations are also environmentally friendly. By reducing paper usage, packaging waste, and
+        transportation, digital gifting supports sustainable practices. At the same time, it offers unmatched
+        convenience — no shipping, no delays, and no geographical restrictions.
+      </p>
 
-    <p class="mb-6">
-      In a world where people value both sustainability and efficiency, digital alternatives align perfectly
-      with modern lifestyles while maintaining emotional depth.
-    </p>
+      <p class="mb-6">
+        In a world where people value both sustainability and efficiency, digital alternatives align perfectly
+        with modern lifestyles while maintaining emotional depth.
+      </p>
 
-    <h2 class="text-2xl font-semibold text-white mt-10 mb-4">
-      Making Memories That Last
-    </h2>
+      <h2 class="text-2xl font-semibold text-white mt-10 mb-4">
+        Making Memories That Last
+      </h2>
 
-    <p class="mb-6">
-      Unlike physical gifts that may fade or be forgotten over time, digital memories can be revisited again
-      and again. A digital celebration becomes a permanent space where emotions, stories, and moments live on.
-      This ability to preserve memories adds long-term value to digital experiences.
-    </p>
+      <p class="mb-6">
+        Unlike physical gifts that may fade or be forgotten over time, digital memories can be revisited again
+        and again. A digital celebration becomes a permanent space where emotions, stories, and moments live on.
+        This ability to preserve memories adds long-term value to digital experiences.
+      </p>
 
-    <p class="mb-6">
-      Digital platforms designed for personalized celebrations focus on creating meaningful emotional
-      connections rather than just delivering content. Each shared link becomes a memory, a story, and a
-      reflection of human connection.
-    </p>
+      <p class="mb-6">
+        Digital platforms designed for personalized celebrations focus on creating meaningful emotional
+        connections rather than just delivering content. Each shared link becomes a memory, a story, and a
+        reflection of human connection.
+      </p>
 
-    <h2 class="text-2xl font-semibold text-white mt-10 mb-4">
-      How VishLink Supports Digital Celebrations
-    </h2>
+      <h2 class="text-2xl font-semibold text-white mt-10 mb-4">
+        How VishLink Supports Digital Celebrations
+      </h2>
 
-    <p class="mb-6">
-      VishLink is built to simplify the process of creating personalized digital celebration pages. It allows
-      users to choose from various templates, customize content, and share meaningful experiences through a
-      single link. The goal is not just to share information, but to deliver emotions in a creative digital
-      format.
-    </p>
+      <p class="mb-6">
+        VishLink is built to simplify the process of creating personalized digital celebration pages. It allows
+        users to choose from various templates, customize content, and share meaningful experiences through a
+        single link. The goal is not just to share information, but to deliver emotions in a creative digital
+        format.
+      </p>
 
-    <p class="mb-6">
-      By combining design, personalization, and accessibility, VishLink helps users transform ordinary moments
-      into memorable digital experiences that can be cherished long after the celebration ends.
-    </p>
+      <p class="mb-6">
+        By combining design, personalization, and accessibility, VishLink helps users transform ordinary moments
+        into memorable digital experiences that can be cherished long after the celebration ends.
+      </p>
 
-    <h2 class="text-2xl font-semibold text-white mt-10 mb-4">
-      The Future of Celebrations
-    </h2>
+      <h2 class="text-2xl font-semibold text-white mt-10 mb-4">
+        The Future of Celebrations
+      </h2>
 
-    <p class="mb-10">
-      As technology continues to evolve, digital celebrations will become even more immersive and expressive.
-      The future of gifting lies in experiences that are personal, sustainable, and emotionally meaningful.
-      Instead of sending just a message, people are choosing to send memories.
-    </p>
+      <p class="mb-10">
+        As technology continues to evolve, digital celebrations will become even more immersive and expressive.
+        The future of gifting lies in experiences that are personal, sustainable, and emotionally meaningful.
+        Instead of sending just a message, people are choosing to send memories.
+      </p>
 
-  </article>
+    </article>
 
 
-  <script>
-    // 1. Horizontal Scroll Fix for PC (Mouse Wheel Support)
-    const scroller = document.getElementById('templateScroller');
-    
-    scroller.addEventListener('wheel', (evt) => {
-      // Agar vertical scroll ho raha hai, toh use horizontal mein convert karo
-      if (evt.deltaY !== 0) {
-        evt.preventDefault();
-        scroller.scrollLeft += evt.deltaY;
+    <script>
+      // 1. Horizontal Scroll Fix for PC (Mouse Wheel Support)
+      const scroller = document.getElementById('templateScroller');
+
+      scroller.addEventListener('wheel', (evt) => {
+        // Agar vertical scroll ho raha hai, toh use horizontal mein convert karo
+        if (evt.deltaY !== 0) {
+          evt.preventDefault();
+          scroller.scrollLeft += evt.deltaY;
+        }
+      }, { passive: false });
+
+      // 2. Navigation Buttons Logic
+      const nextBtn = document.getElementById('nextBtn');
+      const prevBtn = document.getElementById('prevBtn');
+
+      if (nextBtn && prevBtn) {
+        nextBtn.addEventListener('click', () => {
+          const cardWidth = scroller.querySelector('.snap-start').offsetWidth + 24;
+          scroller.scrollBy({ left: cardWidth, behavior: 'smooth' });
+        });
+
+        prevBtn.addEventListener('click', () => {
+          const cardWidth = scroller.querySelector('.snap-start').offsetWidth + 24;
+          scroller.scrollBy({ left: -cardWidth, behavior: 'smooth' });
+        });
       }
-    }, { passive: false });
 
-    // 2. Navigation Buttons Logic
-    const nextBtn = document.getElementById('nextBtn');
-    const prevBtn = document.getElementById('prevBtn');
-
-    if(nextBtn && prevBtn) {
-      nextBtn.addEventListener('click', () => {
-        const cardWidth = scroller.querySelector('.snap-start').offsetWidth + 24;
-        scroller.scrollBy({ left: cardWidth, behavior: 'smooth' });
+      // 3. Loading state for buttons
+      const purchaseLinks = document.querySelectorAll('.submitBtnLink');
+      purchaseLinks.forEach(link => {
+        link.addEventListener("click", function () {
+          this.innerHTML = `<span class="flex items-center gap-2"><svg class="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Wait...</span>`;
+          this.classList.add('opacity-75', 'pointer-events-none');
+        });
       });
 
-      prevBtn.addEventListener('click', () => {
-        const cardWidth = scroller.querySelector('.snap-start').offsetWidth + 24;
-        scroller.scrollBy({ left: -cardWidth, behavior: 'smooth' });
-      });
-    }
-
-    // 3. Loading state for buttons
-    const purchaseLinks = document.querySelectorAll('.submitBtnLink');
-    purchaseLinks.forEach(link => {
-      link.addEventListener("click", function () {
-        this.innerHTML = `<span class="flex items-center gap-2"><svg class="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Wait...</span>`;
-        this.classList.add('opacity-75', 'pointer-events-none');
-      });
-    });
-
-    const form = document.getElementById("feedbackform");
+      const form = document.getElementById("feedbackform");
       const btn = document.getElementById("sendfeedback");
       form.addEventListener("submit", function () {
         btn.disabled = true;
         btn.innerText = "Please wait...";
-    });
+      });
 
-  let activeSlide = 0;
-  const sliderEl = document.getElementById('banner-slider');
-  const dotEls = document.querySelectorAll('.banner-dot');
+      let activeSlide = 0;
+      const sliderEl = document.getElementById('banner-slider');
+      const dotEls = document.querySelectorAll('.banner-dot');
 
-  function moveSlide(index) {
-    activeSlide = index;
-    sliderEl.style.transform = `translateX(-${index * 100}%)`;
-    dotEls.forEach((dot, i) => {
-      dot.style.background = i === activeSlide ? '#6366f1' : 'rgba(255,255,255,0.2)';
-      dot.style.width = i === activeSlide ? '16px' : '6px';
-    });
-  }
+      function moveSlide(index) {
+        activeSlide = index;
+        sliderEl.style.transform = `translateX(-${index * 100}%)`;
+        dotEls.forEach((dot, i) => {
+          dot.style.background = i === activeSlide ? '#6366f1' : 'rgba(255,255,255,0.2)';
+          dot.style.width = i === activeSlide ? '16px' : '6px';
+        });
+      }
 
-  let autoSlide = setInterval(() => {
-    activeSlide = (activeSlide + 1) % 3;
-    moveSlide(activeSlide);
-  }, 5000);
+      let autoSlide = setInterval(() => {
+        activeSlide = (activeSlide + 1) % 3;
+        moveSlide(activeSlide);
+      }, 5000);
 
-  // Initialize
-  moveSlide(0);
+      // Initialize
+      moveSlide(0);
 
-  // Stop auto on click
-  dotEls.forEach(dot => dot.addEventListener('click', () => clearInterval(autoSlide)));
+      // Stop auto on click
+      dotEls.forEach(dot => dot.addEventListener('click', () => clearInterval(autoSlide)));
 
-  </script>
+    </script>
 
-</div>
+  </div>
