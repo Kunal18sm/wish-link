@@ -62,89 +62,102 @@
   <div class="w-full max-w-4xl mb-8">
     <div class="relative w-full rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-950 group">
       <!-- Slider Wrapper -->
-      <div id="banner-slider" class="flex transition-transform duration-700 ease-in-out h-52 sm:h-40 md:h-48">
+      <div id="banner-slider"
+     class="flex transition-transform duration-700 ease-in-out
+            h-auto py-5 lg:py-8">
 
-        <!-- Slide 1 -->
-        <div class="min-w-full relative flex items-center justify-center overflow-hidden bg-purple-900/20">
-          <a href="/game/" class="relative block w-[90%] md:w-[60%] aspect-[11/16]">
+  <!-- Slide 1 -->
+  <div class="min-w-full relative flex items-center justify-center bg-purple-900/20">
+    <a href="/game/"
+       class="relative block
+              w-[80%] sm:w-[65%] md:w-[50%] lg:w-[10%]
+              aspect-[11/16]">
 
-            <!-- Background blur -->
-            <img
-              src="https://res.cloudinary.com/drzq6kjgp/image/upload/v1770794063/Gemini_Generated_Image_4qzfxy4qzfxy4qzf_l5tidy.png"
-              class="absolute inset-0 w-full h-full object-cover blur-md opacity-20 scale-110"
-              aria-hidden="true"
-            >
-            <!-- Main image -->
-            <img
-              src="https://res.cloudinary.com/drzq6kjgp/image/upload/v1770794063/Gemini_Generated_Image_4qzfxy4qzfxy4qzf_l5tidy.png"
-              class="relative z-10 w-full h-full object-contain"
-              alt="Slide 1"
-            >
-            <!-- Gradient -->
-            <div class="absolute inset-0 z-20 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end p-4">
-              <p class="text-white text-xs md:text-sm font-semibold">
-                Play and Win 
-              </p>
-            </div>
+      <!-- Background blur -->
+      <img
+        src="https://res.cloudinary.com/drzq6kjgp/image/upload/v1770794063/Gemini_Generated_Image_4qzfxy4qzfxy4qzf_l5tidy.png"
+        class="absolute inset-0 w-full h-full object-cover blur-xl opacity-25 scale-110"
+        aria-hidden="true"
+      >
 
-          </a>
-        </div>
+      <!-- Main image -->
+      <img
+        src="https://res.cloudinary.com/drzq6kjgp/image/upload/v1770794063/Gemini_Generated_Image_4qzfxy4qzfxy4qzf_l5tidy.png"
+        class="relative z-10 w-full h-full object-cover rounded-xl"
+        alt="Slide 1"
+      >
 
-        <!-- Slide 2 -->
-        <div class="min-w-full relative flex items-center justify-center overflow-hidden bg-indigo-900/20">
-          <a href="/category/birthday" class="relative block w-[90%] md:w-[60%] aspect-[11/16]">
-
-            <!-- Background blur -->
-            <img
-              src="https://res.cloudinary.com/dcw90tnk1/image/upload/v1768805703/wishLink_dev/zehl3lsqfj0gdsaguevn.jpg"
-              class="absolute inset-0 w-full h-full object-cover blur-md opacity-20 scale-110"
-              aria-hidden="true"
-            >
-            <!-- Main image -->
-            <img
-              src="https://res.cloudinary.com/dcw90tnk1/image/upload/v1768805703/wishLink_dev/zehl3lsqfj0gdsaguevn.jpg"
-              class="relative z-10 w-full h-full object-contain"
-              alt="Slide 1"
-            >
-            <!-- Gradient -->
-            <div class="absolute inset-0 z-20 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end p-4">
-              <p class="text-white text-xs md:text-sm font-semibold">
-                Best-Selling Birthday Templates
-              </p>
-            </div>
-
-          </a>
-        </div>
-
-        <!-- Slide 3 -->
-        <div class="min-w-full relative flex items-center justify-center overflow-hidden bg-purple-900/20">
-          <a href="/category/valentine's" class="relative block w-[90%] md:w-[60%] aspect-[11/16]">
-
-            <!-- Background blur -->
-            <img
-              src="https://res.cloudinary.com/drzq6kjgp/image/upload/v1770793447/Gemini_Generated_Image_4qzfxy4qzfxy4qzf_cz2hgg.png"
-              class="absolute inset-0 w-full h-full object-cover blur-md opacity-20 scale-110"
-              aria-hidden="true"
-            >
-            <!-- Main image -->
-            <img
-              src="https://res.cloudinary.com/dcw90tnk1/image/upload/v1769509941/thumbnailV_k7rfkr.jpg"
-              class="relative z-10 w-full h-full object-contain"
-              alt="Slide 1"
-            >
-            <!-- Gradient -->
-            <div class="absolute inset-0 z-20 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end p-4">
-              <p class="text-white text-xs md:text-sm font-semibold">
-                Valentine’s Day Special
-              </p>
-            </div>
-
-          </a>
-        </div>
-
-       
-
+      <!-- Text overlay -->
+      <div class="absolute inset-0 z-20
+                  bg-gradient-to-t from-black/90 via-black/40 to-transparent
+                  flex items-end p-4">
+        <p class="text-white text-sm md:text-base lg:text-base font-semibold drop-shadow-xl">
+          Play and Win
+        </p>
       </div>
+    </a>
+  </div>
+
+  <!-- Slide 2 -->
+  <div class="min-w-full relative flex items-center justify-center bg-indigo-900/20">
+    <a href="/category/birthday"
+       class="relative block
+              w-[80%] sm:w-[65%] md:w-[50%] lg:w-[10%]
+              aspect-[11/16]">
+
+      <img
+        src="https://res.cloudinary.com/dcw90tnk1/image/upload/v1768805703/wishLink_dev/zehl3lsqfj0gdsaguevn.jpg"
+        class="absolute inset-0 w-full h-full object-cover blur-xl opacity-25 scale-110"
+        aria-hidden="true"
+      >
+
+      <img
+        src="https://res.cloudinary.com/dcw90tnk1/image/upload/v1768805703/wishLink_dev/zehl3lsqfj0gdsaguevn.jpg"
+        class="relative z-10 w-full h-full object-cover rounded-xl"
+        alt="Slide 2"
+      >
+
+      <div class="absolute inset-0 z-20
+                  bg-gradient-to-t from-black/90 via-black/40 to-transparent
+                  flex items-end p-4">
+        <p class="text-white text-sm md:text-base lg:text-base font-semibold drop-shadow-xl">
+          Best-Selling Birthday Templates
+        </p>
+      </div>
+    </a>
+  </div>
+
+  <!-- Slide 3 -->
+  <div class="min-w-full relative flex items-center justify-center bg-purple-900/20">
+    <a href="/category/valentine's"
+       class="relative block
+              w-[80%] sm:w-[65%] md:w-[50%] lg:w-[10%]
+              aspect-[11/16]">
+
+      <img
+        src="https://res.cloudinary.com/drzq6kjgp/image/upload/v1770793447/Gemini_Generated_Image_4qzfxy4qzfxy4qzf_cz2hgg.png"
+        class="absolute inset-0 w-full h-full object-cover blur-xl opacity-25 scale-110"
+        aria-hidden="true"
+      >
+
+      <img
+        src="https://res.cloudinary.com/dcw90tnk1/image/upload/v1769509941/thumbnailV_k7rfkr.jpg"
+        class="relative z-10 w-full h-full object-cover rounded-xl"
+        alt="Slide 3"
+      >
+
+      <div class="absolute inset-0 z-20
+                  bg-gradient-to-t from-black/90 via-black/40 to-transparent
+                  flex items-end p-4">
+        <p class="text-white text-sm md:text-base lg:text-base font-semibold drop-shadow-xl">
+          Valentine’s Day Special
+        </p>
+      </div>
+    </a>
+  </div>
+
+</div>
+
 
       <!-- Compact Navigation Dots -->
       <div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-30">
