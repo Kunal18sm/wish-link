@@ -164,10 +164,12 @@ router.post("/purchase/:id", isLoggedIn,
     })
 
     // decreasing game reward points 
+    if(selectedWeb.priceForTemporary > 0){
     const userData = await user.findById(userId);
     if (userData.winnerCount && userData.winnerCount > 0) {
       userData.winnerCount -= 1;
       await userData.save();
+    }
     }
 
     req.flash("success", "Purchase Success");

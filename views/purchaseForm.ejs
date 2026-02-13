@@ -159,7 +159,7 @@
                   class="w-full gradient-bg py-4 rounded-xl font-bold text-white shadow-lg shadow-indigo-500/30 hover:opacity-90 transition transform hover:-translate-y-1">
                   Create Link
                 </button>
-                <% if(winnerCount && winnerCount > 0) {%> 
+                <% if(winnerCount && winnerCount > 0 && selectedWeb.priceForTemporary > 0) {%> 
                 <p class="text-center">Using 1 Winning Credits</p>
                 <% } %>
               </form>

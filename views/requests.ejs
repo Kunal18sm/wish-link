@@ -104,11 +104,9 @@
                                     
                                     <!-- Delete Button -->
                                     <% if(request.isTemporary){ %>
-                                    <form action="/requests/delete/<%= request._id %>?_method=DELETE" method="POST" class="action-form flex-1">
-                                        <button type="submit" class="w-full py-3 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-600 hover:text-white transition font-semibold text-sm">
-                                            Delete
-                                        </button>
-                                    </form>
+                                    <button type="button" onclick="openDeleteModal('/requests/delete/<%= request._id %>?_method=DELETE')" class="flex-1 w-full py-3 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-600 hover:text-white transition font-semibold text-sm">
+                                        Delete
+                                    </button>
                                     <% } %>
 
                                 </div>
@@ -126,14 +124,64 @@
     </main>
 </div>
 
+<div id="deleteModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-[90%] max-w-sm text-center shadow-2xl">
+        <h3 class="text-xl font-bold text-white mb-2">Confirm Delete</h3>
+        <p class="text-slate-400 mb-6">Do you really want to delete it?</p>
+
+        <div class="flex gap-3">
+            <button type="button" onclick="closeDeleteModal()" class="flex-1 py-2 rounded-xl bg-slate-700 text-white hover:bg-slate-600 transition">
+                Cancel
+            </button>
+
+            <form id="deleteForm" method="POST" class="flex-1">
+                <button type="submit" id="deleteSubmitBtn" class="w-full py-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700 transition">
+                    Yes, Delete
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Improved Script for handling multiple forms -->
 <script>
+    const deleteModal = document.getElementById("deleteModal");
+    const deleteForm = document.getElementById("deleteForm");
+    const deleteSubmitBtn = document.getElementById("deleteSubmitBtn");
+
+    function openDeleteModal(action) {
+        if (!deleteModal || !deleteForm) return;
+        deleteForm.action = action;
+        deleteModal.classList.remove("hidden");
+        deleteModal.classList.add("flex");
+    }
+
+    function closeDeleteModal() {
+        if (!deleteModal) return;
+        deleteModal.classList.add("hidden");
+        deleteModal.classList.remove("flex");
+    }
+
+    if (deleteModal) {
+        deleteModal.addEventListener("click", function(e) {
+            if (e.target === deleteModal) {
+                closeDeleteModal();
+            }
+        });
+    }
+
+    if (deleteForm && deleteSubmitBtn) {
+        deleteForm.addEventListener("submit", function () {
+            deleteSubmitBtn.disabled = true;
+            deleteSubmitBtn.innerText = "Please wait...";
+        });
+    }
+
     document.querySelectorAll('.action-form').forEach(form => {
-        form.addEventListener('submit', function(e) {
+        form.addEventListener('submit', function() {
             const btn = this.querySelector('button[type="submit"]');
             if(btn) {
                 // Prevent double submission visual only
-                const originalText = btn.innerText;
                 btn.disabled = true;
                 btn.innerHTML = `<svg class="animate-spin h-4 w-4 text-current inline-block mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Wait...`;
                 btn.classList.add('opacity-70', 'cursor-not-allowed');
