@@ -67,6 +67,85 @@
             transform: translateY(0);
             opacity: 1;
         }
+
+        html[data-theme="light"] body {
+            background-color: #fff7f5 !important;
+            color: #5a3245 !important;
+        }
+
+        html[data-theme="light"] .glass-card {
+            background: #fff4f2 !important;
+            border: 1px solid rgba(225, 29, 72, 0.18) !important;
+            box-shadow: 0 14px 30px -18px rgba(190, 24, 93, 0.24);
+        }
+
+        html[data-theme="light"] .gradient-text {
+            background: linear-gradient(135deg, #e11d48 0%, #f97316 100%);
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        html[data-theme="light"] .input-field {
+            background: #fffaf9 !important;
+            border: 1px solid rgba(225, 29, 72, 0.2) !important;
+            color: #4a2d3d !important;
+        }
+
+        html[data-theme="light"] .input-field::placeholder {
+            color: #ad8799 !important;
+        }
+
+        html[data-theme="light"] .input-field:focus {
+            border-color: #f43f5e !important;
+            background: #ffffff !important;
+            box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.14) !important;
+        }
+
+        html[data-theme="light"] .bg-mesh .blob {
+            background: rgba(244, 63, 94, 0.15) !important;
+        }
+
+        html[data-theme="light"] .bg-mesh .blob[style*="background"] {
+            background: rgba(251, 146, 60, 0.12) !important;
+        }
+
+        html[data-theme="light"] .bg-slate-800 {
+            background-color: #ffeceb !important;
+        }
+
+        html[data-theme="light"] .text-white {
+            color: #4b2436 !important;
+        }
+
+        html[data-theme="light"] .text-slate-300,
+        html[data-theme="light"] .text-slate-400,
+        html[data-theme="light"] .text-slate-500,
+        html[data-theme="light"] .text-slate-600 {
+            color: #8c5d70 !important;
+        }
+
+        html[data-theme="light"] .bg-indigo-600 {
+            background-color: #f43f5e !important;
+        }
+
+        html[data-theme="light"] .hover\:bg-indigo-500:hover {
+            background-color: #e11d48 !important;
+        }
+
+        html[data-theme="light"] .bg-indigo-500\/10,
+        html[data-theme="light"] .bg-emerald-500\/10 {
+            background: rgba(244, 63, 94, 0.1) !important;
+        }
+
+        html[data-theme="light"] .border-indigo-500\/20,
+        html[data-theme="light"] .border-emerald-500\/20 {
+            border-color: rgba(225, 29, 72, 0.28) !important;
+        }
+
+        html[data-theme="light"] .text-indigo-400,
+        html[data-theme="light"] .text-emerald-400 {
+            color: #be185d !important;
+        }
     </style>
 </head>
 <body class="text-slate-300 antialiased selection:bg-indigo-500/30">

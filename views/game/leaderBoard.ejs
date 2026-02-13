@@ -31,6 +31,100 @@
             flex-grow: 1;
             /* Pushes footer to bottom */
         }
+
+        html[data-theme="light"] body {
+            color: #5a3245 !important;
+            background:
+                radial-gradient(circle at 12% 8%, rgba(251, 113, 133, 0.14), transparent 36%),
+                radial-gradient(circle at 88% 84%, rgba(251, 191, 36, 0.12), transparent 42%),
+                #fff7f5 !important;
+        }
+
+        html[data-theme="light"] .glass {
+            background: #fff4f2 !important;
+            border: 1px solid rgba(225, 29, 72, 0.18) !important;
+            box-shadow: 0 18px 34px -24px rgba(190, 24, 93, 0.3);
+        }
+
+        html[data-theme="light"] .bg-white\/\[0\.02\],
+        html[data-theme="light"] .bg-white\/\[0\.01\],
+        html[data-theme="light"] .bg-white\/5 {
+            background-color: #ffefed !important;
+        }
+
+        html[data-theme="light"] .divide-white\/5 {
+            border-color: rgba(225, 29, 72, 0.14) !important;
+        }
+
+        html[data-theme="light"] .border-white\/5 {
+            border-color: rgba(225, 29, 72, 0.16) !important;
+        }
+
+        html[data-theme="light"] .text-white,
+        html[data-theme="light"] .text-slate-200,
+        html[data-theme="light"] .text-slate-300 {
+            color: #4b2436 !important;
+        }
+
+        html[data-theme="light"] .text-slate-400,
+        html[data-theme="light"] .text-slate-500,
+        html[data-theme="light"] .text-slate-600 {
+            color: #8c5d70 !important;
+        }
+
+        html[data-theme="light"] .text-indigo-300,
+        html[data-theme="light"] .text-indigo-400 {
+            color: #be185d !important;
+        }
+
+        html[data-theme="light"] .bg-indigo-500\/20,
+        html[data-theme="light"] .bg-indigo-500\/10 {
+            background-color: rgba(244, 63, 94, 0.12) !important;
+        }
+
+        html[data-theme="light"] .border-indigo-500\/20,
+        html[data-theme="light"] .border-indigo-500\/10,
+        html[data-theme="light"] .border-indigo-500 {
+            border-color: rgba(225, 29, 72, 0.28) !important;
+        }
+
+        html[data-theme="light"] .hover\:bg-white\/\[0\.01\]:hover {
+            background-color: #ffe7e6 !important;
+        }
+
+        html[data-theme="light"] .bg-yellow-400\/\[0\.02\] {
+            background-color: rgba(251, 146, 60, 0.12) !important;
+        }
+
+        html[data-theme="light"] .hover\:bg-yellow-400\/\[0\.04\]:hover {
+            background-color: rgba(251, 146, 60, 0.2) !important;
+        }
+
+        html[data-theme="light"] .bg-slate-300\/\[0\.01\] {
+            background-color: rgba(244, 63, 94, 0.08) !important;
+        }
+
+        html[data-theme="light"] .hover\:bg-slate-300\/\[0\.03\]:hover {
+            background-color: rgba(244, 63, 94, 0.14) !important;
+        }
+
+        html[data-theme="light"] .bg-orange-400\/\[0\.01\] {
+            background-color: rgba(251, 146, 60, 0.08) !important;
+        }
+
+        html[data-theme="light"] .hover\:bg-orange-400\/\[0\.03\]:hover {
+            background-color: rgba(251, 146, 60, 0.16) !important;
+        }
+
+        html[data-theme="light"] .leaderboard-result-btn {
+            background: linear-gradient(135deg, #f43f5e, #fb7185) !important;
+            color: #fff7f9 !important;
+            box-shadow: 0 12px 24px -14px rgba(225, 29, 72, 0.45) !important;
+        }
+
+        html[data-theme="light"] .leaderboard-result-btn:hover {
+            background: linear-gradient(135deg, #e11d48, #f43f5e) !important;
+        }
     </style>
 
     <body class="antialiased">
@@ -136,7 +230,7 @@
         <% if(isAdmin) {%>
         <div class="w-full flex items-center justify-center mb-8 border-b border-slate-800/60 pb-6">
             <form action="/game/updateWinners" method="POST">
-                <button class=" gradient-bg p-4 py-4 rounded-xl font-bold text-white shadow-lg shadow-indigo-500/30 hover:opacity-90 transition transform hover:-translate-y-1" type="submit">result</button>
+                <button class="leaderboard-result-btn gradient-bg p-4 py-4 rounded-xl font-bold text-white shadow-lg shadow-indigo-500/30 hover:opacity-90 transition transform hover:-translate-y-1" type="submit">result</button>
             </form>
         </div>
         <% } %>

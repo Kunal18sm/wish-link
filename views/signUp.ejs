@@ -13,6 +13,17 @@
 
     <meta name="robots" content="<%= robots || 'index, follow' %>">
     <link rel="canonical" href="<%= canonical || 'https://wishlink-7j0a.onrender.com/' %>">
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem("vishlink-theme");
+                if (t !== "light" && t !== "dark") t = "light";
+                document.documentElement.setAttribute("data-theme", t);
+            } catch (_err) {
+                document.documentElement.setAttribute("data-theme", "light");
+            }
+        })();
+    </script>
 
     <meta property="og:title" content="<%= ogTitle || title || 'VishLink' %>">
     <meta property="og:description" content="<%= ogDescription || description %>">
