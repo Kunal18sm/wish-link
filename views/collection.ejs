@@ -62,16 +62,12 @@
 
     <!-- Header Section -->
     <header class="relative max-w-7xl mx-auto px-4 md:px-6 pt-8 pb-10 text-center flex flex-col items-center">
-
-      <!-- 1. Announcement Badge -->
-      <div
-        class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] md:text-xs font-medium mb-6">
-        <span class="flex h-2 w-2 relative">
-          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-          <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-        </span>
-        Featured Digital Surprises
+      <div class="w-full flex justify-center mb-4">
+        <button id="collectionThemeToggleBtn" type="button" class="theme-switch-btn">
+          Switch to Dark Theme
+        </button>
       </div>
+
 
       <!-- 2. Optimized Slidable Image Banner -->
       <div class="w-full max-w-4xl mb-8">
@@ -331,6 +327,28 @@
 
       // Stop auto on click
       dotEls.forEach(dot => dot.addEventListener('click', () => clearInterval(autoSlide)));
+
+      const collectionThemeToggleBtn = document.getElementById("collectionThemeToggleBtn");
+      function refreshCollectionThemeToggleText() {
+        if (!collectionThemeToggleBtn) return;
+        const theme = document.documentElement.getAttribute("data-theme") || "light";
+        collectionThemeToggleBtn.textContent = theme === "dark" ? "Switch to Light Theme" : "Switch to Dark Theme";
+      }
+
+      if (collectionThemeToggleBtn) {
+        collectionThemeToggleBtn.addEventListener("click", function () {
+          if (typeof window.toggleSiteTheme === "function") {
+            window.toggleSiteTheme();
+          } else {
+            const current = document.documentElement.getAttribute("data-theme") || "light";
+            document.documentElement.setAttribute("data-theme", current === "dark" ? "light" : "dark");
+          }
+          refreshCollectionThemeToggleText();
+        });
+      }
+
+      document.addEventListener("themeChanged", refreshCollectionThemeToggleText);
+      refreshCollectionThemeToggleText();
 
       const purchaseLinks = document.querySelectorAll('.submitBtnLink');
       purchaseLinks.forEach(link => {
