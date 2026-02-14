@@ -1,0 +1,246 @@
+<% layout("/layouts/boilerplate") %>
+
+<div class="bg-[#0B1120] text-slate-200 h-dvh pt-[74px] font-sans relative overflow-hidden">
+  <div class="absolute inset-0 -z-10 bg-gradient-to-br from-indigo-900/20 via-[#0B1120] to-emerald-900/10 pointer-events-none"></div>
+
+  <main class="h-full max-w-5xl mx-auto px-0 md:px-5 pb-2 md:pb-3 overflow-hidden">
+    <div class="h-full min-h-0 bg-slate-900/70 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+      <div class="px-4 md:px-6 py-3 md:py-4 border-b border-slate-800 flex items-center justify-between shrink-0">
+        <div>
+          <h1 class="text-xl md:text-2xl font-bold text-white leading-tight">Chat With Admin</h1>
+          <p class="text-slate-400 text-xs md:text-sm mt-1">Support conversation</p>
+        </div>
+        <span class="text-[11px] md:text-xs px-3 py-1 rounded-full border border-emerald-500/30 text-emerald-400 bg-emerald-500/10">Live</span>
+      </div>
+
+      <div id="chatScrollBox" class="flex-1 min-h-0 overflow-y-auto px-3 md:px-5 py-4">
+        <% if(!chat || !chat.messages.length) { %>
+          <div id="emptyState" class="h-full flex items-center justify-center text-center border border-dashed border-slate-700 rounded-2xl bg-slate-800/30 p-8">
+            <div>
+              <h3 class="text-lg font-bold text-slate-200">No messages yet</h3>
+              <p class="text-slate-500 text-sm mt-2">Send your first message. Admin will reply here.</p>
+            </div>
+          </div>
+        <% } %>
+
+        <div id="messageList" class="space-y-4">
+          <% if(chat && chat.messages.length) { %>
+            <% for (let msg of chat.messages) { %>
+              <% const isMine = msg.senderRole === "user"; %>
+              <div data-message-id="<%= msg._id %>" class="mb-1 flex <%= isMine ? 'justify-end' : 'justify-start' %>">
+                <div class="<%= isMine ? 'bg-indigo-600/90 border-indigo-500/60 text-white' : 'bg-slate-800 border-slate-700 text-slate-100' %> max-w-[85%] md:max-w-[70%] px-4 py-3 rounded-2xl border shadow-lg">
+                  <p class="text-sm break-words whitespace-pre-wrap"><%= msg.text %></p>
+                </div>
+              </div>
+            <% } %>
+          <% } %>
+        </div>
+      </div>
+
+      <form id="chatForm" action="/chat/message" method="POST" class="border-t border-slate-800 p-3 md:p-4 bg-slate-950/60 shrink-0 sticky bottom-0">
+        <div class="flex items-end gap-2 md:gap-3">
+          <textarea
+            id="chatMessage"
+            name="chat[message]"
+            rows="2"
+            maxlength="1500"
+            placeholder="Write your message..."
+            class="flex-1 rounded-xl border border-slate-700 bg-slate-900 text-slate-100 px-4 py-3 focus:border-indigo-500 focus:outline-none resize-none"
+            required
+          ></textarea>
+          <button
+            id="sendBtn"
+            type="submit"
+            aria-label="Send message"
+            title="Send"
+            class="w-12 h-12 shrink-0 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center justify-center"
+          >
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M3.4 20.4 22 12 3.4 3.6l-.1 6.6 12.6 1.8-12.6 1.8z"/>
+            </svg>
+          </button>
+        </div>
+      </form>
+    </div>
+  </main>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  (function () {
+    const chatScrollBox = document.getElementById("chatScrollBox");
+    const messageList = document.getElementById("messageList");
+    const emptyState = document.getElementById("emptyState");
+    const chatForm = document.getElementById("chatForm");
+    const sendBtn = document.getElementById("sendBtn");
+    const chatMessage = document.getElementById("chatMessage");
+
+    let activeChatId = "<%= chat ? chat._id : '' %>";
+    const knownMessageIds = new Set();
+    let lastSeenMessageId = "";
+    let pollingInFlight = false;
+
+    function scrollToBottom() {
+      if (chatScrollBox) chatScrollBox.scrollTop = chatScrollBox.scrollHeight;
+    }
+
+    function hideEmptyState() {
+      if (emptyState) emptyState.remove();
+    }
+
+    function trackMessage(messageId) {
+      if (messageId) knownMessageIds.add(String(messageId));
+      if (messageId) lastSeenMessageId = String(messageId);
+    }
+
+    function seedExistingMessages() {
+      const rows = messageList.querySelectorAll("[data-message-id]");
+      rows.forEach((row) => {
+        trackMessage(row.getAttribute("data-message-id"));
+      });
+    }
+
+    function appendMessage(message) {
+      if (!messageList || !message) return;
+      const msgId = message._id ? String(message._id) : "";
+      if (msgId && knownMessageIds.has(msgId)) return;
+
+      hideEmptyState();
+
+      const isMine = message.senderRole === "user";
+      const row = document.createElement("div");
+      row.className = `mb-1 flex ${isMine ? "justify-end" : "justify-start"}`;
+      row.setAttribute("data-message-id", msgId);
+
+      const bubble = document.createElement("div");
+      bubble.className = `${isMine ? "bg-indigo-600/90 border-indigo-500/60 text-white" : "bg-slate-800 border-slate-700 text-slate-100"} max-w-[85%] md:max-w-[70%] px-4 py-3 rounded-2xl border shadow-lg`;
+
+      const p = document.createElement("p");
+      p.className = "text-sm break-words whitespace-pre-wrap";
+      p.textContent = message.text;
+
+      bubble.appendChild(p);
+      row.appendChild(bubble);
+      messageList.appendChild(row);
+      trackMessage(msgId);
+      scrollToBottom();
+    }
+
+    async function sendThroughHttp(text) {
+      const body = new URLSearchParams();
+      body.set("chat[message]", text);
+
+      const response = await fetch(chatForm.action, {
+        method: "POST",
+        headers: { "Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+        body: body.toString(),
+      });
+
+      const data = await response.json();
+      if (!data.ok) throw new Error(data.error || "Failed to send message.");
+
+      if (data.chatId && !activeChatId) {
+        activeChatId = data.chatId;
+      }
+      if (data.message) appendMessage(data.message);
+    }
+
+    async function pollUpdates() {
+      if (pollingInFlight) return;
+      pollingInFlight = true;
+
+      try {
+        if (!activeChatId) {
+          const response = await fetch("/chat/api/user-thread", { headers: { "Accept": "application/json" } });
+          const data = await response.json();
+          if (data.ok && data.chat && data.chat.chatId) {
+            activeChatId = data.chat.chatId;
+            if (Array.isArray(data.chat.messages)) {
+              data.chat.messages.forEach(appendMessage);
+            }
+            if (socket && socket.connected) {
+              socket.emit("joinChat", { chatId: activeChatId });
+            }
+          }
+          return;
+        }
+
+        const after = lastSeenMessageId ? `?afterMessageId=${encodeURIComponent(lastSeenMessageId)}` : "";
+        const response = await fetch(`/chat/api/thread/${activeChatId}${after}`, { headers: { "Accept": "application/json" } });
+        const data = await response.json();
+        if (data.ok && Array.isArray(data.messages) && data.messages.length) {
+          data.messages.forEach(appendMessage);
+        }
+      } catch (_err) {
+        // silent fallback
+      } finally {
+        pollingInFlight = false;
+      }
+    }
+
+    seedExistingMessages();
+    scrollToBottom();
+
+    let socket = null;
+    if (typeof io === "function") {
+      socket = io();
+
+      function joinRoomIfPossible() {
+        if (!activeChatId) return;
+        socket.emit("joinChat", { chatId: activeChatId });
+      }
+
+      socket.on("connect", joinRoomIfPossible);
+      socket.on("newChatMessage", (payload) => {
+        if (!payload || !payload.message) return;
+        if (!activeChatId && payload.chatId) activeChatId = payload.chatId;
+        if (activeChatId && String(payload.chatId) !== String(activeChatId)) return;
+        appendMessage(payload.message);
+      });
+
+      socket.on("chatThreadDeleted", (payload) => {
+        if (!payload || !payload.chatId) return;
+        if (String(payload.chatId) !== String(activeChatId)) return;
+        window.location.href = "/chat";
+      });
+    }
+
+    chatForm.addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const text = chatMessage.value.trim();
+      if (!text) return;
+
+      sendBtn.disabled = true;
+      sendBtn.classList.add("opacity-70", "scale-95");
+
+      try {
+        if (socket && socket.connected) {
+          await new Promise((resolve, reject) => {
+            socket.emit("sendChatMessage", { chatId: activeChatId || null, text }, function (response) {
+              if (!response || !response.ok) return reject(new Error((response && response.error) || "Failed to send message."));
+              if (response.chatId && !activeChatId) {
+                activeChatId = response.chatId;
+                socket.emit("joinChat", { chatId: activeChatId });
+              }
+              resolve();
+            });
+          });
+        } else {
+          await sendThroughHttp(text);
+        }
+
+        chatMessage.value = "";
+        chatMessage.focus();
+      } catch (err) {
+        alert(err.message || "Failed to send message.");
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.classList.remove("opacity-70", "scale-95");
+      }
+    });
+
+    pollUpdates();
+    setInterval(pollUpdates, 2500);
+  })();
+</script>

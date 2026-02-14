@@ -1,9 +1,17 @@
-<nav class="sticky top-0 z-50 glass-effect px-6 py-4 flex justify-between items-center">
+<nav class="<%= (typeof chatLayout !== 'undefined' && chatLayout) ? 'fixed' : 'sticky' %> top-0 z-50 w-full glass-effect px-6 py-4 flex justify-between items-center">
   <a href="/">
     <div class="text-2xl font-bold tracking-tight gradient-text">VishLink</div>
   </a>
 
   <div class="flex items-center gap-4">
+    <% if(currUser && !currUser.isAdmin) {%>
+      <a href="/chat" class="hidden sm:block">
+        <button
+          class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-full text-sm font-semibold transition shadow-lg shadow-indigo-500/20">
+          Chat Admin
+        </button>
+      </a>
+    <% } %>
     <% if(currUser && currUser.isAdmin) {%>
       <a href="/web/new" class="hidden sm:block">
         <button
@@ -17,6 +25,14 @@
         <button
           class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-full text-sm font-semibold transition shadow-lg shadow-indigo-500/20">
           Requests
+        </button>
+      </a>
+    <% } %>
+    <% if(currUser && currUser.isAdmin) {%>
+      <a href="/chat/admin" class="hidden sm:block">
+        <button
+          class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-full text-sm font-semibold transition shadow-lg shadow-indigo-500/20">
+          Chat Inbox
         </button>
       </a>
     <% } %>
@@ -65,6 +81,16 @@
             <a href="/game/leaderboard"
               class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
               <span>LeaderBoard</span>
+            </a>
+            <a href="/chat/admin"
+              class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
+              <span>Chat Inbox</span>
+            </a>
+          <% } %>
+          <% if(currUser && !currUser.isAdmin) {%>
+            <a href="/chat"
+              class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
+              <span>Chat Admin</span>
             </a>
           <% } %>
 

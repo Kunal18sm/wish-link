@@ -1,0 +1,177 @@
+<% layout("/layouts/boilerplate") %>
+
+<div class="bg-[#0B1120] text-slate-200 min-h-screen font-sans pb-20 relative overflow-x-hidden">
+  <div class="fixed inset-0 -z-10 bg-gradient-to-br from-indigo-900/20 via-[#0B1120] to-emerald-900/10 pointer-events-none"></div>
+
+  <main class="max-w-6xl mx-auto px-4 md:px-6 py-10">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 border-b border-slate-800 pb-5">
+      <div>
+        <h1 class="text-3xl md:text-4xl font-extrabold text-white">Chat Requests</h1>
+        <p class="text-slate-400 text-sm mt-2">All user conversations. Open any request to reply.</p>
+      </div>
+      <div class="text-sm text-slate-400">
+        Total Threads: <span id="threadCount" class="text-white font-semibold"><%= chats.length %></span>
+      </div>
+    </div>
+
+    <div id="emptyState" class="<%= chats.length ? 'hidden' : '' %> flex flex-col items-center justify-center py-20 text-center border border-dashed border-slate-700 rounded-3xl bg-slate-800/20">
+      <h3 class="text-xl font-bold text-slate-300">No chat requests yet</h3>
+      <p class="text-slate-500 mt-2">When a user sends the first message, it will appear here.</p>
+    </div>
+
+    <div id="chatGrid" class="<%= chats.length ? '' : 'hidden' %> grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <% for (let chat of chats) { %>
+        <a href="/chat/admin/<%= chat._id %>" class="block" data-chat-id="<%= chat._id %>">
+          <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 hover:border-indigo-500/40 hover:bg-slate-900 transition shadow-xl h-full">
+            <div class="flex justify-between items-start gap-3">
+              <div>
+                <h2 class="text-lg font-bold text-white truncate" data-role="username"><%= chat.user?.username || "Unknown User" %></h2>
+                <p class="text-sm text-indigo-300 truncate" data-role="email"><%= chat.user?.email || "No email" %></p>
+              </div>
+              <% if (chat.adminUnreadCount > 0) { %>
+                <span data-role="badge" data-unread="<%= chat.adminUnreadCount %>" class="shrink-0 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-500/20 border border-rose-500/30 text-rose-300">
+                  <%= chat.adminUnreadCount %> New
+                </span>
+              <% } else { %>
+                <span data-role="badge" data-unread="0" class="shrink-0 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                  Seen
+                </span>
+              <% } %>
+            </div>
+
+            <div class="mt-4 text-sm text-slate-400">
+              <p data-role="lastMessage" class="min-h-[40px] overflow-hidden break-words"><%= chat.lastMessage || "No message yet" %></p>
+            </div>
+          </div>
+        </a>
+      <% } %>
+    </div>
+  </main>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  (function () {
+    const grid = document.getElementById("chatGrid");
+    const emptyState = document.getElementById("emptyState");
+    const threadCount = document.getElementById("threadCount");
+    const socket = typeof io === "function" ? io() : null;
+
+    function updateLayoutState() {
+      const total = grid.querySelectorAll("[data-chat-id]").length;
+      threadCount.textContent = String(total);
+      if (total === 0) {
+        grid.classList.add("hidden");
+        emptyState.classList.remove("hidden");
+      } else {
+        grid.classList.remove("hidden");
+        emptyState.classList.add("hidden");
+      }
+    }
+
+    function renderBadge(badge, unreadCount) {
+      const unread = Number(unreadCount) || 0;
+      badge.setAttribute("data-unread", String(unread));
+      if (unread > 0) {
+        badge.className = "shrink-0 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-500/20 border border-rose-500/30 text-rose-300";
+        badge.textContent = unread + " New";
+      } else {
+        badge.className = "shrink-0 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400";
+        badge.textContent = "Seen";
+      }
+    }
+
+    function createCard(payload) {
+      const a = document.createElement("a");
+      a.href = "/chat/admin/" + payload.chatId;
+      a.className = "block";
+      a.setAttribute("data-chat-id", payload.chatId);
+      a.innerHTML = `
+        <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 hover:border-indigo-500/40 hover:bg-slate-900 transition shadow-xl h-full">
+          <div class="flex justify-between items-start gap-3">
+            <div>
+              <h2 class="text-lg font-bold text-white truncate" data-role="username"></h2>
+              <p class="text-sm text-indigo-300 truncate" data-role="email"></p>
+            </div>
+            <span data-role="badge" data-unread="0"></span>
+          </div>
+          <div class="mt-4 text-sm text-slate-400">
+            <p data-role="lastMessage" class="min-h-[40px] overflow-hidden break-words"></p>
+          </div>
+        </div>
+      `;
+      return a;
+    }
+
+    function upsertChatCard(payload) {
+      if (!payload || !payload.chatId) return;
+
+      let card = grid.querySelector(`[data-chat-id="${payload.chatId}"]`);
+      if (!card) {
+        card = createCard(payload);
+        grid.prepend(card);
+      }
+
+      const name = card.querySelector('[data-role="username"]');
+      const email = card.querySelector('[data-role="email"]');
+      const lastMessage = card.querySelector('[data-role="lastMessage"]');
+      const badge = card.querySelector('[data-role="badge"]');
+
+      if (name) name.textContent = payload.userName || "Unknown User";
+      if (email) email.textContent = payload.userEmail || "No email";
+      if (lastMessage) lastMessage.textContent = payload.lastMessage || "No message yet";
+      if (badge) renderBadge(badge, payload.adminUnreadCount);
+
+      grid.prepend(card);
+      updateLayoutState();
+    }
+
+    function removeCard(chatId) {
+      const card = grid.querySelector(`[data-chat-id="${chatId}"]`);
+      if (card) {
+        card.remove();
+        updateLayoutState();
+      }
+    }
+
+    async function pollInbox() {
+      try {
+        const response = await fetch("/chat/api/admin/inbox", { headers: { "Accept": "application/json" } });
+        const data = await response.json();
+        if (!data.ok || !Array.isArray(data.chats)) return;
+
+        const incomingIds = new Set();
+        for (let i = data.chats.length - 1; i >= 0; i--) {
+          const chat = data.chats[i];
+          incomingIds.add(String(chat.chatId));
+          upsertChatCard(chat);
+        }
+
+        const existing = grid.querySelectorAll("[data-chat-id]");
+        existing.forEach((node) => {
+          const id = node.getAttribute("data-chat-id");
+          if (!incomingIds.has(String(id))) {
+            node.remove();
+          }
+        });
+        updateLayoutState();
+      } catch (_err) {
+        // silent fallback
+      }
+    }
+
+    if (socket) {
+      socket.on("chatThreadUpdated", function (payload) {
+        upsertChatCard(payload);
+      });
+
+      socket.on("chatThreadDeleted", function (payload) {
+        if (!payload || !payload.chatId) return;
+        removeCard(payload.chatId);
+      });
+    }
+
+    pollInbox();
+    setInterval(pollInbox, 3000);
+  })();
+</script>
