@@ -1,4 +1,12 @@
 User-agent: *
 Allow: /
+Disallow: /chat/
+Disallow: /requests/
+Disallow: /profile
+Disallow: /viewHistory
+Disallow: /web/new
+Disallow: /web/purchase/
+Disallow: /feedback/feedbackpage
+Disallow: /game/
 
 Sitemap: https://wishlink-7j0a.onrender.com/sitemap.xml

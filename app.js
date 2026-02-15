@@ -28,6 +28,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 const PORT = process.env.PORT || 8080;
+const SITE_URL = (process.env.SITE_URL || "https://wishlink-7j0a.onrender.com").replace(/\/+$/, "");
 
 app.engine("ejs", ejsMate);
 app.set("view engine", "ejs");
@@ -86,15 +87,30 @@ app.use((req, res, next) => {
 });
 
 app.use((req, res, next) => {
+  const rawPath = req.originalUrl.split("?")[0] || "/";
+  const canonicalUrl = new URL(rawPath, SITE_URL);
+  canonicalUrl.search = "";
+  canonicalUrl.hash = "";
+
+  let normalizedCanonical = canonicalUrl.toString();
+  if (normalizedCanonical.length > SITE_URL.length + 1 && normalizedCanonical.endsWith("/")) {
+    normalizedCanonical = normalizedCanonical.slice(0, -1);
+  }
+
+  res.locals.siteUrl = SITE_URL;
+  res.locals.siteName = "VishLink";
+  res.locals.locale = "en_IN";
   res.locals.title = "VishLink - Create Personalized Wishing Websites";
   res.locals.description =
     "Create beautiful personalized birthday, anniversary and love wishing websites using VishLink.";
-  res.locals.canonical = "https://wishlink-7j0a.onrender.com" + req.originalUrl;
+  res.locals.canonical = normalizedCanonical;
   res.locals.robots = "index, follow";
   res.locals.ogTitle = res.locals.title;
   res.locals.ogDescription = res.locals.description;
-  res.locals.ogImage = "https://wishlink-7j0a.onrender.com/og-image.png";
+  res.locals.ogImage = `${SITE_URL}/og-image.png`;
   res.locals.ogUrl = res.locals.canonical;
+  res.locals.ogType = "website";
+  res.locals.twitterCard = "summary_large_image";
   next();
 });
 
@@ -109,7 +125,8 @@ app.use((req, res) => {
   res.status(404).render("404", {
     title: "Page Not Found - VishLink",
     description: "The page you are looking for does not exist.",
-    canonical: "https://wishlink-7j0a.onrender.com/404",
+    canonical: `${SITE_URL}/404`,
+    robots: "noindex, nofollow",
   });
 });
 

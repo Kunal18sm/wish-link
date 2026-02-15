@@ -1,0 +1,58 @@
+<%
+  const localData = (typeof locals !== "undefined" && locals && typeof locals === "object") ? locals : {};
+  const hasOwn = (key) => Object.prototype.hasOwnProperty.call(localData, key);
+  const getLocal = (key, fallback) => (hasOwn(key) && localData[key] !== undefined ? localData[key] : fallback);
+
+  const resolvedTitle = getLocal("title", "VishLink - Create Personalized Wishing Websites");
+  const resolvedDescription = getLocal("description", "Create beautiful personalized birthday, anniversary and love wishing websites using VishLink.");
+  const resolvedSiteUrl = String(getLocal("siteUrl", "https://wishlink-7j0a.onrender.com")).replace(/\/+$/, "");
+  const resolvedCanonical = getLocal("canonical", `${resolvedSiteUrl}/`);
+  const resolvedRobots = getLocal("robots", "index, follow");
+  const resolvedSiteName = getLocal("siteName", "VishLink");
+  const resolvedOgTitle = getLocal("ogTitle", resolvedTitle);
+  const resolvedOgDescription = getLocal("ogDescription", resolvedDescription);
+  const resolvedOgImage = getLocal("ogImage", `${resolvedSiteUrl}/og-image.png`);
+  const resolvedOgType = getLocal("ogType", "website");
+  const resolvedTwitterCard = getLocal("twitterCard", "summary_large_image");
+  const resolvedOgImageAlt = getLocal("ogImageAlt", `${resolvedSiteName} preview image`);
+  const resolvedLocale = getLocal("locale", "en_IN");
+  const resolvedStructuredData = getLocal("structuredData", null);
+%>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><%= resolvedTitle %></title>
+<meta name="description" content="<%= resolvedDescription %>">
+<meta name="robots" content="<%= resolvedRobots %>">
+<meta name="author" content="<%= resolvedSiteName %>">
+<meta name="theme-color" content="#020617">
+<link rel="canonical" href="<%= resolvedCanonical %>">
+
+<meta property="og:title" content="<%= resolvedOgTitle %>">
+<meta property="og:description" content="<%= resolvedOgDescription %>">
+<meta property="og:image" content="<%= resolvedOgImage %>">
+<meta property="og:image:alt" content="<%= resolvedOgImageAlt %>">
+<meta property="og:url" content="<%= resolvedCanonical %>">
+<meta property="og:type" content="<%= resolvedOgType %>">
+<meta property="og:site_name" content="<%= resolvedSiteName %>">
+<meta property="og:locale" content="<%= resolvedLocale %>">
+
+<meta name="twitter:card" content="<%= resolvedTwitterCard %>">
+<meta name="twitter:title" content="<%= resolvedOgTitle %>">
+<meta name="twitter:description" content="<%= resolvedOgDescription %>">
+<meta name="twitter:image" content="<%= resolvedOgImage %>">
+
+<script type="application/ld+json">
+<%- JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: resolvedSiteName,
+  url: resolvedSiteUrl,
+  description: resolvedDescription,
+  inLanguage: "en-IN"
+}) %>
+</script>
+
+<% if (resolvedStructuredData) { %>
+  <script type="application/ld+json"><%- JSON.stringify(resolvedStructuredData) %></script>
+<% } %>

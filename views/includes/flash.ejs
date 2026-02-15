@@ -1,24 +1,28 @@
+<%
+  const flashSuccess = (typeof success !== "undefined") ? success : null;
+  const flashError = (typeof error !== "undefined") ? error : null;
+%>
 
-<% if (success && success.length) { %>
+<% if (flashSuccess && flashSuccess.length) { %>
   <div id="flash-message"
     class="fixed top-16 left-1/2 -translate-x-1/2 z-[100] min-w-[320px] text-center px-6 py-4 rounded-2xl 
            bg-emerald-500/20 border border-emerald-500/40 backdrop-blur-xl 
            shadow-[0_8px_32px_rgba(16,185,129,0.2)] transition-all duration-500">
     <span class="text-sm font-bold text-emerald-400 tracking-wide flex items-center justify-center gap-2">
       <span class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
-      <%= success %>
+      <%= flashSuccess %>
     </span>
   </div>
 <% } %>
 
-<% if (error && error.length) { %>
+<% if (flashError && flashError.length) { %>
   <div id="flash-message"
     class="fixed top-16 left-1/2 -translate-x-1/2 z-[100] min-w-[320px] text-center px-6 py-4 rounded-2xl 
            bg-rose-500/20 border border-rose-500/40 backdrop-blur-xl 
            shadow-[0_8px_32px_rgba(244,63,94,0.2)] transition-all duration-500">
     <span class="text-sm font-bold text-rose-400 tracking-wide flex items-center justify-center gap-2">
       <span class="w-2 h-2 bg-rose-400 rounded-full animate-pulse"></span>
-      <%= error %>
+      <%= flashError %>
     </span>
   </div>
 <% } %>

@@ -1,10 +1,11 @@
 <nav class="<%= (typeof chatLayout !== 'undefined' && chatLayout) ? 'fixed' : 'sticky' %> top-0 z-50 w-full glass-effect px-6 py-4 flex justify-between items-center">
+  <% const navUser = (typeof currUser !== "undefined") ? currUser : null; %>
   <a href="/">
     <div class="text-2xl font-bold tracking-tight gradient-text">VishLink</div>
   </a>
 
   <div class="flex items-center gap-4">
-    <% if(currUser && !currUser.isAdmin) {%>
+    <% if(navUser && !navUser.isAdmin) {%>
       <a href="/chat" class="hidden sm:block">
         <button
           class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-full text-sm font-semibold transition shadow-lg shadow-indigo-500/20">
@@ -12,7 +13,7 @@
         </button>
       </a>
     <% } %>
-    <% if(currUser && currUser.isAdmin) {%>
+    <% if(navUser && navUser.isAdmin) {%>
       <a href="/web/new" class="hidden sm:block">
         <button
           class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-full text-sm font-semibold transition shadow-lg shadow-indigo-500/20">
@@ -20,7 +21,7 @@
         </button>
       </a>
     <% } %>
-    <% if(currUser && currUser.isAdmin) {%>
+    <% if(navUser && navUser.isAdmin) {%>
       <a href="/requests/" class="hidden sm:block">
         <button
           class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-full text-sm font-semibold transition shadow-lg shadow-indigo-500/20">
@@ -28,7 +29,7 @@
         </button>
       </a>
     <% } %>
-    <% if(currUser && currUser.isAdmin) {%>
+    <% if(navUser && navUser.isAdmin) {%>
       <a href="/chat/admin" class="hidden sm:block">
         <button
           class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-full text-sm font-semibold transition shadow-lg shadow-indigo-500/20">
@@ -55,7 +56,7 @@
         </div>
 
         <div class="py-1">
-          <% if(!currUser) {%>
+          <% if(!navUser) {%>
             <a href="/signUpForm"
               class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
               <span>Signup</span>
@@ -65,7 +66,7 @@
               <span>Login</span>
             </a>
           <% } %>
-          <% if(currUser && currUser.isAdmin) {%>
+          <% if(navUser && navUser.isAdmin) {%>
             <a href="/web/new"
               class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
               <span>Add new</span>
@@ -87,7 +88,7 @@
               <span>Chat Inbox</span>
             </a>
           <% } %>
-          <% if(currUser && !currUser.isAdmin) {%>
+          <% if(navUser && !navUser.isAdmin) {%>
             <a href="/chat"
               class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
               <span>Chat Admin</span>
@@ -97,7 +98,7 @@
 
           <div class="border-t border-slate-700"></div>
 
-          <% if(currUser) {%>
+          <% if(navUser) {%>
             <a href="/profile"
               class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
               <span>My Profile</span>
