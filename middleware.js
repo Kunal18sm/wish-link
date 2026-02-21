@@ -1,5 +1,38 @@
 const { purchaseSchema } = require("./joiValidation.js");
 
+function getPurchaseValidationMessage(error) {
+  const detail = error?.details?.[0];
+  if (!detail) return "Please check your form details and try again.";
+
+  const path = Array.isArray(detail.path) ? detail.path.join(".") : "";
+
+  if (path.endsWith("sender")) {
+    return "Please enter sender name.";
+  }
+
+  if (path.endsWith("receiver")) {
+    return "Please enter receiver name.";
+  }
+
+  if (path.endsWith("specialMsg") && detail.type === "string.max") {
+    return "Special message can be maximum 350 characters.";
+  }
+
+  if (path.endsWith("specialMsg")) {
+    return "Please enter a special message.";
+  }
+
+  if (path.endsWith("price")) {
+    return "Invalid price value. Please refresh and try again.";
+  }
+
+  if (path.endsWith("webName")) {
+    return "Template name is missing. Please reload the form and try again.";
+  }
+
+  return "Please check your form details and try again.";
+}
+
 module.exports.isLoggedIn = (req,res,next)=>{
   if(!req.isAuthenticated()){   
     req.flash("error","You must be Logged in to continue.");
@@ -24,8 +57,7 @@ module.exports.validatepurchase = (req, res, next) => {
     });
 
     if (error) {
-      const firstError = error.details[0]?.message || "Please check your form details.";
-      req.flash("error", firstError);
+      req.flash("error", getPurchaseValidationMessage(error));
       return res.redirect(req.get("Referrer") || "/");
     }
 

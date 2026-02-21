@@ -30,6 +30,34 @@ const io = new Server(server);
 const PORT = process.env.PORT || 8080;
 const SITE_URL = (process.env.SITE_URL || "https://wishlink-7j0a.onrender.com").replace(/\/+$/, "");
 
+function getPurchaseErrorMessage(err) {
+  const rawMessage = String(err?.message || "");
+  const normalizedMessage = rawMessage.toLowerCase();
+
+  if (err?.code === "LIMIT_UNEXPECTED_FILE") {
+    if (err.field === "images") return "Please upload up to 5 images only.";
+    if (err.field === "paymentImage") return "Please upload only one payment screenshot.";
+    return "Some uploaded files are invalid. Please recheck and try again.";
+  }
+
+  if (normalizedMessage.includes("file too large")) {
+    return "Uploaded file is too large. Please choose a smaller image.";
+  }
+
+  if (
+    normalizedMessage.includes("invalid file type") ||
+    normalizedMessage.includes("unsupported format")
+  ) {
+    return "Only JPG, JPEG, and PNG images are allowed.";
+  }
+
+  if (normalizedMessage.includes("selected website template not found")) {
+    return "Template not found. Please open the form again.";
+  }
+
+  return "Purchase failed. Please recheck details and try again.";
+}
+
 app.engine("ejs", ejsMate);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -138,7 +166,7 @@ app.use((err, req, res, _next) => {
   console.log("Unhandled error:", err.message);
 
   if (req.originalUrl.startsWith("/web/purchase/")) {
-    req.flash("error", "Purchase failed. Please recheck details and try again.");
+    req.flash("error", getPurchaseErrorMessage(err));
     return res.redirect(redirectBack);
   }
 

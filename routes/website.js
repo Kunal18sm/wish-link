@@ -15,6 +15,13 @@ const upload = multer({ storage });
 const { v4: uuidv4 } = require("uuid");
 
 const getRedirectBack = (req) => req.get("Referrer") || "/";
+const getPurchaseFailureMessage = (err) => {
+  const message = String(err?.message || "").toLowerCase();
+  if (message.includes("selected website template not found")) {
+    return "Template not found. Please open the form again.";
+  }
+  return "Purchase failed. Please try again.";
+};
 
 
 
@@ -205,7 +212,7 @@ router.post("/purchase/:id", isLoggedIn,
     } catch (err) {
       await cleanupUploads();
       console.log("Purchase failed:", err.message);
-      req.flash("error", "Purchase failed. Please try again.");
+      req.flash("error", getPurchaseFailureMessage(err));
       return res.redirect(getRedirectBack(req));
     }
 
