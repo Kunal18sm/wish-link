@@ -1,5 +1,4 @@
 const { purchaseSchema } = require("./joiValidation.js");
-const ExpressError = require("./utils/ExpressError.js");
 
 module.exports.isLoggedIn = (req,res,next)=>{
   if(!req.isAuthenticated()){   
@@ -18,11 +17,18 @@ module.exports.isAdmin = (req,res,next)=>{
 }
 
 module.exports.validatepurchase = (req, res, next) => {
-    let {error} = purchaseSchema.validate(req.body);
-    if(error){
-        let errMsg = error.details.map((el)=>el.message).join(",");
-        throw new ExpressError(400,errMsg);
-    } else {
-        next();
+    const { error, value } = purchaseSchema.validate(req.body, {
+      abortEarly: false,
+      convert: true,
+      stripUnknown: true,
+    });
+
+    if (error) {
+      const firstError = error.details[0]?.message || "Please check your form details.";
+      req.flash("error", firstError);
+      return res.redirect(req.get("Referrer") || "/");
     }
+
+    req.body = value;
+    next();
 };

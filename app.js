@@ -130,6 +130,21 @@ app.use((req, res) => {
   });
 });
 
+app.use((err, req, res, _next) => {
+  const statusCode = err.statusCode || 500;
+  const message = err.message || "Something went wrong.";
+  const redirectBack = req.get("Referrer") || "/";
+
+  console.log("Unhandled error:", err.message);
+
+  if (req.originalUrl.startsWith("/web/purchase/")) {
+    req.flash("error", "Purchase failed. Please recheck details and try again.");
+    return res.redirect(redirectBack);
+  }
+
+  return res.status(statusCode).send(message);
+});
+
 function normalizeChatMessage(rawMessage) {
   if (typeof rawMessage !== "string") return "";
   return rawMessage.trim().slice(0, 1500);

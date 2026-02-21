@@ -5,9 +5,11 @@ module.exports.purchaseSchema = Joi.object({
   purchase: Joi.object({
     purchaseId: Joi.string().optional(),
     webUrl: Joi.string().optional(),
-    sender: Joi.string().required(),
-    receiver: Joi.string().allow("", null),
-    price: Joi.number().min(0).default(0),
+    sender: Joi.string().trim().allow("", null).default("Anonymous"),
+    receiver: Joi.string().trim().allow("", null).default(""),
+    price: Joi.alternatives()
+      .try(Joi.number().min(0), Joi.string().trim().allow(""))
+      .default(0),
 
     images: Joi.array().items(
       Joi.object({
@@ -21,9 +23,9 @@ module.exports.purchaseSchema = Joi.object({
       filename: Joi.string().required()
     }).optional(),
 
-    specialMsg: Joi.string().max(350).required(),
+    specialMsg: Joi.string().trim().max(350).allow("").default("Best wishes!"),
 
-    webName: Joi.string().required(),
+    webName: Joi.string().trim().allow("", null).optional(),
 
     isLive: Joi.boolean().optional(),
 
@@ -33,6 +35,6 @@ module.exports.purchaseSchema = Joi.object({
 
     adminInterected: Joi.boolean().optional(),
 
-    isTemporary: Joi.boolean().optional()
-  }).required()
-});
+    isTemporary: Joi.boolean().truthy("true").falsy("false").default(true)
+  }).default({}).unknown(true)
+}).required().unknown(true);

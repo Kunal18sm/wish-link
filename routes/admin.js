@@ -12,6 +12,11 @@ const user = require("../models/user.js");
 const { render } = require("ejs");
 const mongoose = require("mongoose");
 
+function getDeleteRedirectPath(req) {
+  if (req.user?.isAdmin) return "/requests/expired";
+  return "/profile";
+}
+
 
 // get requests page
 router.get("/", isLoggedIn, isAdmin, wrapAsync(async (req, res) => {
@@ -73,10 +78,17 @@ router.get("/allLive", isLoggedIn, isAdmin, wrapAsync(async (req, res) => {
 router.delete("/delete/:id", isLoggedIn, wrapAsync(async (req, res) => {
   try {
     const { id } = req.params;
+    const redirectPath = getDeleteRedirectPath(req);
 
     const toDelete = await purchasedWeb.findById(id);
     if (!toDelete) {
-      return res.redirect("/requests/expired");
+      return res.redirect(redirectPath);
+    }
+
+    const isOwner = String(toDelete.author) === String(req.user._id);
+    if (!req.user?.isAdmin && !isOwner) {
+      req.flash("error", "You are not allowed to delete this link.");
+      return res.redirect("/profile");
     }
 
     // delete images from cloudinary
@@ -88,10 +100,10 @@ router.delete("/delete/:id", isLoggedIn, wrapAsync(async (req, res) => {
 
     await purchasedWeb.findByIdAndDelete(id);
     req.flash("success", "Deleted")
-    res.redirect("/profile");
+    res.redirect(redirectPath);
   } catch (err) {
     console.error(err);
-    res.redirect("/profile");
+    res.redirect(getDeleteRedirectPath(req));
   }
 }))
 

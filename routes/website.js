@@ -9,10 +9,12 @@ const { isLoggedIn } = require("../middleware.js")
 const { isAdmin, validatepurchase } = require("../middleware.js")
 
 const multer = require("multer");
-const { storage } = require("../cloudConfig.js");
+const { storage, cloudinary } = require("../cloudConfig.js");
 const upload = multer({ storage });
 
 const { v4: uuidv4 } = require("uuid");
+
+const getRedirectBack = (req) => req.get("Referrer") || "/";
 
 
 
@@ -99,81 +101,113 @@ router.post("/purchase/:id", isLoggedIn,
   validatepurchase,
 
   wrapAsync(async (req, res) => {
+    const uploadedPublicIds = [
+      ...(req.files?.images || []).map((file) => file.filename),
+      ...(req.files?.paymentImage || []).map((file) => file.filename),
+    ];
 
+    const cleanupUploads = async () => {
+      if (!uploadedPublicIds.length) return;
+      await Promise.allSettled(
+        uploadedPublicIds.map((publicId) => cloudinary.uploader.destroy(publicId))
+      );
+    };
 
-    const imagesArr = req.files.images
-      ? req.files.images.map(file => ({
+    try {
+      const imagesArr = (req.files?.images || []).map((file) => ({
         url: file.path,
-        filename: file.filename
-      }))
-      : [];
+        filename: file.filename,
+      }));
 
-    const paymentImg = req.files.paymentImage
-      ? {
-        url: req.files.paymentImage[0].path,
-        filename: req.files.paymentImage[0].filename
+      const paymentImg = req.files?.paymentImage?.[0]
+        ? {
+            url: req.files.paymentImage[0].path,
+            filename: req.files.paymentImage[0].filename,
+          }
+        : null;
+
+      const { id } = req.params;
+      const selectedWeb = await WebSample.findById(id);
+
+      if (!selectedWeb) {
+        throw new Error("Selected website template not found.");
       }
-      : null;
 
-    const { id } = req.params;
-    const selectedWeb = await WebSample.findOneAndUpdate(
-      { _id: id },          // kaunsa document update hoga
-      { $inc: { soldOut: 1 } }, // sirf soldout +1
-      { new: true }         // updated data return karega
-    )
+      const buyinfo = req.body.purchase || {};
+      const parsedPrice = Number(buyinfo.price);
+      const price = Number.isFinite(parsedPrice) ? parsedPrice : 0;
+      const sender =
+        typeof buyinfo.sender === "string" && buyinfo.sender.trim()
+          ? buyinfo.sender.trim()
+          : "Anonymous";
+      const receiver =
+        typeof buyinfo.receiver === "string" ? buyinfo.receiver.trim() : "";
+      const specialMsgText =
+        typeof buyinfo.specialMsg === "string" && buyinfo.specialMsg.trim()
+          ? buyinfo.specialMsg.trim()
+          : "Best wishes!";
+      const purchaseId = uuidv4();
+      const finalWebUrl = `${selectedWeb.webUrl || ""}${purchaseId}`;
+      const isLive = price <= 15;
+      const isTemporary =
+        typeof buyinfo.isTemporary === "boolean"
+          ? buyinfo.isTemporary
+          : String(buyinfo.isTemporary).toLowerCase() === "true";
 
+      const savedPurchase = await new purchasedWeb({
+        purchaseId,
+        webUrl: finalWebUrl,
+        sender,
+        receiver,
+        price,
+        images: imagesArr,
+        paymentProofUrl: paymentImg,
+        specialMsg: [specialMsgText],
+        author: req.user._id,
+        webName: buyinfo.webName || selectedWeb.webName,
+        isLive,
+        isTemporary,
+      }).save();
 
-    const buyinfo = req.body.purchase;
-    const price = buyinfo.price ? buyinfo.price : 0;
-    const specialMsgarr = [buyinfo.specialMsg];
-    const purchaseId = uuidv4();
-    const finalWebUrl = `${selectedWeb.webUrl}${purchaseId}`;
-    const isLive = buyinfo.price <= 15 || buyinfo.price == null ? true : false;
-    // const imageUrlarr = [buyinfo.imageUrl]
-    const newPurchase = new purchasedWeb({
-      purchaseId: purchaseId,
-      webUrl: finalWebUrl,
-      sender: buyinfo.sender,
-      receiver: buyinfo.receiver,
-      price: buyinfo.price,
-      images: imagesArr,
-      paymentProofUrl: paymentImg,
-      specialMsg: specialMsgarr,
-      author: req.user._id,
-      webName: buyinfo.webName,
-      isLive: isLive,
-      isTemporary: buyinfo.isTemporary,
-    });
+      const userId = req.user._id;
 
-    const save = await newPurchase.save();
+      // Non-critical updates should not block a successful purchase document save.
+      try {
+        await user.findByIdAndUpdate(userId, {
+          $push: {
+            webCollection: {
+              webName: buyinfo.webName || selectedWeb.webName,
+              dateOfBuy: new Date(),
+              receiver,
+              price,
+              paymentProofUrl: paymentImg,
+              purchasedId: savedPurchase._id,
+              permanentLink: "",
+            },
+          },
+        });
 
-    //save details in user collection array
-    const userId = req.user._id;;
-    const saveInUser = await user.findByIdAndUpdate(userId, {
-      $push: {
-        webCollection: {
-          webName: buyinfo.webName,
-          dateOfBuy: new Date(),
-          receiver: buyinfo.receiver,
-          price: price,
-          paymentProofUrl: paymentImg,
-          purchasedId: save._id,
-          permanentLink: "",
+        await WebSample.findByIdAndUpdate(id, { $inc: { soldOut: 1 } });
+
+        if (selectedWeb.priceForTemporary > 0) {
+          const userData = await user.findById(userId);
+          if (userData?.winnerCount > 0) {
+            userData.winnerCount -= 1;
+            await userData.save();
+          }
         }
+      } catch (postSaveErr) {
+        console.log("Post-save sync warning:", postSaveErr.message);
       }
-    })
 
-    // decreasing game reward points 
-    if(selectedWeb.priceForTemporary > 0){
-    const userData = await user.findById(userId);
-    if (userData.winnerCount && userData.winnerCount > 0) {
-      userData.winnerCount -= 1;
-      await userData.save();
+      req.flash("success", "Purchase Success");
+      return res.redirect("/profile");
+    } catch (err) {
+      await cleanupUploads();
+      console.log("Purchase failed:", err.message);
+      req.flash("error", "Purchase failed. Please try again.");
+      return res.redirect(getRedirectBack(req));
     }
-    }
-
-    req.flash("success", "Purchase Success");
-    res.redirect("/profile");
 
   }))
 

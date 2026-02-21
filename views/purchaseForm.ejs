@@ -133,7 +133,7 @@
                         <span class="text-indigo-400 text-xs bg-indigo-500/10 px-2 py-0.5 rounded">Required: <%= selectedWeb.imageNeeded %></span>
                       </label>
                       <p class="text-xs text-amber-500/80 mb-2 ml-1">Please upload exactly <%= selectedWeb.imageNeeded %> images for the best result.</p>
-                      <input name="images" id="images" type="file" multiple
+                      <input name="images" id="images" type="file" multiple data-required="<%= selectedWeb.imageNeeded %>"
                         class="w-full px-4 py-3 rounded-xl form-input text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-500/10 file:text-indigo-400 hover:file:bg-indigo-500/20" required >
                   </div>
                   <% } %>
@@ -194,18 +194,21 @@
     
 
     <script>
-      document.getElementById("images").addEventListener("change", function () {
-        if (this.files.length > 5) {
-          alert("Maximum 5 images allowed");
-          this.value = ""; // reset input
-        }
-      });
-      document.getElementById("images").addEventListener("change", function () {
-        if (this.files.length < 3) {
-          alert("please select more images to upload");
-          this.value = ""; // reset input
-        }
-      });
+      const imagesInput = document.getElementById("images");
+      if (imagesInput) {
+        imagesInput.addEventListener("change", function () {
+          const requiredCount = Number(this.dataset.required || 0);
+          if (this.files.length > 5) {
+            alert("Maximum 5 images allowed");
+            this.value = "";
+            return;
+          }
+          if (requiredCount > 0 && this.files.length < requiredCount) {
+            alert(`Please select at least ${requiredCount} images.`);
+            this.value = "";
+          }
+        });
+      }
       
       const form = document.getElementById("BuyForm");
       const btn = document.getElementById("submitBtn");
