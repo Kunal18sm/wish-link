@@ -13,7 +13,7 @@
 
             <hr style="opacity: 0.4;">
               <br>
-              <form id="BuyForm" action="/requests/updateLink/<%- userPurchased.id %>" method="POST" class="space-y-5">
+              <form id="BuyForm" action="/requests/updateLink/<%- userPurchased.id %><%= requestScope === 'permanent' ? '?scope=permanent' : '' %>" method="POST" class="space-y-5">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                   
                   <div>
@@ -64,19 +64,6 @@
     
 
     <script>
-      document.getElementById("images").addEventListener("change", function () {
-        if (this.files.length > 5) {
-          alert("Maximum 5 images allowed");
-          this.value = ""; // reset input
-        }
-      });
-      document.getElementById("images").addEventListener("change", function () {
-        if (this.files.length < 3) {
-          alert("please select more images to upload");
-          this.value = ""; // reset input
-        }
-      });
-      
       const form = document.getElementById("BuyForm");
       const btn = document.getElementById("submitBtn");
       form.addEventListener("submit", function () {

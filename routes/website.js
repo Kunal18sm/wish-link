@@ -1,113 +1,77 @@
 const express = require("express");
+const multer = require("multer");
+const { v4: uuidv4 } = require("uuid");
+
 const WebSample = require("../models/WebSample.js");
 const purchasedWeb = require("../models/purchasedWeb.js");
 const user = require("../models/user.js");
+const wrapAsync = require("../utils/wrapAsync.js");
+const { isLoggedIn, isAdmin, validatepurchase } = require("../middleware.js");
+const {
+  storage,
+  permanentStorage,
+  cloudinary,
+  permanentCloudinaryOptions,
+} = require("../cloudConfig.js");
 
 const router = express.Router({ mergeParams: true });
-const wrapAsync = require("../utils/wrapAsync.js");
-const { isLoggedIn } = require("../middleware.js")
-const { isAdmin, validatepurchase } = require("../middleware.js")
-
-const multer = require("multer");
-const { storage, cloudinary } = require("../cloudConfig.js");
 const upload = multer({ storage });
+const uploadPermanent = multer({ storage: permanentStorage });
 
-const { v4: uuidv4 } = require("uuid");
+const purchaseUploadFields = [
+  { name: "images", maxCount: 5 },
+  { name: "paymentImage", maxCount: 1 },
+];
 
 const getRedirectBack = (req) => req.get("Referrer") || "/";
+
 const getPurchaseFailureMessage = (err) => {
   const message = String(err?.message || "").toLowerCase();
   if (message.includes("selected website template not found")) {
     return "Template not found. Please open the form again.";
   }
+  if (message.includes("invalid purchase type")) {
+    return "Purchase type mismatch. Please reopen the form and try again.";
+  }
+  if (message.includes("permanent database is not configured")) {
+    return "Permanent link service is not configured right now.";
+  }
+  if (message.includes("permanent cloudinary is not configured")) {
+    return "Permanent image storage is not configured right now.";
+  }
   return "Purchase failed. Please try again.";
 };
 
+const parseIsTemporary = (value) => {
+  if (typeof value === "boolean") return value;
+  return String(value).toLowerCase() === "true";
+};
 
+const buildPurchasedWebUrl = (baseWebUrl, purchaseId, isTemporary) => {
+  const sanitizedBase = String(baseWebUrl || "").replace(/\/+$/, "");
+  if (!sanitizedBase) return isTemporary ? `${purchaseId}` : `tulipParisBMW/${purchaseId}`;
+  if (isTemporary) return `${sanitizedBase}/${purchaseId}`;
+  return `${sanitizedBase}/tulipParisBMW/${purchaseId}`;
+};
 
+const getPurchaseModelForType = (req, isTemporary) => {
+  if (isTemporary) return purchasedWeb;
 
+  const permanentModel = req.app.locals.permanentPurchasedWeb;
+  if (!permanentModel) {
+    throw new Error("Permanent database is not configured.");
+  }
 
-// form to add new web
-router.get("/new", isLoggedIn, isAdmin, wrapAsync(async (req, res) => {
-  res.render("addNewWeb", {
-    title: "Add New Website – VishLink",
-    description: "Admin panel to add new wishing website templates.",
-    robots: "noindex, nofollow"
-  });
-}))
+  return permanentModel;
+};
 
-// save new website
-router.post("/new", isLoggedIn, isAdmin, upload.single("imageUrl"), wrapAsync(async (req, res) => {
-
-  let url = req.file.path;
-  let filename = req.file.filename;
-
-  const formData = req.body.formData;
-  // Build article object safely
-
-  const newSample = new WebSample({
-    webName: formData.webName,
-    priceForTemporary: formData.priceForTemporary,
-    priceForPermanent: formData.priceForPermanent,
-    imageUrl: { url, filename },
-    webUrl: formData.webUrl,
-    description: formData.description,
-    imageNeeded: formData.imageNeeded,
-    tags: Array.isArray(formData.category) ? formData.category : [formData.category],
-    articleTitle: formData.title,
-    articleContent: formData.content,
-  })
-  const Saved = await newSample.save();
-  req.flash("success", "Added new website");
-  res.redirect("/");
-}))
-
-
-// Form to purchase temprary website link
-router.get("/purchase/temporary/:id", isLoggedIn, wrapAsync(async (req, res) => {
-  const { id } = req.params;
-  const selectedWeb = await WebSample.findById(id);
-  const isTemporary = true;
-  const winnerCount = req.user.winnerCount || 0;
-  res.render("purchaseForm", {
-    selectedWeb,
-    id,
-    title: `Purchase ${selectedWeb.webName} – VishLink`,
-    description: `Purchase and personalize the ${selectedWeb.webName} wishing website.`,
-    canonical: `https://wishlink-7j0a.onrender.com/web/purchase/${id}`,
-    robots: "noindex, nofollow",
-    isTemporary, winnerCount
-  });
-}))
-
-// Form to purchase website link
-router.get("/purchase/permanent/:id", isLoggedIn, wrapAsync(async (req, res) => {
-  const { id } = req.params;
-  const selectedWeb = await WebSample.findById(id);
-  const isTemporary = false;
-  const winnerCount = 0;
-  res.render("purchaseForm", {
-    selectedWeb,
-    id,
-    title: `Purchase ${selectedWeb.webName} – VishLink`,
-    description: `Purchase and personalize the ${selectedWeb.webName} wishing website.`,
-    canonical: `https://wishlink-7j0a.onrender.com/web/purchase/${id}`,
-    robots: "noindex, nofollow",
-    isTemporary, winnerCount
-  });
-}))
-
-// Save Purchased 
-router.post("/purchase/:id", isLoggedIn,
-
-  upload.fields([
-    { name: "images", maxCount: 5 },        // multiple images
-    { name: "paymentImage", maxCount: 1 }   // single image
-  ]),
-
-  validatepurchase,
-
+const createPurchaseHandler = (expectedIsTemporary) =>
   wrapAsync(async (req, res) => {
+    const buyinfo = req.body.purchase || {};
+    const isTemporary = parseIsTemporary(buyinfo.isTemporary);
+    const isPermanentPurchase = !isTemporary;
+    const destroyOptions = isPermanentPurchase ? permanentCloudinaryOptions : null;
+
     const uploadedPublicIds = [
       ...(req.files?.images || []).map((file) => file.filename),
       ...(req.files?.paymentImage || []).map((file) => file.filename),
@@ -116,11 +80,20 @@ router.post("/purchase/:id", isLoggedIn,
     const cleanupUploads = async () => {
       if (!uploadedPublicIds.length) return;
       await Promise.allSettled(
-        uploadedPublicIds.map((publicId) => cloudinary.uploader.destroy(publicId))
+        uploadedPublicIds.map((publicId) =>
+          destroyOptions
+            ? cloudinary.uploader.destroy(publicId, destroyOptions)
+            : cloudinary.uploader.destroy(publicId)
+        )
       );
     };
 
     try {
+      if (isTemporary !== expectedIsTemporary) {
+        throw new Error("Invalid purchase type for this form.");
+      }
+
+      const PurchaseModel = getPurchaseModelForType(req, isTemporary);
       const imagesArr = (req.files?.images || []).map((file) => ({
         url: file.path,
         filename: file.filename,
@@ -140,28 +113,23 @@ router.post("/purchase/:id", isLoggedIn,
         throw new Error("Selected website template not found.");
       }
 
-      const buyinfo = req.body.purchase || {};
       const parsedPrice = Number(buyinfo.price);
       const price = Number.isFinite(parsedPrice) ? parsedPrice : 0;
       const sender =
         typeof buyinfo.sender === "string" && buyinfo.sender.trim()
           ? buyinfo.sender.trim()
           : "Anonymous";
-      const receiver =
-        typeof buyinfo.receiver === "string" ? buyinfo.receiver.trim() : "";
+      const receiver = typeof buyinfo.receiver === "string" ? buyinfo.receiver.trim() : "";
       const specialMsgText =
         typeof buyinfo.specialMsg === "string" && buyinfo.specialMsg.trim()
           ? buyinfo.specialMsg.trim()
           : "Best wishes!";
-      const purchaseId = uuidv4();
-      const finalWebUrl = `${selectedWeb.webUrl || ""}${purchaseId}`;
-      const isLive = price <= 15;
-      const isTemporary =
-        typeof buyinfo.isTemporary === "boolean"
-          ? buyinfo.isTemporary
-          : String(buyinfo.isTemporary).toLowerCase() === "true";
 
-      const savedPurchase = await new purchasedWeb({
+      const purchaseId = uuidv4();
+      const finalWebUrl = buildPurchasedWebUrl(selectedWeb.webUrl, purchaseId, isTemporary);
+      const isLive = price <= 15;
+
+      const savedPurchase = await new PurchaseModel({
         purchaseId,
         webUrl: finalWebUrl,
         sender,
@@ -189,14 +157,14 @@ router.post("/purchase/:id", isLoggedIn,
               price,
               paymentProofUrl: paymentImg,
               purchasedId: savedPurchase._id,
-              permanentLink: "",
+              permanentLink: isTemporary ? "" : finalWebUrl,
             },
           },
         });
 
         await WebSample.findByIdAndUpdate(id, { $inc: { soldOut: 1 } });
 
-        if (selectedWeb.priceForTemporary > 0) {
+        if (isTemporary && selectedWeb.priceForTemporary > 0) {
           const userData = await user.findById(userId);
           if (userData?.winnerCount > 0) {
             userData.winnerCount -= 1;
@@ -215,9 +183,111 @@ router.post("/purchase/:id", isLoggedIn,
       req.flash("error", getPurchaseFailureMessage(err));
       return res.redirect(getRedirectBack(req));
     }
+  });
 
-  }))
+// form to add new web
+router.get(
+  "/new",
+  isLoggedIn,
+  isAdmin,
+  wrapAsync(async (req, res) => {
+    res.render("addNewWeb", {
+      title: "Add New Website - VishLink",
+      description: "Admin panel to add new wishing website templates.",
+      robots: "noindex, nofollow",
+    });
+  })
+);
 
+// save new website
+router.post(
+  "/new",
+  isLoggedIn,
+  isAdmin,
+  upload.single("imageUrl"),
+  wrapAsync(async (req, res) => {
+    let url = req.file.path;
+    let filename = req.file.filename;
+    const formData = req.body.formData;
 
+    const newSample = new WebSample({
+      webName: formData.webName,
+      priceForTemporary: formData.priceForTemporary,
+      priceForPermanent: formData.priceForPermanent,
+      imageUrl: { url, filename },
+      webUrl: formData.webUrl,
+      description: formData.description,
+      imageNeeded: formData.imageNeeded,
+      tags: Array.isArray(formData.category) ? formData.category : [formData.category],
+      articleTitle: formData.title,
+      articleContent: formData.content,
+    });
+    await newSample.save();
+    req.flash("success", "Added new website");
+    res.redirect("/");
+  })
+);
+
+// Form to purchase temporary website link
+router.get(
+  "/purchase/temporary/:id",
+  isLoggedIn,
+  wrapAsync(async (req, res) => {
+    const { id } = req.params;
+    const selectedWeb = await WebSample.findById(id);
+    const isTemporary = true;
+    const winnerCount = req.user.winnerCount || 0;
+    res.render("purchaseForm", {
+      selectedWeb,
+      id,
+      title: `Purchase ${selectedWeb.webName} - VishLink`,
+      description: `Purchase and personalize the ${selectedWeb.webName} wishing website.`,
+      canonical: `https://wishlink-7j0a.onrender.com/web/purchase/${id}`,
+      robots: "noindex, nofollow",
+      isTemporary,
+      winnerCount,
+    });
+  })
+);
+
+// Form to purchase permanent website link
+router.get(
+  "/purchase/permanent/:id",
+  isLoggedIn,
+  wrapAsync(async (req, res) => {
+    const { id } = req.params;
+    const selectedWeb = await WebSample.findById(id);
+    const isTemporary = false;
+    const winnerCount = 0;
+    res.render("purchaseForm", {
+      selectedWeb,
+      id,
+      title: `Purchase ${selectedWeb.webName} - VishLink`,
+      description: `Purchase and personalize the ${selectedWeb.webName} wishing website.`,
+      canonical: `https://wishlink-7j0a.onrender.com/web/purchase/${id}`,
+      robots: "noindex, nofollow",
+      isTemporary,
+      winnerCount,
+    });
+  })
+);
+
+// Save purchased temporary link (primary DB + primary Cloudinary)
+router.post(
+  "/purchase/temporary/:id",
+  isLoggedIn,
+  upload.fields(purchaseUploadFields),
+  validatepurchase,
+  createPurchaseHandler(true)
+);
+
+// Save purchased permanent link (secondary DB + secondary Cloudinary)
+router.post(
+  "/purchase/permanent/:id",
+  isLoggedIn,
+  uploadPermanent.fields(purchaseUploadFields),
+  validatepurchase,
+  createPurchaseHandler(false)
+);
 
 module.exports = router;

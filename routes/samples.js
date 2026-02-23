@@ -9,6 +9,32 @@ const passport = require("passport");
 const contactSchema = require("../models/contact.js");
 
 const SITE_URL = (process.env.SITE_URL || "https://wishlink-7j0a.onrender.com").replace(/\/+$/, "");
+const REQUEST_SCOPE = {
+  DEFAULT: "default",
+  PERMANENT: "permanent",
+};
+
+async function loadMergedPurchases(req, authorId) {
+  const normalLinks = await purchasedWeb.find({ author: authorId }).lean();
+  const mergedLinks = normalLinks.map((item) => ({
+    ...item,
+    requestScope: REQUEST_SCOPE.DEFAULT,
+  }));
+
+  const permanentModel = req.app.locals.permanentPurchasedWeb;
+  if (permanentModel) {
+    const permanentLinks = await permanentModel.find({ author: authorId }).lean();
+    mergedLinks.push(
+      ...permanentLinks.map((item) => ({
+        ...item,
+        requestScope: REQUEST_SCOPE.PERMANENT,
+      }))
+    );
+  }
+
+  mergedLinks.sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
+  return mergedLinks;
+}
 
 // home route
 router.get("/", wrapAsync(async (req, res) => {
@@ -127,7 +153,7 @@ router.get("/logout", isLoggedIn, (req, res, next) => {
 
 // render profile page
 router.get("/profile", isLoggedIn, async (req, res) => {
-  const purchasedLinks = await purchasedWeb.find({ author: req.user._id });
+  const purchasedLinks = await loadMergedPurchases(req, req.user._id);
   const viewHistory = false;
 
   res.render("profile", {

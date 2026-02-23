@@ -77,7 +77,7 @@
 
             <hr style="opacity: 0.4;">
               <br>
-              <form id="BuyForm" action="/web/purchase/<%= id %>" method="POST" class="space-y-5" enctype="multipart/form-data">
+              <form id="BuyForm" action="/web/purchase/<%= isTemporary ? 'temporary' : 'permanent' %>/<%= id %>" method="POST" class="space-y-5" enctype="multipart/form-data">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                   
                   <div>

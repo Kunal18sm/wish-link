@@ -23,12 +23,16 @@ const chatRoutes = require("./routes/chat.js");
 
 const user = require("./models/user.js");
 const Chat = require("./models/chat.js");
+const getPermanentPurchasedWebModel = require("./models/permanentPurchasedWeb.js");
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 const PORT = process.env.PORT || 8080;
 const SITE_URL = (process.env.SITE_URL || "https://wishlink-7j0a.onrender.com").replace(/\/+$/, "");
+let permanentDbConnection = null;
+
+app.locals.permanentPurchasedWeb = null;
 
 function getPurchaseErrorMessage(err) {
   const rawMessage = String(err?.message || "");
@@ -81,6 +85,22 @@ const connectDb = async () => {
     console.log("DataBase Connected");
   } catch (err) {
     console.log(err);
+  }
+
+  try {
+    if (!process.env.PERMANENT_MONGODB_URL) {
+      console.log("PERMANENT_MONGODB_URL not configured. Permanent requests are disabled.");
+      return;
+    }
+
+    permanentDbConnection = mongoose.createConnection(process.env.PERMANENT_MONGODB_URL);
+    await permanentDbConnection.asPromise();
+
+    app.locals.permanentPurchasedWeb = getPermanentPurchasedWebModel(permanentDbConnection);
+    console.log("Permanent DataBase Connected");
+  } catch (err) {
+    app.locals.permanentPurchasedWeb = null;
+    console.log("Permanent DB connection failed:", err.message);
   }
 };
 
