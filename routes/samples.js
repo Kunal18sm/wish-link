@@ -1,18 +1,45 @@
 const express = require("express");
+const crypto = require("crypto");
+const { OAuth2Client } = require("google-auth-library");
 const WebSample = require("../models/WebSample.js");
 const purchasedWeb = require("../models/purchasedWeb.js");
 const router = express.Router({ mergeParams: true });
 const user = require("../models/user.js");
 const wrapAsync = require("../utils/wrapAsync.js");
 const { isLoggedIn } = require("../middleware.js");
-const passport = require("passport");
 const contactSchema = require("../models/contact.js");
+const { createAuthToken, setAuthCookie, clearAuthCookie } = require("../utils/jwtAuth.js");
 
 const SITE_URL = (process.env.SITE_URL || "https://wishlink-7j0a.onrender.com").replace(/\/+$/, "");
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || "";
+const googleOAuthClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 const REQUEST_SCOPE = {
   DEFAULT: "default",
   PERMANENT: "permanent",
 };
+
+function makeUsernameSlug(rawValue) {
+  const normalized = String(rawValue || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9_]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 20);
+
+  return normalized || "vishlink_user";
+}
+
+async function buildUniqueUsername(seedText) {
+  const base = makeUsernameSlug(seedText);
+  let candidate = base;
+  let suffix = 1;
+
+  while (await user.exists({ username: candidate })) {
+    candidate = `${base}_${suffix}`.slice(0, 28);
+    suffix += 1;
+  }
+
+  return candidate;
+}
 
 async function loadMergedPurchases(req, authorId) {
   const normalLinks = await purchasedWeb.find({ author: authorId }).lean();
@@ -83,7 +110,7 @@ router.get("/category/:tag", wrapAsync(async (req, res) => {
 
 // Get signUp form
 router.get("/signUpForm", wrapAsync(async (req, res) => {
-  if (req.isAuthenticated()) {
+  if (req.user) {
     req.flash("error", "you are already logged in");
     return res.redirect("/");
   }
@@ -97,24 +124,19 @@ router.get("/signUpForm", wrapAsync(async (req, res) => {
 }));
 
 // User signUp
-router.post("/signUp", wrapAsync(async (req, res, next) => {
+router.post("/signUp", wrapAsync(async (req, res) => {
   try {
     const { username, password, email } = req.body;
     const newUser = new user({ email, username });
 
     const registeredUser = await user.register(newUser, password);
-
-    // instant login after signUp
-    req.login(registeredUser, (err) => {
-      if (err) {
-        return next(err);
-      }
-      req.flash("success", "Welcome to VishLink");
-      res.redirect("/");
-    });
+    const token = createAuthToken(registeredUser);
+    setAuthCookie(res, token);
+    req.flash("success", "Welcome to VishLink");
+    return res.redirect("/");
   } catch (err) {
     req.flash("error", err.message);
-    res.redirect("/signUpForm");
+    return res.redirect("/signUpForm");
   }
 }));
 
@@ -128,27 +150,93 @@ router.get("/logInForm", wrapAsync(async (req, res) => {
   });
 }));
 
-// login
-router.post("/login",
-  passport.authenticate("local", {
-    failureRedirect: "/logInForm",
-    failureFlash: true,
-  }),
-  async (req, res) => {
-    req.flash("success", "Welcome Back!");
-    res.redirect("/");
+router.post("/auth/google", wrapAsync(async (req, res) => {
+  if (!googleOAuthClient || !GOOGLE_CLIENT_ID) {
+    return res.status(503).json({
+      ok: false,
+      message: "Google authentication is not configured on server.",
+    });
   }
-);
+
+  const credential = String(req.body?.credential || "");
+  if (!credential) {
+    return res.status(400).json({ ok: false, message: "Missing Google credential." });
+  }
+
+  try {
+    const ticket = await googleOAuthClient.verifyIdToken({
+      idToken: credential,
+      audience: GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload() || {};
+
+    const email = String(payload.email || "").toLowerCase().trim();
+    if (!email || payload.email_verified !== true) {
+      return res.status(401).json({
+        ok: false,
+        message: "Google account email is not verified.",
+      });
+    }
+
+    let existingUser = await user.findOne({ email });
+    if (!existingUser) {
+      const username = await buildUniqueUsername(payload.name || email.split("@")[0] || "vishlink");
+      const newUser = new user({ email, username });
+      const randomPassword = crypto.randomBytes(32).toString("hex");
+      existingUser = await user.register(newUser, randomPassword);
+    }
+
+    const token = createAuthToken(existingUser);
+    setAuthCookie(res, token);
+
+    return res.json({
+      ok: true,
+      redirectTo: "/",
+    });
+  } catch (_err) {
+    return res.status(401).json({
+      ok: false,
+      message: "Google sign-in failed. Please try again.",
+    });
+  }
+}));
+
+function authenticateUserByPassword(username, password) {
+  return new Promise((resolve, reject) => {
+    user.authenticate()(username, password, (err, authenticatedUser, info = {}) => {
+      if (err) return reject(err);
+      if (!authenticatedUser) {
+        return resolve({
+          ok: false,
+          message: info.message || "Invalid username or password.",
+        });
+      }
+      return resolve({ ok: true, user: authenticatedUser });
+    });
+  });
+}
+
+// login
+router.post("/login", wrapAsync(async (req, res) => {
+  const { username, password } = req.body;
+  const authResult = await authenticateUserByPassword(username, password);
+
+  if (!authResult.ok) {
+    req.flash("error", authResult.message);
+    return res.redirect("/logInForm");
+  }
+
+  const token = createAuthToken(authResult.user);
+  setAuthCookie(res, token);
+  req.flash("success", "Welcome Back!");
+  return res.redirect("/");
+}));
 
 // logOut
-router.get("/logout", isLoggedIn, (req, res, next) => {
-  req.logout((err) => {
-    if (err) {
-      return next(err);
-    }
-    req.flash("success", "you are logged out");
-    res.redirect("/");
-  });
+router.get("/logout", isLoggedIn, (req, res) => {
+  clearAuthCookie(res);
+  req.flash("success", "you are logged out");
+  return res.redirect("/");
 });
 
 // render profile page

@@ -15,8 +15,27 @@ const {
 } = require("../cloudConfig.js");
 
 const router = express.Router({ mergeParams: true });
-const upload = multer({ storage });
-const uploadPermanent = multer({ storage: permanentStorage });
+const MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_UPLOAD_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/jpg", "image/webp"]);
+
+const imageFileFilter = (_req, file, cb) => {
+  if (!ALLOWED_UPLOAD_MIME_TYPES.has(file.mimetype)) {
+    return cb(new Error("Invalid file type. Only JPG, JPEG, PNG, and WEBP images are allowed."));
+  }
+  return cb(null, true);
+};
+
+const upload = multer({
+  storage,
+  fileFilter: imageFileFilter,
+  limits: { fileSize: MAX_UPLOAD_SIZE_BYTES, files: 6 },
+});
+
+const uploadPermanent = multer({
+  storage: permanentStorage,
+  fileFilter: imageFileFilter,
+  limits: { fileSize: MAX_UPLOAD_SIZE_BYTES, files: 6 },
+});
 
 const purchaseUploadFields = [
   { name: "images", maxCount: 5 },

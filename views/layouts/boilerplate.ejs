@@ -15,6 +15,8 @@
         })();
     </script>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/output.css">
     <link rel="stylesheet" href="/design.css">
@@ -34,12 +36,43 @@
 
         <%- include("../includes/flash.ejs") %>
 
+            <div id="installPromptBackdrop" class="fixed inset-0 hidden"
+                style="z-index:220;background:rgba(2,6,23,0.72);"></div>
+            <div id="installPromptModal" class="fixed hidden"
+                style="z-index:230;top:10px;left:50%;transform:translateX(-50%);width:min(94%,560px);background:rgba(15,23,42,0.98);border:1px solid rgba(99,102,241,0.45);border-radius:14px;box-shadow:0 18px 46px rgba(2,6,23,0.58);padding:14px 16px;">
+                <div class="flex items-start gap-4">
+                    <img src="/assets/vishlink_logo.png" alt="VishLink app logo" class="rounded-xl object-cover"
+                        style="width:52px;height:52px;">
+                    <div class="flex-1">
+                        <h3 class="text-white font-semibold leading-tight" style="font-size:1.05rem;">Install VishLink</h3>
+                        <p id="installPromptMessage" class="mt-1 text-slate-300 leading-relaxed" style="font-size:0.92rem;">
+                            Install VishLink in one click.
+                        </p>
+                    </div>
+                    <button id="installPromptCloseBtn" type="button"
+                        class="text-slate-300 hover:text-white transition leading-none" style="font-size:1.35rem;">&times;</button>
+                </div>
+                <div class="mt-3 flex flex-wrap items-center justify-end gap-2">
+                    <button id="installPromptLaterBtn" type="button"
+                        class="rounded-lg border border-slate-600 text-slate-300 hover:border-slate-400 hover:text-white transition"
+                        style="padding:7px 14px;font-size:0.86rem;">
+                        Later
+                    </button>
+                    <button id="installPromptInstallBtn" type="button"
+                        class="rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-500 transition"
+                        style="padding:7px 16px;font-size:0.88rem;">
+                        Install
+                    </button>
+                </div>
+            </div>
+
             <%- (typeof body !== "undefined" ? body : "") %>
 
                 <% if (typeof hideFooter === "undefined" || !hideFooter) { %>
                     <%- include("../includes/footer.ejs") %>
                 <% } %>
 
+                    <script src="/installPrompt.js?v=20260326a"></script>
                     <script src="/script.js"></script>
 </body>
 

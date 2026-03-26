@@ -68,7 +68,7 @@
                         <div class="flex items-center gap-4 w-full lg:w-1/4">
                             <a href="/requests/edit/<%= request._id %><%= scopeQuery %>">
                                 <div class="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 overflow-hidden shrink-0">
-                                    <img src="https://api.dicebear.com/7.x/initials/svg?seed=<%= request.sender %>&backgroundColor=1e293b" class="w-full h-full object-cover">
+                                    <img src="https://api.dicebear.com/7.x/initials/svg?seed=<%= request.sender %>&backgroundColor=1e293b" loading="lazy" decoding="async" class="w-full h-full object-cover">
                                 </div>
                             </a>
 
@@ -84,7 +84,7 @@
                         <div class="w-full lg:w-2/4 flex justify-center lg:justify-start">
                             <div class="relative group/image overflow-hidden rounded-xl border border-slate-700 bg-slate-950/50 w-full max-w-sm h-48 md:h-56 flex items-center justify-center">
                                 <% if (paymentProofUrl) { %>
-                                <img src="<%= paymentProofUrl %>" class="max-w-full max-h-full object-contain opacity-90 group-hover/image:opacity-100 transition duration-300">
+                                <img src="<%= getOptimizedCloudinaryUrl(paymentProofUrl, "payment") %>" srcset="<%= getResponsiveCloudinarySrcSet(paymentProofUrl, 'payment') %>" sizes="(max-width: 1024px) 90vw, 520px" loading="lazy" decoding="async" class="max-w-full max-h-full object-contain opacity-90 group-hover/image:opacity-100 transition duration-300">
                                 <div class="absolute inset-0 bg-black/50 opacity-0 group-hover/image:opacity-100 transition duration-300 flex items-center justify-center backdrop-blur-sm">
                                     <a href="<%= paymentProofUrl %>" target="_blank" class="px-4 py-2 bg-white text-slate-900 rounded-lg text-sm font-bold shadow-lg transform translate-y-2 group-hover/image:translate-y-0 transition flex items-center gap-2">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>

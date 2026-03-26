@@ -8,11 +8,18 @@ const mongoose = require("mongoose");
 const ejsMate = require("ejs-mate");
 const session = require("express-session");
 const flash = require("connect-flash");
-const passport = require("passport");
-const LocalStrategy = require("passport-local");
+const cookieParser = require("cookie-parser");
 const { Server } = require("socket.io");
 const methodOverride = require("method-override");
 const path = require("path");
+const { createWindowRateLimiter } = require("./utils/rateLimiter.js");
+const { toOptimizedCloudinaryUrl } = require("./utils/cloudinaryUrl.js");
+const {
+  extractTokenFromRequest,
+  verifyAuthToken,
+  clearAuthCookie,
+  extractTokenFromCookieHeader,
+} = require("./utils/jwtAuth.js");
 
 const routes = require("./routes/samples.js");
 const webRoutes = require("./routes/website.js");
@@ -30,9 +37,40 @@ const server = http.createServer(app);
 const io = new Server(server);
 const PORT = process.env.PORT || 8080;
 const SITE_URL = (process.env.SITE_URL || "https://wishlink-7j0a.onrender.com").replace(/\/+$/, "");
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || "";
+const MUTATING_REQUEST_WINDOW_MS = Number(process.env.MUTATING_REQUEST_WINDOW_MS || 10 * 60 * 1000);
+const MUTATING_REQUEST_LIMIT = Number(process.env.MUTATING_REQUEST_LIMIT || 5);
+const MUTATING_REQUEST_WINDOW_MINUTES = Math.max(1, Math.round(MUTATING_REQUEST_WINDOW_MS / (60 * 1000)));
+const RATE_LIMIT_MESSAGE = `Rate limit exceeded: ${MUTATING_REQUEST_LIMIT} requests allowed every ${MUTATING_REQUEST_WINDOW_MINUTES} minutes.`;
 let permanentDbConnection = null;
+const socketChatRateStore = new Map();
 
 app.locals.permanentPurchasedWeb = null;
+function getResponsiveWidth(variant) {
+  const normalizedVariant = String(variant || "default").toLowerCase();
+  if (normalizedVariant === "avatar") return 220;
+  if (normalizedVariant === "payment") return 1200;
+  return 1200;
+}
+
+function buildCloudinaryTransforms(variant, width) {
+  const normalizedVariant = String(variant || "default").toLowerCase();
+  const finalWidth = Number(width) > 0 ? Number(width) : getResponsiveWidth(normalizedVariant);
+
+  if (normalizedVariant === "avatar") {
+    return ["f_auto", "q_80", "c_limit", `w_${finalWidth}`, "dpr_auto"];
+  }
+
+  return ["f_auto", "q_80", "c_limit", `w_${finalWidth}`, "dpr_auto"];
+}
+
+app.locals.getOptimizedCloudinaryUrl = (url, variant = "default", width) =>
+  toOptimizedCloudinaryUrl(url, buildCloudinaryTransforms(variant, width));
+
+app.locals.getResponsiveCloudinarySrcSet = (url, variant = "default") =>
+  [480, 768, 1200]
+    .map((width) => `${app.locals.getOptimizedCloudinaryUrl(url, variant, width)} ${width}w`)
+    .join(", ");
 
 function getPurchaseErrorMessage(err) {
   const rawMessage = String(err?.message || "");
@@ -52,7 +90,7 @@ function getPurchaseErrorMessage(err) {
     normalizedMessage.includes("invalid file type") ||
     normalizedMessage.includes("unsupported format")
   ) {
-    return "Only JPG, JPEG, and PNG images are allowed.";
+    return "Only JPG, JPEG, PNG, and WEBP images are allowed.";
   }
 
   if (normalizedMessage.includes("selected website template not found")) {
@@ -66,11 +104,42 @@ app.engine("ejs", ejsMate);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.set("io", io);
+app.set("trust proxy", 1);
+app.disable("x-powered-by");
 
 app.use(methodOverride("_method"));
-app.use(express.static("public"));
-app.use(express.static(path.join(__dirname, "public")));
-app.use(express.urlencoded({ extended: true }));
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  next();
+});
+
+const staticAssetCacheControl = (res, filePath) => {
+  const ext = path.extname(filePath).toLowerCase();
+  if ([".png", ".jpg", ".jpeg", ".webp", ".avif", ".svg", ".gif", ".mp3", ".woff", ".woff2"].includes(ext)) {
+    res.setHeader("Cache-Control", "public, max-age=2592000, immutable");
+    return;
+  }
+
+  if ([".css", ".js", ".mjs", ".json", ".webmanifest"].includes(ext)) {
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    return;
+  }
+
+  res.setHeader("Cache-Control", "public, max-age=3600");
+};
+
+app.use(
+  express.static(path.join(__dirname, "public"), {
+    etag: true,
+    lastModified: true,
+    setHeaders: staticAssetCacheControl,
+  })
+);
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
+app.use(express.json({ limit: "1mb" }));
+app.use(cookieParser());
 
 const connectDb = async () => {
   try {
@@ -107,11 +176,13 @@ const connectDb = async () => {
 const sessionOptions = {
   secret: process.env.SESSION_SECRET,
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false,
   cookie: {
     expires: Date.now() + 1000 * 60 * 60 * 5 * 24,
     maxAge: 1000 * 60 * 60 * 5 * 24, // 5 days
     httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
   },
 };
 
@@ -119,11 +190,72 @@ const sessionMiddleware = session(sessionOptions);
 app.use(sessionMiddleware);
 app.use(flash());
 
-app.use(passport.initialize());
-app.use(passport.session());
-passport.use(new LocalStrategy(user.authenticate()));
-passport.serializeUser(user.serializeUser());
-passport.deserializeUser(user.deserializeUser());
+app.use(async (req, res, next) => {
+  const token = extractTokenFromRequest(req);
+  if (!token) {
+    req.user = null;
+    return next();
+  }
+
+  try {
+    const payload = verifyAuthToken(token);
+    if (!payload?.sub) {
+      req.user = null;
+      clearAuthCookie(res);
+      return next();
+    }
+
+    const loggedInUser = await user.findById(payload.sub);
+    if (!loggedInUser) {
+      req.user = null;
+      clearAuthCookie(res);
+      return next();
+    }
+
+    req.user = loggedInUser;
+    return next();
+  } catch (_err) {
+    req.user = null;
+    clearAuthCookie(res);
+    return next();
+  }
+});
+
+const mutatingRequestLimiter = createWindowRateLimiter({
+  windowMs: MUTATING_REQUEST_WINDOW_MS,
+  max: MUTATING_REQUEST_LIMIT,
+  keyGenerator: (req) => {
+    if (req.user?._id) return `user:${req.user._id}`;
+    return `ip:${req.ip || req.socket?.remoteAddress || "unknown"}`;
+  },
+  skip: (req) => !["POST", "PUT", "PATCH", "DELETE"].includes(req.method),
+  onLimitReached: (req, res, entry) => {
+    const retryAfterSeconds = Math.max(1, Math.ceil((entry.resetAt - Date.now()) / 1000));
+    res.setHeader("Retry-After", String(retryAfterSeconds));
+    const acceptHeader = String(req.get("accept") || "");
+    const wantsJson = req.xhr || acceptHeader.includes("application/json");
+    if (wantsJson) {
+      return res.status(429).json({
+        ok: false,
+        message: RATE_LIMIT_MESSAGE,
+      });
+    }
+
+    req.flash("error", RATE_LIMIT_MESSAGE);
+    return res.status(429).redirect(req.get("Referrer") || "/");
+  },
+});
+
+app.use(mutatingRequestLimiter);
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of socketChatRateStore.entries()) {
+    if (!entry || entry.resetAt <= now) {
+      socketChatRateStore.delete(key);
+    }
+  }
+}, Math.max(MUTATING_REQUEST_WINDOW_MS, 60 * 1000)).unref();
 
 app.use((req, res, next) => {
   res.locals.success = req.flash("success");
@@ -131,6 +263,9 @@ app.use((req, res, next) => {
   res.locals.currUser = req.user;
   res.locals.hideFooter = false;
   res.locals.chatLayout = false;
+  res.locals.googleClientId = GOOGLE_CLIENT_ID;
+  res.locals.getOptimizedCloudinaryUrl = app.locals.getOptimizedCloudinaryUrl;
+  res.locals.getResponsiveCloudinarySrcSet = app.locals.getResponsiveCloudinarySrcSet;
   next();
 });
 
@@ -198,24 +333,43 @@ function normalizeChatMessage(rawMessage) {
   return rawMessage.trim().slice(0, 1500);
 }
 
+function getSocketRateState(userId) {
+  const key = String(userId || "anonymous");
+  const now = Date.now();
+  let entry = socketChatRateStore.get(key);
+
+  if (!entry || entry.resetAt <= now) {
+    entry = { count: 0, resetAt: now + MUTATING_REQUEST_WINDOW_MS };
+  }
+
+  entry.count += 1;
+  socketChatRateStore.set(key, entry);
+  return entry;
+}
+
 function hasChatAccess(currentUser, chatDoc) {
   if (!currentUser || !chatDoc) return false;
   if (currentUser.isAdmin) return true;
   return String(chatDoc.user) === String(currentUser._id);
 }
 
-io.engine.use(sessionMiddleware);
-io.engine.use(passport.initialize());
-io.engine.use(passport.session());
+io.use(async (socket, next) => {
+  try {
+    const cookieHeader = socket.request?.headers?.cookie || "";
+    const token = extractTokenFromCookieHeader(cookieHeader);
+    if (!token) return next(new Error("Unauthorized"));
 
-io.use((socket, next) => {
-  const currentUser = socket.request.user;
-  if (!currentUser) {
+    const payload = verifyAuthToken(token);
+    if (!payload?.sub) return next(new Error("Unauthorized"));
+
+    const currentUser = await user.findById(payload.sub);
+    if (!currentUser) return next(new Error("Unauthorized"));
+
+    socket.user = currentUser;
+    return next();
+  } catch (_err) {
     return next(new Error("Unauthorized"));
   }
-
-  socket.user = currentUser;
-  next();
 });
 
 io.on("connection", (socket) => {
@@ -246,6 +400,17 @@ io.on("connection", (socket) => {
 
   socket.on("sendChatMessage", async (payload = {}, cb) => {
     try {
+      const socketRateState = getSocketRateState(socket.user?._id);
+      if (socketRateState.count > MUTATING_REQUEST_LIMIT) {
+        if (typeof cb === "function") {
+          cb({
+            ok: false,
+            error: RATE_LIMIT_MESSAGE,
+          });
+        }
+        return;
+      }
+
       const messageText = normalizeChatMessage(payload.text);
       if (!messageText) {
         if (typeof cb === "function") cb({ ok: false, error: "Message cannot be empty." });

@@ -34,15 +34,15 @@ function getPurchaseValidationMessage(error) {
 }
 
 module.exports.isLoggedIn = (req,res,next)=>{
-  if(!req.isAuthenticated()){   
+  if(!req.user){   
     req.flash("error","You must be Logged in to continue.");
-    return res.redirect("/loginForm");
+    return res.redirect("/logInForm");
   }
   next();
 }
 
 module.exports.isAdmin = (req,res,next)=>{
-  if(!req.isAuthenticated() || !req.user.isAdmin){   
+  if(!req.user || !req.user.isAdmin){   
     req.flash("error","You must be admin to continue.");
     return res.redirect("/");
   }

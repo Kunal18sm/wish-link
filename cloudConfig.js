@@ -22,7 +22,17 @@ const storage = new CloudinaryStorage({
   cloudinary,
   params: {
     folder: "wishLink_dev",
-    allowed_formats: ["png", "jpg", "jpeg"],
+    allowed_formats: ["png", "jpg", "jpeg", "webp"],
+    resource_type: "image",
+    transformation: [
+      {
+        quality: "80",
+        fetch_format: "auto",
+        flags: "strip_profile",
+        width: 1200,
+        crop: "limit",
+      },
+    ],
   },
 });
 
@@ -36,7 +46,17 @@ const permanentStorage = new CloudinaryStorage({
     return {
       ...permanentCloudinaryOptions,
       folder: "wishLink_permanent",
-      allowed_formats: ["png", "jpg", "jpeg"],
+      allowed_formats: ["png", "jpg", "jpeg", "webp"],
+      resource_type: "image",
+      transformation: [
+        {
+          quality: "80",
+          fetch_format: "auto",
+          flags: "strip_profile",
+          width: 1200,
+          crop: "limit",
+        },
+      ],
     };
   },
 });

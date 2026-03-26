@@ -25,6 +25,9 @@
         gtag('js', new Date());
         gtag('config', 'G-L0F12E1ENT');
     </script>
+    <% if (googleClientId) { %>
+      <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <% } %>
     <style>
         body { font-family: 'Inter', sans-serif; }
         .glass-box {
@@ -93,6 +96,17 @@
                 </button>
             </form>
 
+            <% if (googleClientId) { %>
+              <div class="my-5 flex items-center gap-3">
+                  <span class="h-px flex-1 bg-slate-700"></span>
+                  <span class="text-xs uppercase tracking-wider text-slate-500">or</span>
+                  <span class="h-px flex-1 bg-slate-700"></span>
+              </div>
+              <div class="flex justify-center">
+                <div id="googleSignInBtn"></div>
+              </div>
+            <% } %>
+
 
             
 
@@ -113,6 +127,44 @@
             btn.disabled = true;
             btn.innerText = "Please wait...";
         });
+
+        <% if (googleClientId) { %>
+        async function handleGoogleCredentialResponse(response) {
+            try {
+                const loginResponse = await fetch("/auth/google", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ credential: response.credential }),
+                });
+
+                const payload = await loginResponse.json();
+                if (!loginResponse.ok || !payload.ok) {
+                    alert(payload.message || "Google sign-in failed.");
+                    return;
+                }
+
+                window.location.href = payload.redirectTo || "/";
+            } catch (_err) {
+                alert("Google sign-in failed. Please try again.");
+            }
+        }
+
+        window.addEventListener("load", function () {
+            if (!window.google || !window.google.accounts || !window.google.accounts.id) return;
+
+            window.google.accounts.id.initialize({
+                client_id: "<%= googleClientId %>",
+                callback: handleGoogleCredentialResponse,
+                ux_mode: "popup",
+                auto_select: false,
+            });
+
+            window.google.accounts.id.renderButton(
+                document.getElementById("googleSignInBtn"),
+                { theme: "outline", size: "large", shape: "pill", text: "continue_with", width: 280 }
+            );
+        });
+        <% } %>
     </script>
 </body>
 </html>
