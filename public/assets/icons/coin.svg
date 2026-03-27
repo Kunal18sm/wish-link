@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Coin">
+  <defs>
+    <radialGradient id="coinInner" cx="30%" cy="28%" r="72%">
+      <stop offset="0%" stop-color="#fff7b8"/>
+      <stop offset="56%" stop-color="#f6c344"/>
+      <stop offset="100%" stop-color="#db8a06"/>
+    </radialGradient>
+    <linearGradient id="coinOuter" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a86200"/>
+      <stop offset="100%" stop-color="#7a3f00"/>
+    </linearGradient>
+  </defs>
+
+  <circle cx="32" cy="32" r="31" fill="url(#coinOuter)"/>
+  <circle cx="32" cy="32" r="26.5" fill="url(#coinInner)"/>
+  <circle cx="32" cy="32" r="21.5" fill="none" stroke="#996114" stroke-width="2.5" opacity="0.85"/>
+  <ellipse cx="23" cy="18.5" rx="8.2" ry="5.1" fill="#fff9d8" opacity="0.55"/>
+
+  <path d="M32 18.5v27" stroke="#111111" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M39 24.2c0-2.7-3.1-4.9-7-4.9s-7 2.2-7 4.9 3.1 4.8 7 4.8 7 2.2 7 4.9-3.1 4.9-7 4.9-7-2.2-7-4.9"
+        fill="none" stroke="#111111" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

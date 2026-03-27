@@ -38,7 +38,21 @@ const userSchema = new Schema({
   winnerCount: {
     type: Number,
     default: 0,
-  }
+  },
+  dailyCreditClaim: {
+    dateKey: {
+      type: String,
+      default: "",
+    },
+    amount: {
+      type: Number,
+      default: 0,
+    },
+    claimedAt: {
+      type: Date,
+      default: null,
+    },
+  },
   
 });
 

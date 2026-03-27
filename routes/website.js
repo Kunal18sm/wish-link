@@ -41,6 +41,30 @@ const purchaseUploadFields = [
   { name: "images", maxCount: 5 },
   { name: "paymentImage", maxCount: 1 },
 ];
+const TEMPLATE_CATEGORIES = [
+  "all",
+  "free",
+  "birthday",
+  "valentine's",
+  "sorry",
+  "girlfriend",
+  "family",
+  "funny",
+  "males",
+  "females",
+  "single",
+  "couple",
+  "anniversary",
+  "wedding",
+  "best friend",
+  "parents",
+  "festival",
+  "new year",
+  "christmas",
+  "diwali",
+  "eid",
+  "holi",
+];
 
 const getRedirectBack = (req) => req.get("Referrer") || "/";
 
@@ -58,6 +82,12 @@ const getPurchaseFailureMessage = (err) => {
   if (message.includes("permanent cloudinary is not configured")) {
     return "Permanent image storage is not configured right now.";
   }
+  if (message.includes("insufficient credits")) {
+    return "You do not have enough credits for this action.";
+  }
+  if (message.includes("payment screenshot is required")) {
+    return "Please upload payment screenshot to continue.";
+  }
   return "Purchase failed. Please try again.";
 };
 
@@ -65,6 +95,44 @@ const parseIsTemporary = (value) => {
   if (typeof value === "boolean") return value;
   return String(value).toLowerCase() === "true";
 };
+
+const toFiniteNumberOrDefault = (value, fallback = 0) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const toCreditCost = (value, fallback = 0) => {
+  const parsed = Math.floor(toFiniteNumberOrDefault(value, fallback));
+  return Number.isFinite(parsed) ? Math.max(parsed, 0) : Math.max(fallback, 0);
+};
+
+const normalizeTemplateCategories = (rawCategories) => {
+  const values = Array.isArray(rawCategories) ? rawCategories : [rawCategories];
+  const uniqueCategories = new Set();
+
+  for (const value of values) {
+    const normalized = String(value || "").trim().toLowerCase();
+    if (!normalized || !TEMPLATE_CATEGORIES.includes(normalized)) continue;
+    uniqueCategories.add(normalized);
+  }
+
+  return Array.from(uniqueCategories);
+};
+
+const buildTemplatePayload = (formData = {}) => ({
+  webName: String(formData.webName || "").trim(),
+  priceForTemporary: toFiniteNumberOrDefault(formData.priceForTemporary, 0),
+  priceForPermanent: toFiniteNumberOrDefault(formData.priceForPermanent, 0),
+  previewCredits: toCreditCost(formData.previewCredits, 1),
+  purchaseCredits: toCreditCost(formData.purchaseCredits, 1),
+  webUrl: String(formData.webUrl || "").trim(),
+  description: String(formData.description || "").trim(),
+  imageNeeded: toFiniteNumberOrDefault(formData.imageNeeded, 5),
+  priority: toFiniteNumberOrDefault(formData.priority, 0),
+  tags: normalizeTemplateCategories(formData.category),
+  articleTitle: String(formData.title || "").trim(),
+  articleContent: String(formData.content || "").trim(),
+});
 
 const buildPurchasedWebUrl = (baseWebUrl, purchaseId, isTemporary) => {
   const sanitizedBase = String(baseWebUrl || "").replace(/\/+$/, "");
@@ -90,6 +158,8 @@ const createPurchaseHandler = (expectedIsTemporary) =>
     const isTemporary = parseIsTemporary(buyinfo.isTemporary);
     const isPermanentPurchase = !isTemporary;
     const destroyOptions = isPermanentPurchase ? permanentCloudinaryOptions : null;
+    const userId = req.user?._id;
+    let creditsUsed = 0;
 
     const uploadedPublicIds = [
       ...(req.files?.images || []).map((file) => file.filename),
@@ -118,7 +188,7 @@ const createPurchaseHandler = (expectedIsTemporary) =>
         filename: file.filename,
       }));
 
-      const paymentImg = req.files?.paymentImage?.[0]
+      let paymentImg = req.files?.paymentImage?.[0]
         ? {
             url: req.files.paymentImage[0].path,
             filename: req.files.paymentImage[0].filename,
@@ -132,8 +202,44 @@ const createPurchaseHandler = (expectedIsTemporary) =>
         throw new Error("Selected website template not found.");
       }
 
-      const parsedPrice = Number(buyinfo.price);
-      const price = Number.isFinite(parsedPrice) ? parsedPrice : 0;
+      const temporaryPrice = Math.max(0, toFiniteNumberOrDefault(selectedWeb.priceForTemporary, 0));
+      const permanentPrice = Math.max(0, toFiniteNumberOrDefault(selectedWeb.priceForPermanent, 0));
+      const purchaseCreditsRequired = toCreditCost(selectedWeb.purchaseCredits, 1);
+
+      if (isTemporary && temporaryPrice > 0 && purchaseCreditsRequired > 0) {
+        const updatedCreditUser = await user.findOneAndUpdate(
+          {
+            _id: userId,
+            winnerCount: { $gte: purchaseCreditsRequired },
+          },
+          {
+            $inc: { winnerCount: -purchaseCreditsRequired },
+          },
+          {
+            new: true,
+            projection: { winnerCount: 1 },
+          }
+        );
+
+        if (updatedCreditUser) {
+          creditsUsed = purchaseCreditsRequired;
+          req.user.winnerCount = Number(updatedCreditUser.winnerCount || 0);
+        }
+      }
+
+      const requiresPaymentProof = !isTemporary || (temporaryPrice > 0 && creditsUsed === 0);
+      if (requiresPaymentProof && !paymentImg) {
+        if (isTemporary && temporaryPrice > 0 && purchaseCreditsRequired > 0 && creditsUsed === 0) {
+          throw new Error("Insufficient credits for free unlock.");
+        }
+        throw new Error("Payment screenshot is required.");
+      }
+
+      if (!requiresPaymentProof) {
+        paymentImg = null;
+      }
+
+      const price = isTemporary ? (creditsUsed > 0 ? 0 : temporaryPrice) : permanentPrice;
       const sender =
         typeof buyinfo.sender === "string" && buyinfo.sender.trim()
           ? buyinfo.sender.trim()
@@ -163,8 +269,6 @@ const createPurchaseHandler = (expectedIsTemporary) =>
         isTemporary,
       }).save();
 
-      const userId = req.user._id;
-
       // Non-critical updates should not block a successful purchase document save.
       try {
         await user.findByIdAndUpdate(userId, {
@@ -182,14 +286,6 @@ const createPurchaseHandler = (expectedIsTemporary) =>
         });
 
         await WebSample.findByIdAndUpdate(id, { $inc: { soldOut: 1 } });
-
-        if (isTemporary && selectedWeb.priceForTemporary > 0) {
-          const userData = await user.findById(userId);
-          if (userData?.winnerCount > 0) {
-            userData.winnerCount -= 1;
-            await userData.save();
-          }
-        }
       } catch (postSaveErr) {
         console.log("Post-save sync warning:", postSaveErr.message);
       }
@@ -197,12 +293,76 @@ const createPurchaseHandler = (expectedIsTemporary) =>
       req.flash("success", "Purchase Success");
       return res.redirect("/profile");
     } catch (err) {
+      if (creditsUsed > 0 && userId) {
+        await user
+          .findByIdAndUpdate(userId, { $inc: { winnerCount: creditsUsed } })
+          .catch(() => {});
+      }
       await cleanupUploads();
       console.log("Purchase failed:", err.message);
       req.flash("error", getPurchaseFailureMessage(err));
       return res.redirect(getRedirectBack(req));
     }
   });
+
+router.post(
+  "/template/:id/preview/unlock",
+  isLoggedIn,
+  wrapAsync(async (req, res) => {
+    const { id } = req.params;
+    const selectedWeb = await WebSample.findById(id).select("webUrl previewCredits");
+
+    if (!selectedWeb || !selectedWeb.webUrl) {
+      return res.status(404).json({
+        ok: false,
+        message: "Template preview not found.",
+      });
+    }
+
+    const previewCreditsRequired = toCreditCost(selectedWeb.previewCredits, 1);
+
+    if (previewCreditsRequired <= 0) {
+      return res.json({
+        ok: true,
+        redirectUrl: selectedWeb.webUrl,
+        chargedCredits: 0,
+        remainingCredits: Number(req.user?.winnerCount || 0),
+      });
+    }
+
+    const updatedUser = await user.findOneAndUpdate(
+      {
+        _id: req.user._id,
+        winnerCount: { $gte: previewCreditsRequired },
+      },
+      {
+        $inc: { winnerCount: -previewCreditsRequired },
+      },
+      {
+        new: true,
+        projection: { winnerCount: 1 },
+      }
+    );
+
+    if (!updatedUser) {
+      return res.status(400).json({
+        ok: false,
+        message: `Insufficient credits. You need ${previewCreditsRequired} credits to preview this template.`,
+        requiredCredits: previewCreditsRequired,
+        currentCredits: Number(req.user?.winnerCount || 0),
+      });
+    }
+
+    req.user.winnerCount = Number(updatedUser.winnerCount || 0);
+
+    return res.json({
+      ok: true,
+      redirectUrl: selectedWeb.webUrl,
+      chargedCredits: previewCreditsRequired,
+      remainingCredits: Number(updatedUser.winnerCount || 0),
+    });
+  })
+);
 
 // form to add new web
 router.get(
@@ -211,6 +371,7 @@ router.get(
   isAdmin,
   wrapAsync(async (req, res) => {
     res.render("addNewWeb", {
+      categories: TEMPLATE_CATEGORIES,
       title: "Add New Website - VishLink",
       description: "Admin panel to add new wishing website templates.",
       robots: "noindex, nofollow",
@@ -225,25 +386,98 @@ router.post(
   isAdmin,
   upload.single("imageUrl"),
   wrapAsync(async (req, res) => {
-    let url = req.file.path;
-    let filename = req.file.filename;
+    const url = req.file.path;
+    const filename = req.file.filename;
     const formData = req.body.formData;
+    const payload = buildTemplatePayload(formData);
 
     const newSample = new WebSample({
-      webName: formData.webName,
-      priceForTemporary: formData.priceForTemporary,
-      priceForPermanent: formData.priceForPermanent,
+      webName: payload.webName,
+      priceForTemporary: payload.priceForTemporary,
+      priceForPermanent: payload.priceForPermanent,
+      previewCredits: payload.previewCredits,
+      purchaseCredits: payload.purchaseCredits,
       imageUrl: { url, filename },
-      webUrl: formData.webUrl,
-      description: formData.description,
-      imageNeeded: formData.imageNeeded,
-      tags: Array.isArray(formData.category) ? formData.category : [formData.category],
-      articleTitle: formData.title,
-      articleContent: formData.content,
+      webUrl: payload.webUrl,
+      description: payload.description,
+      imageNeeded: payload.imageNeeded,
+      tags: payload.tags,
+      articleTitle: payload.articleTitle,
+      articleContent: payload.articleContent,
+      priority: payload.priority,
     });
     await newSample.save();
     req.flash("success", "Added new website");
     res.redirect("/");
+  })
+);
+
+// form to edit template
+router.get(
+  "/template/:id/edit",
+  isLoggedIn,
+  isAdmin,
+  wrapAsync(async (req, res) => {
+    const selectedWeb = await WebSample.findById(req.params.id);
+    if (!selectedWeb) {
+      req.flash("error", "Template not found.");
+      return res.redirect("/");
+    }
+
+    return res.render("editTemplate", {
+      selectedWeb,
+      categories: TEMPLATE_CATEGORIES,
+      title: `Edit ${selectedWeb.webName} - VishLink`,
+      description: "Admin panel to edit website template details and priority.",
+      robots: "noindex, nofollow",
+    });
+  })
+);
+
+// update template
+router.put(
+  "/template/:id",
+  isLoggedIn,
+  isAdmin,
+  upload.single("imageUrl"),
+  wrapAsync(async (req, res) => {
+    const selectedWeb = await WebSample.findById(req.params.id);
+    if (!selectedWeb) {
+      req.flash("error", "Template not found.");
+      return res.redirect("/");
+    }
+
+    const payload = buildTemplatePayload(req.body.formData);
+    const updateData = {
+      webName: payload.webName,
+      priceForTemporary: payload.priceForTemporary,
+      priceForPermanent: payload.priceForPermanent,
+      previewCredits: payload.previewCredits,
+      purchaseCredits: payload.purchaseCredits,
+      webUrl: payload.webUrl,
+      description: payload.description,
+      imageNeeded: payload.imageNeeded,
+      tags: payload.tags,
+      articleTitle: payload.articleTitle,
+      articleContent: payload.articleContent,
+      priority: payload.priority,
+    };
+
+    if (req.file) {
+      updateData.imageUrl = {
+        url: req.file.path,
+        filename: req.file.filename,
+      };
+    }
+
+    await WebSample.findByIdAndUpdate(req.params.id, updateData);
+
+    if (req.file && selectedWeb.imageUrl?.filename) {
+      await cloudinary.uploader.destroy(selectedWeb.imageUrl.filename);
+    }
+
+    req.flash("success", "Template updated");
+    return res.redirect("/");
   })
 );
 
@@ -254,8 +488,17 @@ router.get(
   wrapAsync(async (req, res) => {
     const { id } = req.params;
     const selectedWeb = await WebSample.findById(id);
+    if (!selectedWeb) {
+      req.flash("error", "Template not found.");
+      return res.redirect("/");
+    }
     const isTemporary = true;
     const winnerCount = req.user.winnerCount || 0;
+    const purchaseCreditsRequired = toCreditCost(selectedWeb.purchaseCredits, 1);
+    const canUseCredits =
+      Number(selectedWeb.priceForTemporary || 0) > 0 &&
+      purchaseCreditsRequired > 0 &&
+      winnerCount >= purchaseCreditsRequired;
     res.render("purchaseForm", {
       selectedWeb,
       id,
@@ -265,6 +508,8 @@ router.get(
       robots: "noindex, nofollow",
       isTemporary,
       winnerCount,
+      purchaseCreditsRequired,
+      canUseCredits,
     });
   })
 );
@@ -276,6 +521,10 @@ router.get(
   wrapAsync(async (req, res) => {
     const { id } = req.params;
     const selectedWeb = await WebSample.findById(id);
+    if (!selectedWeb) {
+      req.flash("error", "Template not found.");
+      return res.redirect("/");
+    }
     const isTemporary = false;
     const winnerCount = 0;
     res.render("purchaseForm", {
@@ -287,6 +536,8 @@ router.get(
       robots: "noindex, nofollow",
       isTemporary,
       winnerCount,
+      purchaseCreditsRequired: 0,
+      canUseCredits: false,
     });
   })
 );

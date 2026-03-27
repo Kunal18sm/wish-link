@@ -1,0 +1,296 @@
+<% layout("/layouts/boilerplate") %>
+
+<%
+  const trimmedSearch = String(searchTerm || "").trim();
+  const searchQuery = trimmedSearch ? `search=${encodeURIComponent(trimmedSearch)}` : "";
+  const pageQuery = currentPage && currentPage > 1 ? `page=${currentPage}` : "";
+  const joinQuery = [searchQuery, pageQuery].filter(Boolean).join("&");
+  const returnToPath = joinQuery ? `/requests/users?${joinQuery}` : "/requests/users";
+%>
+
+<div class="bg-[#0B1120] text-slate-200 min-h-screen font-sans pb-20 relative overflow-x-hidden">
+  <div class="fixed inset-0 -z-10 bg-gradient-to-br from-indigo-900/20 via-[#0B1120] to-emerald-900/10 pointer-events-none"></div>
+
+  <main class="max-w-7xl mx-auto px-4 md:px-6 py-10">
+    <section class="mb-8 border border-slate-800 rounded-3xl bg-slate-900/60 backdrop-blur-md p-6 md:p-8 shadow-xl">
+      <div class="flex flex-col lg:flex-row gap-6 lg:items-end lg:justify-between">
+        <div>
+          <h1 class="text-3xl md:text-4xl font-extrabold text-white">Manage Users</h1>
+          <p class="text-slate-400 mt-2 text-sm">
+            Search by username, update credits, and open user profile/history in one place.
+          </p>
+          <p class="text-indigo-300 mt-3 text-sm bg-indigo-500/10 inline-flex px-3 py-1 rounded-full border border-indigo-500/20">
+            Showing <%= adminUsers.length %> users in this batch (limit <%= pageLimit %>)
+          </p>
+        </div>
+
+        <form action="/requests/users" method="GET" class="w-full lg:max-w-lg">
+          <label for="searchInput" class="block text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">
+            Search Username
+          </label>
+          <div class="flex gap-2">
+            <input
+              id="searchInput"
+              name="search"
+              type="text"
+              value="<%= trimmedSearch %>"
+              placeholder="Enter username..."
+              class="flex-1 px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500"
+            >
+            <button
+              type="submit"
+              class="px-5 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-500 transition"
+            >
+              Search
+            </button>
+            <% if (trimmedSearch) { %>
+              <a
+                href="/requests/users"
+                class="px-5 py-3 rounded-xl bg-slate-700 text-slate-100 font-semibold hover:bg-slate-600 transition"
+              >
+                Clear
+              </a>
+            <% } %>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section>
+      <% if (!adminUsers.length) { %>
+        <div class="text-center py-16 border border-dashed border-slate-700 rounded-3xl bg-slate-900/40">
+          <h2 class="text-xl font-bold text-slate-200">No users found</h2>
+          <p class="text-slate-400 mt-2">Try another username or clear the search.</p>
+        </div>
+      <% } else { %>
+        <div id="usersGrid" class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <% for (let listUser of adminUsers) { %>
+            <article class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 shadow-lg">
+              <div class="flex justify-between items-start gap-3">
+                <div class="min-w-0">
+                  <h2 class="text-lg font-bold text-white truncate">@<%= listUser.username %></h2>
+                  <p class="text-sm text-slate-400 truncate"><%= listUser.email %></p>
+                  <p class="text-xs text-slate-500 mt-1">
+                    Joined:
+                    <%= new Date(listUser.date).toLocaleDateString("en-IN", { dateStyle: "medium", timeZone: "Asia/Kolkata" }) %>
+                  </p>
+                </div>
+                <span class="px-2.5 py-1 text-[10px] uppercase font-bold tracking-wide rounded-full border <%= listUser.isAdmin ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' %>">
+                  <%= listUser.isAdmin ? "Admin" : "User" %>
+                </span>
+              </div>
+
+              <div class="mt-4 grid grid-cols-2 gap-3">
+                <div class="rounded-xl border border-slate-700 bg-slate-800/60 p-3">
+                  <p class="text-xs uppercase tracking-wide text-slate-400">Total Created</p>
+                  <p class="text-xl font-bold text-white mt-1"><%= listUser.totalLinksCreated %></p>
+                </div>
+                <div class="rounded-xl border border-slate-700 bg-slate-800/60 p-3">
+                  <p class="text-xs uppercase tracking-wide text-slate-400">Active Links</p>
+                  <p class="text-xl font-bold text-white mt-1"><%= listUser.activeLinksCount %></p>
+                </div>
+              </div>
+
+              <form action="/requests/users/<%= listUser.id %>/credits" method="POST" class="mt-4 flex gap-2 items-end">
+                <input type="hidden" name="returnTo" value="<%= returnToPath %>">
+                <label class="flex-1">
+                  <span class="text-xs uppercase tracking-wide text-slate-400">Credits</span>
+                  <input
+                    name="winnerCount"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value="<%= listUser.winnerCount %>"
+                    required
+                    class="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500"
+                  >
+                </label>
+                <button
+                  type="submit"
+                  class="px-4 py-2.5 rounded-xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-600 hover:text-white transition font-semibold text-sm"
+                >
+                  Update
+                </button>
+              </form>
+
+              <div class="mt-4 flex flex-wrap gap-2">
+                <a
+                  href="/requests/userProfile/<%= listUser.id %>"
+                  class="px-4 py-2 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-600 hover:text-white transition text-sm font-semibold"
+                >
+                  View Profile
+                </a>
+                <a
+                  href="/requests/userProfileHistory/<%= listUser.id %>"
+                  class="px-4 py-2 rounded-xl bg-slate-700 border border-slate-600 text-slate-200 hover:bg-slate-600 transition text-sm font-semibold"
+                >
+                  View History
+                </a>
+              </div>
+            </article>
+          <% } %>
+        </div>
+
+        <div class="mt-8 flex justify-center">
+          <button
+            id="loadMoreBtn"
+            type="button"
+            data-next-page="<%= nextPage || '' %>"
+            data-search="<%= trimmedSearch %>"
+            data-return-base="<%= returnToPath %>"
+            class="<%= hasMore ? '' : 'hidden' %> px-6 py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-500 transition shadow-lg shadow-indigo-600/30"
+          >
+            Load More
+          </button>
+        </div>
+      <% } %>
+    </section>
+  </main>
+</div>
+
+<script>
+  const usersGrid = document.getElementById("usersGrid");
+  const loadMoreBtn = document.getElementById("loadMoreBtn");
+
+  function escapeHtml(value) {
+    return String(value || "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function formatJoinDate(value) {
+    const dateObj = new Date(value);
+    if (Number.isNaN(dateObj.getTime())) return "N/A";
+    return dateObj.toLocaleDateString("en-IN", {
+      dateStyle: "medium",
+      timeZone: "Asia/Kolkata",
+    });
+  }
+
+  function buildUserCard(userData, returnToPath) {
+    const id = escapeHtml(userData.id);
+    const username = escapeHtml(userData.username);
+    const email = escapeHtml(userData.email);
+    const isAdmin = Boolean(userData.isAdmin);
+    const roleLabel = isAdmin ? "Admin" : "User";
+    const roleClass = isAdmin
+      ? "bg-indigo-500/10 text-indigo-300 border-indigo-500/20"
+      : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+    const winnerCount = Number(userData.winnerCount || 0);
+    const totalLinks = Number(userData.totalLinksCreated || 0);
+    const activeLinks = Number(userData.activeLinksCount || 0);
+    const joinedDate = escapeHtml(formatJoinDate(userData.date));
+    const escapedReturnTo = escapeHtml(returnToPath);
+
+    return `
+      <article class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 shadow-lg">
+        <div class="flex justify-between items-start gap-3">
+          <div class="min-w-0">
+            <h2 class="text-lg font-bold text-white truncate">@${username}</h2>
+            <p class="text-sm text-slate-400 truncate">${email}</p>
+            <p class="text-xs text-slate-500 mt-1">Joined: ${joinedDate}</p>
+          </div>
+          <span class="px-2.5 py-1 text-[10px] uppercase font-bold tracking-wide rounded-full border ${roleClass}">
+            ${roleLabel}
+          </span>
+        </div>
+
+        <div class="mt-4 grid grid-cols-2 gap-3">
+          <div class="rounded-xl border border-slate-700 bg-slate-800/60 p-3">
+            <p class="text-xs uppercase tracking-wide text-slate-400">Total Created</p>
+            <p class="text-xl font-bold text-white mt-1">${totalLinks}</p>
+          </div>
+          <div class="rounded-xl border border-slate-700 bg-slate-800/60 p-3">
+            <p class="text-xs uppercase tracking-wide text-slate-400">Active Links</p>
+            <p class="text-xl font-bold text-white mt-1">${activeLinks}</p>
+          </div>
+        </div>
+
+        <form action="/requests/users/${id}/credits" method="POST" class="mt-4 flex gap-2 items-end">
+          <input type="hidden" name="returnTo" value="${escapedReturnTo}">
+          <label class="flex-1">
+            <span class="text-xs uppercase tracking-wide text-slate-400">Credits</span>
+            <input
+              name="winnerCount"
+              type="number"
+              min="0"
+              step="1"
+              value="${winnerCount}"
+              required
+              class="mt-1 w-full px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500"
+            >
+          </label>
+          <button
+            type="submit"
+            class="px-4 py-2.5 rounded-xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-600 hover:text-white transition font-semibold text-sm"
+          >
+            Update
+          </button>
+        </form>
+
+        <div class="mt-4 flex flex-wrap gap-2">
+          <a href="/requests/userProfile/${id}" class="px-4 py-2 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-600 hover:text-white transition text-sm font-semibold">
+            View Profile
+          </a>
+          <a href="/requests/userProfileHistory/${id}" class="px-4 py-2 rounded-xl bg-slate-700 border border-slate-600 text-slate-200 hover:bg-slate-600 transition text-sm font-semibold">
+            View History
+          </a>
+        </div>
+      </article>
+    `;
+  }
+
+  if (loadMoreBtn && usersGrid) {
+    loadMoreBtn.addEventListener("click", async function () {
+      const nextPage = Number.parseInt(loadMoreBtn.dataset.nextPage || "0", 10);
+      const searchValue = String(loadMoreBtn.dataset.search || "");
+      const returnToBase = String(loadMoreBtn.dataset.returnBase || "/requests/users");
+      if (!nextPage) return;
+
+      const currentLabel = loadMoreBtn.textContent;
+      loadMoreBtn.disabled = true;
+      loadMoreBtn.textContent = "Loading...";
+
+      try {
+        const query = new URLSearchParams();
+        query.set("page", String(nextPage));
+        if (searchValue) query.set("search", searchValue);
+
+        const response = await fetch(`/requests/users/load?${query.toString()}`, {
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
+        if (!response.ok) throw new Error("Request failed");
+        const payload = await response.json();
+        if (!payload || payload.ok !== true || !Array.isArray(payload.users)) {
+          throw new Error("Invalid response");
+        }
+
+        const nextReturnToPath = searchValue
+          ? `${returnToBase.split("&page=")[0]}&page=${nextPage}`
+          : `/requests/users?page=${nextPage}`;
+
+        payload.users.forEach((item) => {
+          usersGrid.insertAdjacentHTML("beforeend", buildUserCard(item, nextReturnToPath));
+        });
+
+        if (payload.hasMore && payload.nextPage) {
+          loadMoreBtn.dataset.nextPage = String(payload.nextPage);
+          loadMoreBtn.disabled = false;
+          loadMoreBtn.textContent = currentLabel;
+          return;
+        }
+
+        loadMoreBtn.classList.add("hidden");
+      } catch (_error) {
+        loadMoreBtn.disabled = false;
+        loadMoreBtn.textContent = "Try Again";
+      }
+    });
+  }
+</script>

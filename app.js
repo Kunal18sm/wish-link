@@ -15,6 +15,12 @@ const path = require("path");
 const { createWindowRateLimiter } = require("./utils/rateLimiter.js");
 const { toOptimizedCloudinaryUrl } = require("./utils/cloudinaryUrl.js");
 const {
+  getCreditDateKey,
+  getDailyRewardCredits,
+  getCreditWeekdayKey,
+  DAILY_REWARD_BY_DAY,
+} = require("./utils/creditUtils.js");
+const {
   extractTokenFromRequest,
   verifyAuthToken,
   clearAuthCookie,
@@ -38,12 +44,20 @@ const io = new Server(server);
 const PORT = process.env.PORT || 8080;
 const SITE_URL = (process.env.SITE_URL || "https://wishlink-7j0a.onrender.com").replace(/\/+$/, "");
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || "";
+const ASSET_VERSION = process.env.ASSET_VERSION || "20260327a";
 const MUTATING_REQUEST_WINDOW_MS = Number(process.env.MUTATING_REQUEST_WINDOW_MS || 10 * 60 * 1000);
 const MUTATING_REQUEST_LIMIT = Number(process.env.MUTATING_REQUEST_LIMIT || 5);
 const MUTATING_REQUEST_WINDOW_MINUTES = Math.max(1, Math.round(MUTATING_REQUEST_WINDOW_MS / (60 * 1000)));
 const RATE_LIMIT_MESSAGE = `Rate limit exceeded: ${MUTATING_REQUEST_LIMIT} requests allowed every ${MUTATING_REQUEST_WINDOW_MINUTES} minutes.`;
 let permanentDbConnection = null;
 const socketChatRateStore = new Map();
+
+function shouldSkipGlobalRateLimit(req) {
+  const requestPath = String(req.path || "");
+  if (requestPath === "/credits/claim-daily") return true;
+  if (requestPath.startsWith("/web/template/") && requestPath.endsWith("/preview/unlock")) return true;
+  return false;
+}
 
 app.locals.permanentPurchasedWeb = null;
 function getResponsiveWidth(variant) {
@@ -123,7 +137,7 @@ const staticAssetCacheControl = (res, filePath) => {
   }
 
   if ([".css", ".js", ".mjs", ".json", ".webmanifest"].includes(ext)) {
-    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.setHeader("Cache-Control", "public, max-age=604800, stale-while-revalidate=86400");
     return;
   }
 
@@ -228,7 +242,10 @@ const mutatingRequestLimiter = createWindowRateLimiter({
     if (req.user?._id) return `user:${req.user._id}`;
     return `ip:${req.ip || req.socket?.remoteAddress || "unknown"}`;
   },
-  skip: (req) => !["POST", "PUT", "PATCH", "DELETE"].includes(req.method),
+  skip: (req) =>
+    req.user?.isAdmin ||
+    shouldSkipGlobalRateLimit(req) ||
+    !["POST", "PUT", "PATCH", "DELETE"].includes(req.method),
   onLimitReached: (req, res, entry) => {
     const retryAfterSeconds = Math.max(1, Math.ceil((entry.resetAt - Date.now()) / 1000));
     res.setHeader("Retry-After", String(retryAfterSeconds));
@@ -258,12 +275,28 @@ setInterval(() => {
 }, Math.max(MUTATING_REQUEST_WINDOW_MS, 60 * 1000)).unref();
 
 app.use((req, res, next) => {
+  const todayCreditDateKey = getCreditDateKey();
+  const hasClaimedDailyCredit =
+    String(req.user?.dailyCreditClaim?.dateKey || "") === todayCreditDateKey;
+
   res.locals.success = req.flash("success");
   res.locals.error = req.flash("error");
   res.locals.currUser = req.user;
+  res.locals.userCredits = Number(req.user?.winnerCount || 0);
   res.locals.hideFooter = false;
   res.locals.chatLayout = false;
+  res.locals.showInstallPrompt = req.path === "/";
+  res.locals.todayCreditDateKey = todayCreditDateKey;
+  res.locals.dailyRewardByDay = DAILY_REWARD_BY_DAY;
+  res.locals.dailyCreditReward =
+    req.user && !req.user.isAdmin && !hasClaimedDailyCredit
+      ? {
+          credits: getDailyRewardCredits(),
+          todayKey: getCreditWeekdayKey(),
+        }
+      : null;
   res.locals.googleClientId = GOOGLE_CLIENT_ID;
+  res.locals.assetVersion = ASSET_VERSION;
   res.locals.getOptimizedCloudinaryUrl = app.locals.getOptimizedCloudinaryUrl;
   res.locals.getResponsiveCloudinarySrcSet = app.locals.getResponsiveCloudinarySrcSet;
   next();
@@ -400,8 +433,8 @@ io.on("connection", (socket) => {
 
   socket.on("sendChatMessage", async (payload = {}, cb) => {
     try {
-      const socketRateState = getSocketRateState(socket.user?._id);
-      if (socketRateState.count > MUTATING_REQUEST_LIMIT) {
+      const socketRateState = socket.user?.isAdmin ? null : getSocketRateState(socket.user?._id);
+      if (socketRateState && socketRateState.count > MUTATING_REQUEST_LIMIT) {
         if (typeof cb === "function") {
           cb({
             ok: false,

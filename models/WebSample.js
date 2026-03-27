@@ -46,6 +46,20 @@ const WebSampleSchema = new Schema({
     type: Number,
     default: 39,
   },
+  previewCredits: {
+    type: Number,
+    default: 1,
+    min: 0,
+  },
+  purchaseCredits: {
+    type: Number,
+    default: 1,
+    min: 0,
+  },
+  priority: {
+    type: Number,
+    default: 0,
+  },
 
 })
 

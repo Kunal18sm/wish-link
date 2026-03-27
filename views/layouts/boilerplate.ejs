@@ -15,18 +15,36 @@
         })();
     </script>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/output.css">
-    <link rel="stylesheet" href="/design.css">
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-L0F12E1ENT"></script>
+    <link rel="stylesheet" href="/output.css?v=<%= assetVersion %>">
+    <link rel="stylesheet" href="/design.css?v=<%= assetVersion %>">
+    <!-- Google Analytics (lazy loaded after page becomes idle) -->
     <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag() { dataLayer.push(arguments); }
-        gtag('js', new Date());
-        gtag('config', 'G-L0F12E1ENT');
+        (function () {
+            var gaLoaded = false;
+
+            function loadGa() {
+                if (gaLoaded) return;
+                gaLoaded = true;
+
+                window.dataLayer = window.dataLayer || [];
+                window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+                window.gtag("js", new Date());
+                window.gtag("config", "G-L0F12E1ENT");
+
+                var gaScript = document.createElement("script");
+                gaScript.async = true;
+                gaScript.src = "https://www.googletagmanager.com/gtag/js?id=G-L0F12E1ENT";
+                document.head.appendChild(gaScript);
+            }
+
+            window.addEventListener("load", function () {
+                if ("requestIdleCallback" in window) {
+                    window.requestIdleCallback(loadGa, { timeout: 2500 });
+                } else {
+                    setTimeout(loadGa, 1200);
+                }
+            }, { once: true });
+        })();
     </script>
 </head>
 
@@ -36,35 +54,271 @@
 
         <%- include("../includes/flash.ejs") %>
 
-            <div id="installPromptBackdrop" class="fixed inset-0 hidden"
-                style="z-index:220;background:rgba(2,6,23,0.72);"></div>
-            <div id="installPromptModal" class="fixed hidden"
-                style="z-index:230;top:10px;left:50%;transform:translateX(-50%);width:min(94%,560px);background:rgba(15,23,42,0.98);border:1px solid rgba(99,102,241,0.45);border-radius:14px;box-shadow:0 18px 46px rgba(2,6,23,0.58);padding:14px 16px;">
-                <div class="flex items-start gap-4">
-                    <img src="/assets/vishlink_logo.png" alt="VishLink app logo" class="rounded-xl object-cover"
-                        style="width:52px;height:52px;">
-                    <div class="flex-1">
-                        <h3 class="text-white font-semibold leading-tight" style="font-size:1.05rem;">Install VishLink</h3>
-                        <p id="installPromptMessage" class="mt-1 text-slate-300 leading-relaxed" style="font-size:0.92rem;">
-                            Install VishLink in one click.
-                        </p>
+            <% if (showInstallPrompt) { %>
+                <div id="installPromptBackdrop" class="fixed inset-0 hidden"
+                    style="z-index:220;background:rgba(2,6,23,0.01);"></div>
+                <div id="installPromptModal" class="fixed hidden"
+                    style="z-index:230;top:10px;left:50%;transform:translateX(-50%);width:min(94%,560px);background:rgba(15,23,42,0.98);border:1px solid rgba(99,102,241,0.45);border-radius:14px;box-shadow:0 18px 46px rgba(2,6,23,0.58);padding:14px 16px;">
+                    <div class="flex items-start gap-4">
+                        <img src="/assets/icon-192.png" alt="VishLink app logo" loading="lazy" decoding="async" width="52"
+                            height="52" class="rounded-xl object-cover" style="width:52px;height:52px;">
+                        <div class="flex-1">
+                            <h3 class="text-white font-semibold leading-tight" style="font-size:1.05rem;">Install VishLink</h3>
+                            <p id="installPromptMessage" class="mt-1 text-slate-300 leading-relaxed" style="font-size:0.92rem;">
+                                Install VishLink in one click.
+                            </p>
+                        </div>
+                        <button id="installPromptCloseBtn" type="button"
+                            aria-label="Close install prompt"
+                            class="text-slate-300 hover:text-white transition leading-none flex items-center justify-center rounded-lg"
+                            style="font-size:1.35rem;width:44px;height:44px;">&times;</button>
                     </div>
-                    <button id="installPromptCloseBtn" type="button"
-                        class="text-slate-300 hover:text-white transition leading-none" style="font-size:1.35rem;">&times;</button>
+                    <div class="mt-3 flex flex-wrap items-center justify-end gap-2">
+                        <button id="installPromptLaterBtn" type="button"
+                            class="rounded-lg border border-slate-600 text-slate-300 hover:border-slate-400 hover:text-white transition min-h-[44px]"
+                            style="padding:7px 14px;font-size:0.86rem;min-width:96px;">
+                            Later
+                        </button>
+                        <button id="installPromptInstallBtn" type="button"
+                            class="rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-500 transition min-h-[44px]"
+                            style="padding:7px 16px;font-size:0.88rem;min-width:96px;">
+                            Install
+                        </button>
+                    </div>
                 </div>
-                <div class="mt-3 flex flex-wrap items-center justify-end gap-2">
-                    <button id="installPromptLaterBtn" type="button"
-                        class="rounded-lg border border-slate-600 text-slate-300 hover:border-slate-400 hover:text-white transition"
-                        style="padding:7px 14px;font-size:0.86rem;">
-                        Later
-                    </button>
-                    <button id="installPromptInstallBtn" type="button"
-                        class="rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-500 transition"
-                        style="padding:7px 16px;font-size:0.88rem;">
-                        Install
-                    </button>
+                <style>
+                    html[data-theme="light"] #installPromptBackdrop {
+                        background: rgba(244, 114, 182, 0.18) !important;
+                    }
+                    html[data-theme="light"] #installPromptModal {
+                        background: rgba(255, 248, 250, 0.98) !important;
+                        border-color: rgba(225, 29, 72, 0.24) !important;
+                        box-shadow: 0 18px 46px rgba(190, 24, 93, 0.2) !important;
+                    }
+                    html[data-theme="light"] #installPromptModal h3,
+                    html[data-theme="light"] #installPromptModal p,
+                    html[data-theme="light"] #installPromptModal #installPromptCloseBtn {
+                        color: #5b2a40 !important;
+                    }
+                    html[data-theme="light"] #installPromptModal #installPromptLaterBtn {
+                        color: #7a3f57 !important;
+                        border-color: rgba(225, 29, 72, 0.24) !important;
+                    }
+                    html[data-theme="light"] #installPromptModal #installPromptLaterBtn:hover {
+                        background: rgba(251, 113, 133, 0.14) !important;
+                        color: #4b1f33 !important;
+                    }
+                    html[data-theme="light"] #installPromptModal #installPromptInstallBtn {
+                        background: linear-gradient(135deg, #f43f5e, #fb7185) !important;
+                        color: #fff7f9 !important;
+                    }
+                </style>
+            <% } %>
+
+            <% if (dailyCreditReward && showInstallPrompt) { %>
+                <style>
+                    #dailyRewardModal {
+                        font-family: 'Poppins', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+                        width: min(94vw, 390px);
+                        background: linear-gradient(148deg, #0f172a 0%, #1e1b4b 52%, #312e81 100%);
+                        border: 1px solid rgba(250, 204, 21, 0.32);
+                        box-shadow: 0 28px 72px rgba(2, 6, 23, 0.78), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+                    }
+                    #dailyRewardModal::before {
+                        content: "";
+                        position: absolute;
+                        inset: -1px;
+                        border-radius: inherit;
+                        background:
+                            radial-gradient(circle at 16% 14%, rgba(251, 191, 36, 0.22), transparent 34%),
+                            radial-gradient(circle at 85% 20%, rgba(59, 130, 246, 0.22), transparent 36%),
+                            radial-gradient(circle at 50% 95%, rgba(236, 72, 153, 0.16), transparent 42%);
+                        opacity: 0.9;
+                        pointer-events: none;
+                    }
+                    #dailyRewardModal > * {
+                        position: relative;
+                        z-index: 1;
+                    }
+                    #dailyRewardModal .day-box {
+                        transition: all 0.22s ease;
+                        background: linear-gradient(180deg, rgba(30, 41, 59, 0.86), rgba(15, 23, 42, 0.88));
+                        border: 1px solid rgba(148, 163, 184, 0.25);
+                        min-width: 0;
+                    }
+                    #dailyRewardModal .day-box:hover:not(.claimed):not(.locked) {
+                        transform: translateY(-3px) scale(1.03);
+                        background: linear-gradient(180deg, rgba(51, 65, 85, 0.95), rgba(15, 23, 42, 0.92));
+                        border-color: rgba(251, 191, 36, 0.38);
+                    }
+                    #dailyRewardModal .claimed {
+                        background: linear-gradient(180deg, rgba(20, 83, 45, 0.6), rgba(15, 23, 42, 0.88));
+                        border-color: rgba(34, 197, 94, 0.5);
+                    }
+                    #dailyRewardModal .active-day {
+                        border: 2px solid rgba(251, 191, 36, 0.85);
+                        background: linear-gradient(180deg, rgba(217, 119, 6, 0.34), rgba(15, 23, 42, 0.92));
+                        box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.15), 0 14px 20px rgba(2, 6, 23, 0.45);
+                    }
+                    @keyframes bounce-slow {
+                        0%, 100% { transform: translateY(0); }
+                        50% { transform: translateY(-5px); }
+                    }
+                    #dailyRewardModal .coin-float {
+                        animation: bounce-slow 2s ease-in-out infinite;
+                    }
+                    #dailyRewardModal .reward-grid {
+                        display: grid;
+                        grid-template-columns: repeat(3, minmax(0, 1fr));
+                        gap: 0.75rem;
+                    }
+                    #dailyRewardModal .reward-coin {
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: auto;
+                        height: auto;
+                        border: none;
+                        background: transparent;
+                        box-shadow: none;
+                    }
+                    #dailyRewardModal .reward-coin::after {
+                        content: none;
+                    }
+                    #dailyRewardModal .reward-coin img {
+                        position: relative;
+                        z-index: 1;
+                        width: 1.5rem;
+                        height: 1.5rem;
+                    }
+                    #dailyRewardModal .reward-coin.reward-coin--muted {
+                        border: none;
+                        background: transparent;
+                        box-shadow: none;
+                    }
+                    #dailyRewardModal .reward-coin.reward-coin--muted img {
+                        filter: grayscale(1) opacity(0.55);
+                    }
+
+                    html[data-theme="light"] #dailyRewardModal {
+                        background: linear-gradient(148deg, #fff8fa 0%, #ffeef4 52%, #ffe6ee 100%) !important;
+                        border-color: rgba(225, 29, 72, 0.28) !important;
+                        box-shadow: 0 24px 54px rgba(190, 24, 93, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.65) !important;
+                    }
+                    html[data-theme="light"] #dailyRewardModal::before {
+                        background:
+                            radial-gradient(circle at 16% 14%, rgba(251, 113, 133, 0.2), transparent 36%),
+                            radial-gradient(circle at 85% 20%, rgba(251, 146, 60, 0.18), transparent 38%),
+                            radial-gradient(circle at 50% 95%, rgba(244, 114, 182, 0.16), transparent 42%) !important;
+                    }
+                    html[data-theme="light"] #dailyRewardModal .day-box {
+                        background: linear-gradient(180deg, rgba(255, 251, 252, 0.97), rgba(255, 240, 244, 0.95)) !important;
+                        border-color: rgba(225, 29, 72, 0.18) !important;
+                    }
+                    html[data-theme="light"] #dailyRewardModal .day-box:hover:not(.claimed):not(.locked) {
+                        background: linear-gradient(180deg, rgba(255, 244, 248, 1), rgba(255, 233, 239, 0.98)) !important;
+                        border-color: rgba(225, 29, 72, 0.3) !important;
+                    }
+                    html[data-theme="light"] #dailyRewardModal .claimed {
+                        background: linear-gradient(180deg, rgba(217, 249, 228, 0.95), rgba(236, 253, 245, 0.98)) !important;
+                        border-color: rgba(22, 163, 74, 0.35) !important;
+                    }
+                    html[data-theme="light"] #dailyRewardModal .active-day {
+                        border-color: rgba(225, 29, 72, 0.52) !important;
+                        background: linear-gradient(180deg, rgba(255, 230, 238, 0.98), rgba(255, 244, 247, 0.96)) !important;
+                        box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.14), 0 12px 18px rgba(190, 24, 93, 0.16) !important;
+                    }
+                    html[data-theme="light"] #dailyRewardModal h2,
+                    html[data-theme="light"] #dailyRewardModal p,
+                    html[data-theme="light"] #dailyRewardModal span {
+                        color: #5b2a40 !important;
+                    }
+                    html[data-theme="light"] #dailyRewardModal #dailyRewardClaimBtn {
+                        background: linear-gradient(135deg, #f43f5e, #fb7185) !important;
+                        color: #fff7f9 !important;
+                    }
+                    html[data-theme="light"] #dailyRewardToast {
+                        background: rgba(255, 245, 247, 0.98) !important;
+                        border-color: rgba(225, 29, 72, 0.26) !important;
+                        box-shadow: 0 16px 38px rgba(190, 24, 93, 0.18) !important;
+                    }
+                    html[data-theme="light"] #dailyRewardToast span {
+                        color: #6b2541 !important;
+                    }
+                </style>
+
+                <% const coinIconPath = `/assets/icons/coin.svg?v=${assetVersion}`; %>
+                <% const checkIconPath = "/assets/icons/check-circle.svg"; %>
+                <% const rewardDays = [
+                    { key: "mon", label: "Mon", credits: Number(dailyRewardByDay?.mon || 1) },
+                    { key: "tue", label: "Tue", credits: Number(dailyRewardByDay?.tue || 1) },
+                    { key: "wed", label: "Wed", credits: Number(dailyRewardByDay?.wed || 1) },
+                    { key: "thu", label: "Thu", credits: Number(dailyRewardByDay?.thu || 1) },
+                    { key: "fri", label: "Fri", credits: Number(dailyRewardByDay?.fri || 1) },
+                    { key: "sat", label: "Sat", credits: Number(dailyRewardByDay?.sat || 2) },
+                    { key: "sun", label: "Sun", credits: Number(dailyRewardByDay?.sun || 3) },
+                ]; %>
+                <% const dayOrder = ["mon","tue","wed","thu","fri","sat","sun"]; %>
+                <% const normalizedTodayIndex = Math.max(0, dayOrder.indexOf(dailyCreditReward.todayKey)); %>
+                <% const todayKey = dayOrder[normalizedTodayIndex] || "mon"; %>
+                <% const progressPercent = Math.max(0, Math.round((normalizedTodayIndex / 7) * 100)); %>
+                <div id="dailyRewardStack" data-date-key="<%= todayCreditDateKey %>" class="fixed inset-0 px-3 flex justify-center items-start pointer-events-auto" style="z-index:45;padding-top:74px;">
+                    <div id="dailyRewardModal"
+                        class="rounded-2xl px-4 pb-4 pt-3 text-white relative overflow-hidden pointer-events-auto">
+                        <div class="absolute -top-12 -right-12 w-24 h-24 bg-yellow-500/10 blur-3xl rounded-full pointer-events-none"></div>
+
+                        <div class="flex mt-8 mb-8 justify-between items-center mb-4 relative">
+                            <div>
+                                <h2 class="text-xl font-bold text-yellow-400">Daily Gifts</h2>
+                                <p class="text-[10px] text-slate-300 uppercase tracking-widest">Claim your rewards</p>
+                            </div>
+                            <div class="bg-slate-950/45 px-3 py-1.5 rounded-2xl border border-yellow-300/20 flex items-center gap-2">
+                                <div class="reward-coin">
+                                    <img src="<%= coinIconPath %>" alt="coin" width="17" height="17" loading="eager" decoding="async">
+                                </div>
+                                <span id="balance" class="text-sm font-bold tracking-tight"><%= Number(userCredits || 0).toLocaleString("en-IN") %></span>
+                            </div>
+                        </div>
+
+                        <div class="reward-grid mb-5 relative">
+                            <% rewardDays.forEach((dayReward, idx) => { const isToday = dayReward.key === todayKey; const isClaimed = normalizedTodayIndex > idx; const isLocked = normalizedTodayIndex < idx; %>
+                                <div class="day-box rounded-2xl p-3 flex flex-col items-center justify-center text-center <%= isToday ? 'active-day cursor-pointer group' : '' %> <%= isClaimed ? 'claimed' : '' %> <%= isLocked ? 'locked opacity-60' : '' %>"
+                                    <%= isToday ? `id="dailyRewardActiveDay" data-day-label="${dayReward.label}"` : "" %>>
+                                    <span class="text-[10px] font-semibold <%= isToday ? 'text-yellow-300' : 'text-slate-300' %> mb-2"><%= dayReward.label %></span>
+                                    <% if (isClaimed) { %>
+                                        <img src="<%= checkIconPath %>" alt="claimed" width="24" height="24" loading="lazy" decoding="async" class="h-6 w-6">
+                                        <span class="text-[9px] mt-2 font-bold text-green-400 uppercase">Done</span>
+                                    <% } else if (isToday) { %>
+                                        <div class="coin-float">
+                                            <div class="reward-coin">
+                                                <img src="<%= coinIconPath %>" alt="coin" width="17" height="17" loading="eager" decoding="async">
+                                            </div>
+                                        </div>
+                                        <span class="text-[9px] mt-1 font-bold text-yellow-300">+<%= dayReward.credits %></span>
+                                        <button id="dailyRewardClaimBtn" type="button"
+                                            class="mt-2 text-[9px] font-black bg-yellow-500 text-indigo-950 px-3 py-1 rounded-lg uppercase">
+                                            Claim
+                                        </button>
+                                    <% } else { %>
+                                        <div class="reward-coin reward-coin--muted">
+                                            <img src="<%= coinIconPath %>" alt="coin" width="17" height="17" loading="lazy" decoding="async">
+                                        </div>
+                                        <span class="text-[9px] mt-2 font-bold text-slate-400">+<%= dayReward.credits %></span>
+                                        <span class="text-[8px] mt-1 font-bold text-slate-500 uppercase">Locked</span>
+                                    <% } %>
+                                </div>
+                            <% }); %>
+                        </div>
+
+                        <p id="dailyRewardFeedback" class="mt-3 text-center text-xs text-rose-300 hidden"></p>
+                    </div>
                 </div>
-            </div>
+
+                <div id="dailyRewardToast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-emerald-950/95 px-5 py-3 rounded-2xl border border-emerald-400/35 flex items-center gap-3 transform translate-y-32 opacity-0 transition-all duration-500 z-[280] pointer-events-none shadow-[0_16px_42px_rgba(2,6,23,0.75)]">
+                    <img src="<%= checkIconPath %>" alt="success" width="24" height="24" loading="lazy" decoding="async" class="h-6 w-6">
+                    <span class="text-xs font-semibold">+<span id="dailyRewardToastValue">0</span> Coins Collected!</span>
+                </div>
+            <% } %>
 
             <%- (typeof body !== "undefined" ? body : "") %>
 
@@ -72,8 +326,13 @@
                     <%- include("../includes/footer.ejs") %>
                 <% } %>
 
-                    <script src="/installPrompt.js?v=20260326a"></script>
-                    <script src="/script.js"></script>
+                    <script defer src="/script.js?v=<%= assetVersion %>"></script>
+                    <% if (showInstallPrompt) { %>
+                        <script defer src="/installPrompt.js?v=<%= assetVersion %>"></script>
+                    <% } %>
+                    <% if (dailyCreditReward && showInstallPrompt) { %>
+                        <script defer src="/dailyReward.js?v=<%= assetVersion %>"></script>
+                    <% } %>
 </body>
 
 </html>

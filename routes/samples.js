@@ -9,6 +9,7 @@ const wrapAsync = require("../utils/wrapAsync.js");
 const { isLoggedIn } = require("../middleware.js");
 const contactSchema = require("../models/contact.js");
 const { createAuthToken, setAuthCookie, clearAuthCookie } = require("../utils/jwtAuth.js");
+const { getCreditDateKey, getDailyRewardCredits } = require("../utils/creditUtils.js");
 
 const SITE_URL = (process.env.SITE_URL || "https://wishlink-7j0a.onrender.com").replace(/\/+$/, "");
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || "";
@@ -17,6 +18,21 @@ const REQUEST_SCOPE = {
   DEFAULT: "default",
   PERMANENT: "permanent",
 };
+const NEW_SIGNUP_CREDITS = 15;
+const HERO_PRIMARY_IMAGE =
+  "https://res.cloudinary.com/drzq6kjgp/image/upload/v1770794063/Gemini_Generated_Image_4qzfxy4qzfxy4qzf_l5tidy.png";
+
+function buildLcpImageMeta(res, cloudinaryUrl) {
+  if (!res?.locals?.getOptimizedCloudinaryUrl || !res?.locals?.getResponsiveCloudinarySrcSet) {
+    return {};
+  }
+
+  return {
+    lcpImageUrl: res.locals.getOptimizedCloudinaryUrl(cloudinaryUrl, "card"),
+    lcpImageSrcSet: res.locals.getResponsiveCloudinarySrcSet(cloudinaryUrl, "card"),
+    lcpImageSizes: "(max-width: 768px) 80vw, 30vw",
+  };
+}
 
 function makeUsernameSlug(rawValue) {
   const normalized = String(rawValue || "")
@@ -66,10 +82,11 @@ async function loadMergedPurchases(req, authorId) {
 // home route
 router.get("/", wrapAsync(async (req, res) => {
   res.locals.message = req.flash("success");
-  const allSamples = await WebSample.find().sort({ _id: -1 });
+  const allSamples = await WebSample.find().sort({ priority: -1, _id: -1 });
 
   res.render("home", {
     allSamples,
+    ...buildLcpImageMeta(res, HERO_PRIMARY_IMAGE),
     title: "Create Personalized Wishing Websites | VishLink",
     description: "Create beautiful personalized birthday, anniversary and love wishing websites. Share a unique link instantly.",
     canonical: `${SITE_URL}/`,
@@ -90,11 +107,12 @@ router.get("/category/:tag", wrapAsync(async (req, res) => {
   const encodedTag = encodeURIComponent(normalizedTag);
 
   res.locals.message = req.flash("success");
-  const allSamples = await WebSample.find({ tags: normalizedTag }).sort({ _id: -1 });
+  const allSamples = await WebSample.find({ tags: normalizedTag }).sort({ priority: -1, _id: -1 });
 
   res.render("collection", {
     allSamples,
     activeTag: normalizedTag,
+    ...buildLcpImageMeta(res, HERO_PRIMARY_IMAGE),
     title: `${normalizedTag} Wishing Websites | VishLink`,
     description: `Create personalized ${normalizedTag} wishing websites and share memorable moments.`,
     canonical: `${SITE_URL}/category/${encodedTag}`,
@@ -127,12 +145,16 @@ router.get("/signUpForm", wrapAsync(async (req, res) => {
 router.post("/signUp", wrapAsync(async (req, res) => {
   try {
     const { username, password, email } = req.body;
-    const newUser = new user({ email, username });
+    const newUser = new user({
+      email,
+      username,
+      winnerCount: NEW_SIGNUP_CREDITS,
+    });
 
     const registeredUser = await user.register(newUser, password);
     const token = createAuthToken(registeredUser);
     setAuthCookie(res, token);
-    req.flash("success", "Welcome to VishLink");
+    req.flash("success", `Welcome to VishLink! +${NEW_SIGNUP_CREDITS} coins added.`);
     return res.redirect("/");
   } catch (err) {
     req.flash("error", err.message);
@@ -181,7 +203,11 @@ router.post("/auth/google", wrapAsync(async (req, res) => {
     let existingUser = await user.findOne({ email });
     if (!existingUser) {
       const username = await buildUniqueUsername(payload.name || email.split("@")[0] || "vishlink");
-      const newUser = new user({ email, username });
+      const newUser = new user({
+        email,
+        username,
+        winnerCount: NEW_SIGNUP_CREDITS,
+      });
       const randomPassword = crypto.randomBytes(32).toString("hex");
       existingUser = await user.register(newUser, randomPassword);
     }
@@ -232,6 +258,67 @@ router.post("/login", wrapAsync(async (req, res) => {
   return res.redirect("/");
 }));
 
+router.post("/credits/claim-daily", isLoggedIn, wrapAsync(async (req, res) => {
+  const todayDateKey = getCreditDateKey();
+  const rewardCredits = getDailyRewardCredits();
+  const acceptHeader = String(req.get("accept") || "");
+  const wantsJson = req.xhr || acceptHeader.includes("application/json");
+
+  const updatedUser = await user.findOneAndUpdate(
+    {
+      _id: req.user._id,
+      "dailyCreditClaim.dateKey": { $ne: todayDateKey },
+    },
+    {
+      $inc: { winnerCount: rewardCredits },
+      $set: {
+        dailyCreditClaim: {
+          dateKey: todayDateKey,
+          amount: rewardCredits,
+          claimedAt: new Date(),
+        },
+      },
+    },
+    {
+      new: true,
+      projection: { winnerCount: 1 },
+    }
+  );
+
+  if (!updatedUser) {
+    const message = "Daily reward already claimed for today.";
+    if (wantsJson) {
+      return res.status(409).json({
+        ok: false,
+        message,
+      });
+    }
+
+    req.flash("error", message);
+    return res.redirect(req.get("Referrer") || "/");
+  }
+
+  req.user.winnerCount = Number(updatedUser.winnerCount || 0);
+  req.user.dailyCreditClaim = {
+    dateKey: todayDateKey,
+    amount: rewardCredits,
+    claimedAt: new Date(),
+  };
+
+  if (wantsJson) {
+    return res.json({
+      ok: true,
+      message: `Daily reward claimed: +${rewardCredits} credits.`,
+      claimedCredits: rewardCredits,
+      claimedDateKey: todayDateKey,
+      totalCredits: Number(updatedUser.winnerCount || 0),
+    });
+  }
+
+  req.flash("success", `Daily reward claimed: +${rewardCredits} credits.`);
+  return res.redirect(req.get("Referrer") || "/");
+}));
+
 // logOut
 router.get("/logout", isLoggedIn, (req, res) => {
   clearAuthCookie(res);
@@ -245,6 +332,8 @@ router.get("/profile", isLoggedIn, async (req, res) => {
   const viewHistory = false;
 
   res.render("profile", {
+    profileUser: req.user,
+    totalLinksCreated: req.user.webCollection?.length || 0,
     purchasedLinks,
     viewHistory,
     title: "My Profile - VishLink",
@@ -260,6 +349,8 @@ router.get("/viewHistory", isLoggedIn, async (req, res) => {
   const viewHistory = true;
 
   res.render("profile", {
+    profileUser: req.user,
+    totalLinksCreated: req.user.webCollection?.length || 0,
     purchasedLinks,
     viewHistory,
     title: "My Profile - VishLink",

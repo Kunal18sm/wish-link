@@ -1,13 +1,16 @@
-const STATIC_CACHE_NAME = "vishlink-static-v5";
+const STATIC_CACHE_NAME = "vishlink-static-v9";
 const STATIC_ASSETS = [
-  "/design.css",
-  "/output.css",
-  "/installPrompt.js?v=20260326a",
-  "/script.js",
-  "/manifest.webmanifest",
-  "/assets/vishlink_logo.png",
+  "/design.css?v=20260327a",
+  "/output.css?v=20260327a",
+  "/installPrompt.js?v=20260327a",
+  "/script.js?v=20260327a",
+  "/homeCollection.js?v=20260327a",
+  "/dailyReward.js?v=20260327a",
+  "/manifest.webmanifest?v=20260327a",
   "/assets/icon-192.png",
   "/assets/icon-512.png",
+  "/assets/icons/coin.svg",
+  "/assets/icons/check-circle.svg",
 ];
 
 self.addEventListener("install", (event) => {
@@ -47,9 +50,19 @@ function shouldUseNetworkFirst(requestUrl) {
 function putInCache(request, response) {
   if (!response || response.status !== 200) return;
 
-  caches.open(STATIC_CACHE_NAME).then((cache) => {
-    cache.put(request, response.clone());
-  });
+  // Clone immediately before the response body is consumed by the browser.
+  let responseClone = null;
+  try {
+    responseClone = response.clone();
+  } catch (_err) {
+    return;
+  }
+
+  caches.open(STATIC_CACHE_NAME)
+    .then((cache) => cache.put(request, responseClone))
+    .catch(() => {
+      // Ignore cache write failures.
+    });
 }
 
 self.addEventListener("fetch", (event) => {

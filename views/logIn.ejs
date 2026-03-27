@@ -14,22 +14,42 @@
         })();
     </script>
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/output.css">
-    <link rel="stylesheet" href="/design.css">
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-L0F12E1ENT"></script>
+    <link rel="stylesheet" href="/output.css?v=<%= assetVersion %>">
+    <link rel="stylesheet" href="/design.css?v=<%= assetVersion %>">
+    <!-- Google Analytics (lazy loaded after page becomes idle) -->
     <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag() { dataLayer.push(arguments); }
-        gtag('js', new Date());
-        gtag('config', 'G-L0F12E1ENT');
+        (function () {
+            var gaLoaded = false;
+
+            function loadGa() {
+                if (gaLoaded) return;
+                gaLoaded = true;
+
+                window.dataLayer = window.dataLayer || [];
+                window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+                window.gtag("js", new Date());
+                window.gtag("config", "G-L0F12E1ENT");
+
+                var gaScript = document.createElement("script");
+                gaScript.async = true;
+                gaScript.src = "https://www.googletagmanager.com/gtag/js?id=G-L0F12E1ENT";
+                document.head.appendChild(gaScript);
+            }
+
+            window.addEventListener("load", function () {
+                if ("requestIdleCallback" in window) {
+                    window.requestIdleCallback(loadGa, { timeout: 2500 });
+                } else {
+                    setTimeout(loadGa, 1200);
+                }
+            }, { once: true });
+        })();
     </script>
     <% if (googleClientId) { %>
       <script src="https://accounts.google.com/gsi/client" async defer></script>
     <% } %>
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: "Segoe UI", "Roboto", "Helvetica Neue", Arial, system-ui, sans-serif; }
         .glass-box {
             background: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(16px);

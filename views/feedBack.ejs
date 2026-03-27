@@ -67,7 +67,7 @@
                         <div class="flex items-start gap-4 mb-4">
                             <div class="shrink-0 w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 overflow-hidden">
                                 <img src="https://api.dicebear.com/7.x/initials/svg?seed=<%= feedback.userName %>&backgroundColor=1e293b" 
-                                     alt="Avatar" class="w-full h-full object-cover">
+                                     alt="<%= feedback.userName %> avatar" loading="lazy" decoding="async" width="40" height="40" class="w-full h-full object-cover">
                             </div>
                             <div class="min-w-0">
                                 <h3 class="font-bold text-slate-100 truncate" title="<%= feedback.userName %>">

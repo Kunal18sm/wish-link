@@ -1,0 +1,288 @@
+<% layout("/layouts/boilerplate") %>
+
+<style>
+  .font-body {
+    font-family: "Segoe UI", "Roboto", "Helvetica Neue", Arial, system-ui, sans-serif;
+  }
+
+  .form-input {
+    background-color: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(71, 85, 105, 0.5);
+    transition: all 0.3s ease;
+  }
+
+  .form-input:focus {
+    background-color: rgba(30, 41, 59, 0.8);
+    border-color: #6366f1;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+  }
+</style>
+
+<div class="bg-[#0B1120] text-slate-200 min-h-screen flex flex-col font-body relative overflow-x-hidden">
+  <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+    <div class="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px] mix-blend-screen"></div>
+    <div class="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[120px] mix-blend-screen"></div>
+  </div>
+
+  <main class="flex-grow flex items-center justify-center px-4 md:px-6 py-12">
+    <div class="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-5 gap-12 items-start">
+      <div class="lg:col-span-2 lg:sticky lg:top-24 pt-8 text-center lg:text-left">
+        <h1 class="text-4xl md:text-5xl font-extrabold mb-6 leading-tight text-white">
+          Edit Template
+        </h1>
+        <p class="text-slate-400 text-lg leading-relaxed mb-8">
+          Update template content, thumbnail, categories, and priority.
+        </p>
+
+        <div class="rounded-2xl overflow-hidden border border-slate-800 bg-slate-900/50 p-3">
+          <img
+            src="<%= getOptimizedCloudinaryUrl(selectedWeb.imageUrl.url, 'card') %>"
+            srcset="<%= getResponsiveCloudinarySrcSet(selectedWeb.imageUrl.url, 'card') %>"
+            sizes="(max-width: 1024px) 100vw, 30vw"
+            alt="<%= selectedWeb.webName %>"
+            class="w-full h-auto object-cover rounded-xl">
+        </div>
+      </div>
+
+      <div class="lg:col-span-3 bg-slate-900/60 backdrop-blur-xl border border-slate-800 p-6 md:p-8 rounded-3xl shadow-2xl relative">
+        <div class="absolute inset-0 rounded-3xl ring-1 ring-inset ring-white/10 pointer-events-none"></div>
+
+        <form
+          id="EditTemplateForm"
+          action="/web/template/<%= selectedWeb._id %>?_method=PUT"
+          method="POST"
+          class="space-y-6"
+          enctype="multipart/form-data">
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="col-span-1">
+              <label class="block text-sm font-semibold mb-2 text-slate-300 ml-1">Website Name</label>
+              <input
+                name="formData[webName]"
+                type="text"
+                value="<%= selectedWeb.webName %>"
+                class="w-full px-4 py-3 rounded-xl form-input text-white focus:outline-none placeholder-slate-600"
+                required>
+            </div>
+
+            <div class="col-span-1">
+              <label class="block text-sm font-semibold mb-2 text-slate-300 ml-1">Website Url</label>
+              <input
+                name="formData[webUrl]"
+                type="url"
+                value="<%= selectedWeb.webUrl %>"
+                class="w-full px-4 py-3 rounded-xl form-input text-white focus:outline-none placeholder-slate-600"
+                required>
+            </div>
+
+            <div class="col-span-1">
+              <label class="block text-sm font-semibold mb-2 text-slate-300 ml-1">Replace Thumbnail (Optional)</label>
+              <input
+                name="imageUrl"
+                type="file"
+                accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+                class="w-full px-4 py-2.5 rounded-xl form-input text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-500/10 file:text-indigo-400 hover:file:bg-indigo-500/20">
+            </div>
+
+            <div class="col-span-1">
+              <label class="block text-sm font-semibold mb-2 text-slate-300 ml-1">Price For Temporary (Rs)</label>
+              <input
+                name="formData[priceForTemporary]"
+                type="number"
+                value="<%= selectedWeb.priceForTemporary %>"
+                class="w-full px-4 py-3 rounded-xl form-input text-white focus:outline-none placeholder-slate-600"
+                required>
+            </div>
+
+            <div class="col-span-1">
+              <label class="block text-sm font-semibold mb-2 text-slate-300 ml-1">Price For Permanent (Rs)</label>
+              <input
+                name="formData[priceForPermanent]"
+                type="number"
+                value="<%= selectedWeb.priceForPermanent %>"
+                class="w-full px-4 py-3 rounded-xl form-input text-white focus:outline-none placeholder-slate-600"
+                required>
+            </div>
+
+            <div class="col-span-1">
+              <label class="block text-sm font-semibold mb-2 text-slate-300 ml-1">Preview Credits Required</label>
+              <input
+                name="formData[previewCredits]"
+                type="number"
+                min="0"
+                value="<%= Number.isFinite(selectedWeb.previewCredits) ? selectedWeb.previewCredits : 1 %>"
+                class="w-full px-4 py-3 rounded-xl form-input text-white focus:outline-none placeholder-slate-600"
+                required>
+            </div>
+
+            <div class="col-span-1">
+              <label class="block text-sm font-semibold mb-2 text-slate-300 ml-1">Purchase Credits Required</label>
+              <input
+                name="formData[purchaseCredits]"
+                type="number"
+                min="0"
+                value="<%= Number.isFinite(selectedWeb.purchaseCredits) ? selectedWeb.purchaseCredits : 1 %>"
+                class="w-full px-4 py-3 rounded-xl form-input text-white focus:outline-none placeholder-slate-600"
+                required>
+            </div>
+
+            <div class="col-span-1">
+              <label class="block text-sm font-semibold mb-2 text-slate-300 ml-1">Priority Number</label>
+              <input
+                name="formData[priority]"
+                type="number"
+                value="<%= Number.isFinite(selectedWeb.priority) ? selectedWeb.priority : 0 %>"
+                class="w-full px-4 py-3 rounded-xl form-input text-white focus:outline-none placeholder-slate-600"
+                required>
+            </div>
+
+            <div class="col-span-full">
+              <label class="block text-sm font-semibold mb-2 text-slate-300 ml-1">Images Needed (Count)</label>
+              <input
+                name="formData[imageNeeded]"
+                type="number"
+                value="<%= selectedWeb.imageNeeded %>"
+                class="w-full px-4 py-3 rounded-xl form-input text-white focus:outline-none placeholder-slate-600"
+                required>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-800">
+            <h3 class="text-lg font-bold text-white mb-2">Article Content</h3>
+
+            <div class="mb-4">
+              <label class="block text-sm font-semibold mb-2 text-slate-300 ml-1">Article Title</label>
+              <input
+                name="formData[title]"
+                type="text"
+                value="<%= selectedWeb.articleTitle || '' %>"
+                class="w-full px-4 py-3 rounded-xl form-input text-white focus:outline-none placeholder-slate-600">
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold mb-2 text-slate-300 ml-1">Article Content</label>
+              <textarea
+                name="formData[content]"
+                rows="6"
+                class="w-full px-4 py-3 rounded-xl form-input text-white focus:outline-none placeholder-slate-600 resize-none"><%= selectedWeb.articleContent || '' %></textarea>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-800">
+            <label class="block text-sm font-semibold mb-3 text-slate-300 ml-1">Select Categories</label>
+            <div class="flex flex-wrap gap-2 md:gap-3">
+              <% const selectedTags = Array.isArray(selectedWeb.tags) ? selectedWeb.tags : []; %>
+              <% categories.forEach((tag) => { const label = tag.split(" ").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" "); const checked = selectedTags.includes(tag); %>
+                <label class="cursor-pointer group">
+                  <input type="checkbox" name="formData[category][]" value="<%= tag %>" class="peer sr-only" <%= checked ? "checked" : "" %>>
+                  <span class="inline-block px-4 py-2 rounded-xl border border-slate-700 bg-slate-800/50 text-slate-400 text-sm font-medium transition-all duration-200 group-hover:border-slate-500 group-hover:bg-slate-800 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-500 peer-checked:shadow-[0_0_15px_rgba(99,102,241,0.4)] peer-focus:ring-2 peer-focus:ring-indigo-500/50 select-none">
+                    <%= label %>
+                  </span>
+                </label>
+              <% }) %>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold mb-2 text-slate-300 ml-1">Short Description</label>
+            <textarea
+              name="formData[description]"
+              rows="4"
+              class="w-full px-4 py-3 rounded-xl form-input text-white focus:outline-none placeholder-slate-600 resize-none"
+              required><%= selectedWeb.description %></textarea>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              id="submitBtn"
+              type="submit"
+              class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 py-4 rounded-xl font-bold text-white shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:scale-[1.01] transition-all duration-300 active:scale-[0.99]">
+              Update Template
+            </button>
+            <a
+              href="/"
+              class="w-full flex items-center justify-center border border-slate-700 bg-slate-800/60 py-4 rounded-xl font-semibold text-slate-200 hover:bg-slate-700/80 transition">
+              Cancel
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const form = document.getElementById("EditTemplateForm");
+    const btn = document.getElementById("submitBtn");
+
+    function getTargetWidth() {
+      if (window.innerWidth <= 640) return 480;
+      if (window.innerWidth <= 1024) return 768;
+      return 1200;
+    }
+
+    function loadImage(file) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const objectUrl = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(objectUrl);
+          resolve(img);
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(objectUrl);
+          reject(new Error("Failed to load image"));
+        };
+        img.src = objectUrl;
+      });
+    }
+
+    async function optimizeImageFile(file) {
+      if (!file || !String(file.type || "").startsWith("image/")) return file;
+
+      const img = await loadImage(file);
+      const maxWidth = getTargetWidth();
+      const scale = Math.min(1, maxWidth / img.width);
+      const width = Math.round(img.width * scale);
+      const height = Math.round(img.height * scale);
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext("2d");
+      context.drawImage(img, 0, 0, width, height);
+
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/webp", 0.8));
+      if (!blob || blob.size >= file.size) return file;
+
+      const safeName = file.name.replace(/\.[^/.]+$/, "");
+      return new File([blob], `${safeName}.webp`, { type: "image/webp", lastModified: Date.now() });
+    }
+
+    async function optimizeInputFiles(inputElement) {
+      if (!inputElement || !inputElement.files || !inputElement.files.length) return;
+      if (typeof DataTransfer === "undefined") return;
+      const optimized = await Promise.all(Array.from(inputElement.files).map(optimizeImageFile));
+      const dataTransfer = new DataTransfer();
+      optimized.forEach((file) => dataTransfer.items.add(file));
+      inputElement.files = dataTransfer.files;
+    }
+
+    form.addEventListener("submit", async function (event) {
+      if (form.dataset.optimizedSubmit === "true") return;
+      event.preventDefault();
+
+      btn.disabled = true;
+      btn.innerText = "Saving...";
+      btn.classList.add("opacity-75", "cursor-not-allowed");
+
+      try {
+        await optimizeInputFiles(form.querySelector('input[name="imageUrl"]'));
+      } catch (_err) {
+        // If optimization fails, original image will still be uploaded.
+      }
+
+      form.dataset.optimizedSubmit = "true";
+      form.submit();
+    });
+  </script>
+</div>

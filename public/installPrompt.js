@@ -93,10 +93,10 @@
     });
   }
 
-  window.addEventListener("load", () => {
+  function initInstallPromptLifecycle() {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
-        .register("/service-worker.js?v=5", {
+        .register("/service-worker.js?v=9", {
           scope: "/",
           updateViaCache: "none",
         })
@@ -111,5 +111,11 @@
         showInstallPrompt(getManualInstallMessage());
       }, 1200);
     }
-  });
+  }
+
+  if (document.readyState === "complete") {
+    initInstallPromptLifecycle();
+  } else {
+    window.addEventListener("load", initInstallPromptLifecycle, { once: true });
+  }
 })();

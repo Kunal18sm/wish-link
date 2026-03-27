@@ -1,5 +1,7 @@
-<nav class="<%= (typeof chatLayout !== 'undefined' && chatLayout) ? 'fixed' : 'sticky' %> top-0 z-50 w-full glass-effect px-6 py-4 flex justify-between items-center">
+<nav class="<%= (typeof chatLayout !== 'undefined' && chatLayout) ? 'fixed' : 'sticky' %> top-0 w-full glass-effect px-6 py-4 flex justify-between items-center"
+  style="z-index:210;">
   <% const navUser = (typeof currUser !== "undefined") ? currUser : null; %>
+  <% const coinIconPath = `/assets/icons/coin.svg?v=${assetVersion}`; %>
   <a href="/">
     <div class="text-2xl font-bold tracking-tight gradient-text">VishLink</div>
   </a>
@@ -46,6 +48,14 @@
       </a>
     <% } %>
     <% if(navUser && navUser.isAdmin) {%>
+      <a href="/requests/users" class="hidden sm:block">
+        <button
+          class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-full text-sm font-semibold transition shadow-lg shadow-indigo-500/20">
+          Users
+        </button>
+      </a>
+    <% } %>
+    <% if(navUser && navUser.isAdmin) {%>
       <a href="/chat/admin" class="hidden sm:block">
         <button
           class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-full text-sm font-semibold transition shadow-lg shadow-indigo-500/20">
@@ -54,8 +64,30 @@
       </a>
     <% } %>
 
+    <% if(navUser) {%>
+      <div class="flex p-2 items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1e293b] border border-slate-700 shadow-md min-w-[72px] justify-center">
+        <img src="<%= coinIconPath %>" alt="coin" width="20" height="20" loading="lazy" decoding="async" class="w-5 h-5">
+        <span class="text-sm font-semibold text-slate-200 leading-none"><%= Number(userCredits || 0).toLocaleString("en-IN") %></span>
+      </div>
+    <% } %>
+
+    <button id="navThemeToggleBtn"
+      type="button"
+      aria-label="Toggle theme"
+      class="relative flex items-center justify-center w-10 h-10 rounded-full bg-[#1e293b] border border-slate-700 hover:border-indigo-500 transition-all focus:outline-none shadow-md text-slate-200"
+      style="z-index:211;"
+      title="Toggle theme">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M21.64 13a1 1 0 00-1.05-.14A8 8 0 1111.14 3.4a1 1 0 00-.14-1.05 1 1 0 00-1.06-.26A10 10 0 1019.9 14.06a1 1 0 00-.26-1.06z" />
+      </svg>
+    </button>
+
     <div class="relative">
       <button id="profileBtn"
+        aria-label="Open account menu"
+        aria-haspopup="menu"
+        aria-expanded="false"
+        aria-controls="profileMenu"
         class="flex items-center justify-center w-10 h-10 rounded-full bg-[#1e293b] border border-slate-700 hover:border-indigo-500 transition-all focus:outline-none shadow-md">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-slate-300" fill="none" viewBox="0 0 24 24"
           stroke="currentColor">
@@ -65,7 +97,8 @@
       </button>
 
       <div id="profileMenu"
-        class="hidden absolute right-0 mt-3 w-52 bg-[#1e293b] border border-slate-700 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] z-[60] overflow-hidden">
+        class="hidden absolute right-0 mt-3 w-52 bg-[#1e293b] border border-slate-700 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] overflow-hidden"
+        style="z-index:220;">
 
         <div class="px-4 py-3 border-b border-slate-700 bg-[#161e2b]">
           <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Account</p>
@@ -98,6 +131,10 @@
             <a href="/requests/allLive?scope=permanent"
               class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
               <span>Permanent Live</span>
+            </a>
+            <a href="/requests/users"
+              class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
+              <span>Users</span>
             </a>
             <a href="/feedback/feedbackpage"
               class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">

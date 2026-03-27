@@ -17,6 +17,10 @@
   const resolvedOgImageAlt = getLocal("ogImageAlt", `${resolvedSiteName} preview image`);
   const resolvedLocale = getLocal("locale", "en_IN");
   const resolvedStructuredData = getLocal("structuredData", null);
+  const resolvedAssetVersion = getLocal("assetVersion", "20260326b");
+  const resolvedLcpImageUrl = getLocal("lcpImageUrl", "");
+  const resolvedLcpImageSrcSet = getLocal("lcpImageSrcSet", "");
+  const resolvedLcpImageSizes = getLocal("lcpImageSizes", "");
 %>
 
 <meta charset="UTF-8">
@@ -27,14 +31,18 @@
 <meta name="author" content="<%= resolvedSiteName %>">
 <meta name="theme-color" content="#020617">
 <link rel="canonical" href="<%= resolvedCanonical %>">
-<link rel="icon" type="image/png" href="/assets/vishlink_logo.png">
-<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icon-192.png">
+<link rel="manifest" href="/manifest.webmanifest?v=<%= resolvedAssetVersion %>">
 <link rel="apple-touch-icon" href="/assets/icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="<%= resolvedSiteName %>">
 <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
 <link rel="dns-prefetch" href="//res.cloudinary.com">
+<% if (resolvedLcpImageUrl) { %>
+<link rel="preload" as="image" href="<%= resolvedLcpImageUrl %>"<% if (resolvedLcpImageSrcSet) { %> imagesrcset="<%= resolvedLcpImageSrcSet %>"<% } %><% if (resolvedLcpImageSizes) { %> imagesizes="<%= resolvedLcpImageSizes %>"<% } %>
+  fetchpriority="high">
+<% } %>
 
 <meta property="og:title" content="<%= resolvedOgTitle %>">
 <meta property="og:description" content="<%= resolvedOgDescription %>">
