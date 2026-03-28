@@ -1,57 +1,68 @@
 const express = require("express");
 const router = express.Router({ mergeParams: true });
 const wrapAsync = require("../utils/wrapAsync.js");
-const { isLoggedIn } = require("../middleware.js")
-const { isAdmin } = require("../middleware.js")
+const { isLoggedIn, isAdmin } = require("../middleware.js");
 const feedback = require("../models/feedback.js");
 
 // feedback
-router.post("/add", isLoggedIn, wrapAsync((async (req, res) => {
-  const { message } = req.body;
-  const author = req.user._id ;
-  const newFeedBack = new feedback({
-    feedbackmsg: message,
-    email: req.user.email,
-    userName: req.user.username,
-    author: author,
-  })
-  await newFeedBack.save();
-  res.redirect("/feedback/feedbackpage");
+router.post(
+  "/add",
+  isLoggedIn,
+  wrapAsync(async (req, res) => {
+    const { message } = req.body;
+    const newFeedBack = new feedback({
+      feedbackmsg: message,
+      email: req.user.email,
+      userName: req.user.username,
+      author: req.user._id,
+    });
 
-})))
+    await newFeedBack.save();
+    res.redirect("/feedback/feedbackpage");
+  })
+);
 
 // feedback Page
-router.get("/feedbackpage", isLoggedIn, wrapAsync((async (req, res) => {
+router.get(
+  "/feedbackpage",
+  isLoggedIn,
+  wrapAsync(async (req, res) => {
+    try {
+      const allFeedbacks = await feedback
+        .find({})
+        .select("feedbackmsg email userName author date")
+        .sort({ _id: -1 })
+        .lean();
 
-  try {
-    const currUser = req.user;
-    let allFeedbacks = await feedback.find().sort({ _id: -1 });
-    res.render("feedBack", {
-      allFeedbacks,
-      title: "Feedback Dashboard – VishLink",
-      description: "Admin feedback management panel.",
-      robots: "noindex, nofollow",
-      currUser
-    });
-  } catch (err) {
-    res.redirect("/")
-  }
-})))
+      res.render("feedBack", {
+        allFeedbacks,
+        title: "Feedback Dashboard - VishLink",
+        description: "Admin feedback management panel.",
+        robots: "noindex, nofollow",
+        currUser: req.user,
+      });
+    } catch (_err) {
+      res.redirect("/");
+    }
+  })
+);
 
-//delete FeedBack
-router.delete("/delete/:id", isLoggedIn, isAdmin, wrapAsync((async (req, res) => {
-  const { id } = req.params;
-  console.log(id);
+// delete feedback
+router.delete(
+  "/delete/:id",
+  isLoggedIn,
+  isAdmin,
+  wrapAsync(async (req, res) => {
+    const { id } = req.params;
 
-  try {
-    await feedback.findByIdAndDelete(id);
-    res.redirect("/feedback/feedbackpage")
-  } catch (err) {
-    res.redirect("/")
-  }
-})))
-
-
-
+    try {
+      await feedback.findByIdAndDelete(id);
+      res.redirect("/feedback/feedbackpage");
+    } catch (_err) {
+      res.redirect("/");
+    }
+  })
+);
 
 module.exports = router;
+

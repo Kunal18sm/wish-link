@@ -15,7 +15,9 @@
     </script>
 
     <link rel="stylesheet" href="/output.css?v=<%= assetVersion %>">
-    <link rel="stylesheet" href="/design.css?v=<%= assetVersion %>">
+    <link rel="stylesheet" href="/design.css?v=<%= assetVersion %>" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="/design.css?v=<%= assetVersion %>"></noscript>
+    <% if (enableAnalytics) { %>
     <!-- Google Analytics (lazy loaded after page becomes idle) -->
     <script>
         (function () {
@@ -45,6 +47,7 @@
             }, { once: true });
         })();
     </script>
+    <% } %>
     <% if (googleClientId) { %>
       <script src="https://accounts.google.com/gsi/client" async defer></script>
     <% } %>

@@ -24,5 +24,7 @@ const feedbackSchema = Schema({
   },
 })
 
+feedbackSchema.index({ date: -1 });
+feedbackSchema.index({ author: 1, date: -1 });
 
 module.exports = mongoose.model("feedback", feedbackSchema);

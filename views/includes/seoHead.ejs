@@ -37,8 +37,6 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="<%= resolvedSiteName %>">
-<link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
-<link rel="dns-prefetch" href="//res.cloudinary.com">
 <% if (resolvedLcpImageUrl) { %>
 <link rel="preload" as="image" href="<%= resolvedLcpImageUrl %>"<% if (resolvedLcpImageSrcSet) { %> imagesrcset="<%= resolvedLcpImageSrcSet %>"<% } %><% if (resolvedLcpImageSizes) { %> imagesizes="<%= resolvedLcpImageSizes %>"<% } %>
   fetchpriority="high">

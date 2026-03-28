@@ -1,7 +1,6 @@
 const express = require("express");
 const crypto = require("crypto");
 const { OAuth2Client } = require("google-auth-library");
-const WebSample = require("../models/WebSample.js");
 const purchasedWeb = require("../models/purchasedWeb.js");
 const router = express.Router({ mergeParams: true });
 const user = require("../models/user.js");
@@ -10,6 +9,8 @@ const { isLoggedIn } = require("../middleware.js");
 const contactSchema = require("../models/contact.js");
 const { createAuthToken, setAuthCookie, clearAuthCookie } = require("../utils/jwtAuth.js");
 const { getCreditDateKey, getDailyRewardCredits } = require("../utils/creditUtils.js");
+const { getHomeSamples, getCategorySamples } = require("../utils/webSampleCache.js");
+const { getBannerSlides, BANNER_PAGES } = require("../utils/bannerConfigCache.js");
 
 const SITE_URL = (process.env.SITE_URL || "https://wishlink-7j0a.onrender.com").replace(/\/+$/, "");
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || "";
@@ -19,19 +20,31 @@ const REQUEST_SCOPE = {
   PERMANENT: "permanent",
 };
 const NEW_SIGNUP_CREDITS = 15;
+const PROFILE_PURCHASE_SELECT = "webName webUrl receiver price isLive isTemporary date author";
 const HERO_PRIMARY_IMAGE =
   "https://res.cloudinary.com/drzq6kjgp/image/upload/v1770794063/Gemini_Generated_Image_4qzfxy4qzfxy4qzf_l5tidy.png";
 
 function buildLcpImageMeta(res, cloudinaryUrl) {
+  const resolvedUrl = String(cloudinaryUrl || "").trim();
+  if (!resolvedUrl) {
+    return {};
+  }
+
   if (!res?.locals?.getOptimizedCloudinaryUrl || !res?.locals?.getResponsiveCloudinarySrcSet) {
     return {};
   }
 
   return {
-    lcpImageUrl: res.locals.getOptimizedCloudinaryUrl(cloudinaryUrl, "card"),
-    lcpImageSrcSet: res.locals.getResponsiveCloudinarySrcSet(cloudinaryUrl, "card"),
-    lcpImageSizes: "(max-width: 768px) 80vw, 30vw",
+    lcpImageUrl: res.locals.getOptimizedCloudinaryUrl(resolvedUrl, "banner"),
+    lcpImageSrcSet: res.locals.getResponsiveCloudinarySrcSet(resolvedUrl, "banner"),
+    lcpImageSizes: "(max-width: 640px) 92vw, (max-width: 1024px) 84vw, 840px",
   };
+}
+
+function getPrimaryBannerImageUrl(bannerSlides = []) {
+  const firstSlide = Array.isArray(bannerSlides) ? bannerSlides[0] : null;
+  const bannerImage = String(firstSlide?.imageUrl || "").trim();
+  return bannerImage || HERO_PRIMARY_IMAGE;
 }
 
 function makeUsernameSlug(rawValue) {
@@ -58,15 +71,22 @@ async function buildUniqueUsername(seedText) {
 }
 
 async function loadMergedPurchases(req, authorId) {
-  const normalLinks = await purchasedWeb.find({ author: authorId }).lean();
+  const permanentModel = req.app.locals.permanentPurchasedWeb;
+  const normalQuery = purchasedWeb
+    .find({ author: authorId })
+    .select(PROFILE_PURCHASE_SELECT)
+    .lean();
+  const permanentQuery = permanentModel
+    ? permanentModel.find({ author: authorId }).select(PROFILE_PURCHASE_SELECT).lean()
+    : Promise.resolve([]);
+
+  const [normalLinks, permanentLinks] = await Promise.all([normalQuery, permanentQuery]);
   const mergedLinks = normalLinks.map((item) => ({
     ...item,
     requestScope: REQUEST_SCOPE.DEFAULT,
   }));
 
-  const permanentModel = req.app.locals.permanentPurchasedWeb;
-  if (permanentModel) {
-    const permanentLinks = await permanentModel.find({ author: authorId }).lean();
+  if (permanentLinks.length) {
     mergedLinks.push(
       ...permanentLinks.map((item) => ({
         ...item,
@@ -82,11 +102,16 @@ async function loadMergedPurchases(req, authorId) {
 // home route
 router.get("/", wrapAsync(async (req, res) => {
   res.locals.message = req.flash("success");
-  const allSamples = await WebSample.find().sort({ priority: -1, _id: -1 });
+  const [allSamples, bannerSlides] = await Promise.all([
+    getHomeSamples(),
+    getBannerSlides(BANNER_PAGES.HOME),
+  ]);
 
   res.render("home", {
     allSamples,
-    ...buildLcpImageMeta(res, HERO_PRIMARY_IMAGE),
+    bannerSlides,
+    designCssVariant: "lite",
+    ...buildLcpImageMeta(res, getPrimaryBannerImageUrl(bannerSlides)),
     title: "Create Personalized Wishing Websites | VishLink",
     description: "Create beautiful personalized birthday, anniversary and love wishing websites. Share a unique link instantly.",
     canonical: `${SITE_URL}/`,
@@ -107,12 +132,17 @@ router.get("/category/:tag", wrapAsync(async (req, res) => {
   const encodedTag = encodeURIComponent(normalizedTag);
 
   res.locals.message = req.flash("success");
-  const allSamples = await WebSample.find({ tags: normalizedTag }).sort({ priority: -1, _id: -1 });
+  const [allSamples, bannerSlides] = await Promise.all([
+    getCategorySamples(normalizedTag),
+    getBannerSlides(BANNER_PAGES.COLLECTION),
+  ]);
 
   res.render("collection", {
     allSamples,
+    bannerSlides,
     activeTag: normalizedTag,
-    ...buildLcpImageMeta(res, HERO_PRIMARY_IMAGE),
+    designCssVariant: "lite",
+    ...buildLcpImageMeta(res, getPrimaryBannerImageUrl(bannerSlides)),
     title: `${normalizedTag} Wishing Websites | VishLink`,
     description: `Create personalized ${normalizedTag} wishing websites and share memorable moments.`,
     canonical: `${SITE_URL}/category/${encodedTag}`,
@@ -200,7 +230,7 @@ router.post("/auth/google", wrapAsync(async (req, res) => {
       });
     }
 
-    let existingUser = await user.findOne({ email });
+    let existingUser = await user.findOne({ email }).select("_id username email isAdmin");
     if (!existingUser) {
       const username = await buildUniqueUsername(payload.name || email.split("@")[0] || "vishlink");
       const newUser = new user({
@@ -329,11 +359,23 @@ router.get("/logout", isLoggedIn, (req, res) => {
 // render profile page
 router.get("/profile", isLoggedIn, async (req, res) => {
   const purchasedLinks = await loadMergedPurchases(req, req.user._id);
+  const [stats] = await user.aggregate([
+    { $match: { _id: req.user._id } },
+    {
+      $project: {
+        totalLinksCreated: {
+          $size: {
+            $ifNull: ["$webCollection", []],
+          },
+        },
+      },
+    },
+  ]);
   const viewHistory = false;
 
   res.render("profile", {
     profileUser: req.user,
-    totalLinksCreated: req.user.webCollection?.length || 0,
+    totalLinksCreated: Number(stats?.totalLinksCreated || 0),
     purchasedLinks,
     viewHistory,
     title: "My Profile - VishLink",
@@ -345,12 +387,16 @@ router.get("/profile", isLoggedIn, async (req, res) => {
 
 // render all creation page
 router.get("/viewHistory", isLoggedIn, async (req, res) => {
-  const purchasedLinks = await req.user.webCollection;
+  const profileUser = await user
+    .findById(req.user._id)
+    .select("_id username email winnerCount webCollection")
+    .lean();
+  const purchasedLinks = Array.isArray(profileUser?.webCollection) ? profileUser.webCollection : [];
   const viewHistory = true;
 
   res.render("profile", {
-    profileUser: req.user,
-    totalLinksCreated: req.user.webCollection?.length || 0,
+    profileUser: profileUser || req.user,
+    totalLinksCreated: purchasedLinks.length,
     purchasedLinks,
     viewHistory,
     title: "My Profile - VishLink",

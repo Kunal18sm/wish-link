@@ -15,8 +15,11 @@
         })();
     </script>
 
+    <% const resolvedDesignCss = designCssVariant === "lite" ? "/homeCollectionLite.css" : "/design.css"; %>
     <link rel="stylesheet" href="/output.css?v=<%= assetVersion %>">
-    <link rel="stylesheet" href="/design.css?v=<%= assetVersion %>">
+    <link rel="stylesheet" href="<%= resolvedDesignCss %>?v=<%= assetVersion %>" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="<%= resolvedDesignCss %>?v=<%= assetVersion %>"></noscript>
+    <% if (enableAnalytics) { %>
     <!-- Google Analytics (lazy loaded after page becomes idle) -->
     <script>
         (function () {
@@ -46,6 +49,7 @@
             }, { once: true });
         })();
     </script>
+    <% } %>
 </head>
 
 <body class="bg-[#020617] text-slate-200 flex flex-col <%= (typeof chatLayout !== 'undefined' && chatLayout) ? 'h-dvh overflow-hidden' : 'min-h-screen' %>">

@@ -1,0 +1,86 @@
+<% layout("/layouts/boilerplate") %>
+<%
+  const homeSlides = Array.isArray(homeConfig && homeConfig.slides) ? homeConfig.slides : [];
+  const collectionSlides = Array.isArray(collectionConfig && collectionConfig.slides) ? collectionConfig.slides : [];
+%>
+
+<div class="min-h-screen bg-[#0B1120] text-slate-200 px-4 md:px-6 py-8">
+  <div class="max-w-7xl mx-auto">
+    <div class="mb-6 md:mb-8">
+      <h1 class="text-2xl md:text-3xl font-bold text-white">Banner Manager</h1>
+      <p class="mt-2 text-sm text-slate-400">Yahan sirf banner images dikhengi. Kisi image par click karke us banner ko alag page par edit karein.</p>
+    </div>
+
+    <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 md:p-6 mb-8">
+      <div class="flex items-center justify-between gap-3 mb-4">
+        <div>
+          <h2 class="text-lg md:text-xl font-semibold text-white">Home Page Banners</h2>
+          <p class="text-xs text-slate-400 mt-1">Image click karein aur selected banner ka form khul jayega.</p>
+        </div>
+        <a
+          href="/requests/banner/home/new"
+          class="inline-flex items-center justify-center rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-500/20">
+          + Add New Banner
+        </a>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <% homeSlides.forEach((slide, index) => { %>
+          <% const imageUrl = String(slide && slide.imageUrl || "").trim(); %>
+          <% if (imageUrl) { %>
+            <a
+              href="/requests/banner/home/<%= index %>/edit"
+              class="group block rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 hover:border-emerald-400/50 transition">
+              <div class="h-44 bg-slate-900">
+                <img
+                  src="<%= getOptimizedCloudinaryUrl(imageUrl, 'card') %>"
+                  srcset="<%= getResponsiveCloudinarySrcSet(imageUrl, 'card') %>"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  alt="Home banner <%= index + 1 %>"
+                  class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                  loading="lazy"
+                  decoding="async">
+              </div>
+            </a>
+          <% } %>
+        <% }) %>
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 md:p-6">
+      <div class="flex items-center justify-between gap-3 mb-4">
+        <div>
+          <h2 class="text-lg md:text-xl font-semibold text-white">Collection Page Banners</h2>
+          <p class="text-xs text-slate-400 mt-1">Gallery clean rakhi gayi hai, details edit page me milengi.</p>
+        </div>
+        <a
+          href="/requests/banner/collection/new"
+          class="inline-flex items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-2 text-xs font-semibold text-cyan-200 transition hover:bg-cyan-500/20">
+          + Add New Banner
+        </a>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <% collectionSlides.forEach((slide, index) => { %>
+          <% const imageUrl = String(slide && slide.imageUrl || "").trim(); %>
+          <% if (imageUrl) { %>
+            <a
+              href="/requests/banner/collection/<%= index %>/edit"
+              class="group block rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 hover:border-cyan-400/50 transition">
+              <div class="h-44 bg-slate-900">
+                <img
+                  src="<%= getOptimizedCloudinaryUrl(imageUrl, 'card') %>"
+                  srcset="<%= getResponsiveCloudinarySrcSet(imageUrl, 'card') %>"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  alt="Collection banner <%= index + 1 %>"
+                  class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                  loading="lazy"
+                  decoding="async">
+              </div>
+            </a>
+          <% } %>
+        <% }) %>
+      </div>
+    </section>
+  </div>
+</div>

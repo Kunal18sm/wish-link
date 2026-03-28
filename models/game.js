@@ -5,7 +5,7 @@ const Schema = mongoose.Schema;
 const gameSchema = new Schema({
   userName : {
     type: String,
-    require: true,
+    required: true,
   },
 
   userScore: {
@@ -19,5 +19,8 @@ const gameSchema = new Schema({
   },
 
 })
+
+gameSchema.index({ userScore: -1 });
+gameSchema.index({ author: 1 }, { unique: true });
 
 module.exports = mongoose.model("game", gameSchema);

@@ -78,4 +78,10 @@ const purchasedWebSchema = new Schema({
   },
 });
 
+purchasedWebSchema.index({ purchaseId: 1 });
+purchasedWebSchema.index({ author: 1, date: -1 });
+purchasedWebSchema.index({ adminInterected: 1, _id: -1 });
+purchasedWebSchema.index({ isLive: 1, _id: -1 });
+purchasedWebSchema.index({ date: 1, isTemporary: 1 });
+
 module.exports = purchasedWebSchema;

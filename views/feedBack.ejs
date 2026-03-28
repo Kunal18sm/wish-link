@@ -73,7 +73,7 @@
                                 <h3 class="font-bold text-slate-100 truncate" title="<%= feedback.userName %>">
                                     <%= feedback.userName %>
                                 </h3>
-                                <% if(currUser.isAdmin ||  currUser._id.equals(feedback.author._id) ) { %>
+                                <% if (currUser && (currUser.isAdmin || String(currUser._id) === String(feedback.author?._id || feedback.author))) { %>
                                 <p class="text-xs text-indigo-400 truncate font-medium">
                                     <%= feedback.email %>
                                 </p>
@@ -90,7 +90,7 @@
                         </div>
 
                         <!-- Footer / Delete Action -->
-                        <% if(currUser.isAdmin || currUser._id.equals(feedback.author._id) ) { %>
+                        <% if (currUser && (currUser.isAdmin || String(currUser._id) === String(feedback.author?._id || feedback.author))) { %>
                         <div class="mt-auto border-t border-slate-800 pt-4 flex justify-end">
                             <form action="/feedback/delete/<%= feedback._id %>?_method=DELETE" method="POST">
                                 <button type="submit" 

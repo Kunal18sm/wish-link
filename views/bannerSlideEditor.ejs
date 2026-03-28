@@ -1,0 +1,171 @@
+<% layout("/layouts/boilerplate") %>
+<%
+  const isEditMode = mode === "edit";
+  const safeSlide = slide || {};
+  const slideTitle = String(safeSlide.title || "");
+  const slideLink = String(safeSlide.linkUrl || "/");
+  const slideAlt = String(safeSlide.altText || "");
+  const slideSortOrder = Number.isFinite(Number(safeSlide.sortOrder)) ? Number(safeSlide.sortOrder) : 0;
+  const slideImage = String(safeSlide.imageUrl || "").trim();
+  const pageLabel = bannerPage === "collection" ? "Collection" : "Home";
+%>
+
+<style>
+  .banner-editor-input {
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(71, 85, 105, 0.75);
+    color: #e2e8f0;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .banner-editor-input:focus {
+    outline: none;
+    border-color: rgba(34, 197, 94, 0.85);
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.18);
+  }
+
+  .banner-editor-label {
+    color: #cbd5e1;
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    display: inline-block;
+  }
+</style>
+
+<div class="min-h-screen bg-[#0B1120] text-slate-200 px-4 md:px-6 py-8">
+  <div class="max-w-3xl mx-auto">
+    <div class="mb-6">
+      <a
+        href="/requests/banner"
+        class="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-800">
+        Back to Banner Gallery
+      </a>
+      <h1 class="text-2xl md:text-3xl font-bold text-white mt-4">
+        <%= isEditMode ? "Edit" : "Add" %> <%= pageLabel %> Banner
+      </h1>
+      <p class="mt-2 text-sm text-slate-400">
+        <%= isEditMode ? "Is single banner ki details yahan update karein." : "Naya banner banane ke liye details fill karein." %>
+      </p>
+    </div>
+
+    <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 md:p-6">
+      <% if (slideImage) { %>
+        <div class="mb-5 rounded-xl overflow-hidden border border-slate-800 bg-slate-950">
+          <img
+            src="<%= getOptimizedCloudinaryUrl(slideImage, 'card') %>"
+            srcset="<%= getResponsiveCloudinarySrcSet(slideImage, 'card') %>"
+            sizes="(max-width: 768px) 100vw, 720px"
+            alt="Current banner preview"
+            class="w-full h-52 md:h-64 object-cover"
+            loading="lazy"
+            decoding="async">
+        </div>
+      <% } %>
+
+      <form
+        action="<%= isEditMode ? `/requests/banner/${bannerPage}/${slideIndex}` : `/requests/banner/${bannerPage}/new` %>"
+        method="POST"
+        enctype="multipart/form-data"
+        class="space-y-4">
+        <div>
+          <label class="banner-editor-label" for="title">Banner Title</label>
+          <input
+            id="title"
+            name="title"
+            type="text"
+            maxlength="120"
+            class="banner-editor-input w-full rounded-lg px-3 py-2 text-sm"
+            placeholder="Example: Birthday Collection Offer"
+            value="<%= slideTitle %>">
+        </div>
+
+        <div>
+          <label class="banner-editor-label" for="linkUrl">Redirect Link</label>
+          <input
+            id="linkUrl"
+            name="linkUrl"
+            type="text"
+            maxlength="1024"
+            class="banner-editor-input w-full rounded-lg px-3 py-2 text-sm"
+            placeholder="/category/birthday"
+            value="<%= slideLink %>">
+        </div>
+
+        <div>
+          <label class="banner-editor-label" for="altText">Image Alt Text</label>
+          <input
+            id="altText"
+            name="altText"
+            type="text"
+            maxlength="180"
+            class="banner-editor-input w-full rounded-lg px-3 py-2 text-sm"
+            placeholder="Banner image description"
+            value="<%= slideAlt %>">
+        </div>
+
+        <div>
+          <label class="banner-editor-label" for="sortOrder">Sort Order</label>
+          <input
+            id="sortOrder"
+            name="sortOrder"
+            type="number"
+            class="banner-editor-input w-full rounded-lg px-3 py-2 text-sm"
+            value="<%= slideSortOrder %>">
+        </div>
+
+        <div>
+          <label class="banner-editor-label" for="imageFile">
+            <%= isEditMode ? "Replace Banner Image (Optional)" : "Banner Image" %>
+          </label>
+          <input
+            id="imageFile"
+            name="imageFile"
+            type="file"
+            accept="image/png,image/jpeg,image/jpg,image/webp"
+            class="banner-editor-input w-full rounded-lg px-3 py-2 text-sm"
+            <%= isEditMode ? "" : "required" %>>
+        </div>
+
+        <div>
+          <label class="inline-flex items-center gap-2 text-sm text-slate-300">
+            <input
+              type="checkbox"
+              name="isActive"
+              class="h-4 w-4 rounded border-slate-600 bg-slate-800 text-emerald-500"
+              <%= safeSlide.isActive !== false ? "checked" : "" %>>
+            Active Banner
+          </label>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3 pt-2">
+          <button
+            type="submit"
+            class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500 transition">
+            Save Banner
+          </button>
+          <a
+            href="/requests/banner"
+            class="inline-flex items-center justify-center rounded-xl border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-300 hover:bg-slate-800 transition">
+            Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+
+    <% if (isEditMode) { %>
+      <div class="mt-5 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4">
+        <p class="text-sm text-rose-200 mb-3">Agar is banner ki zarurat nahi hai to aap ise delete kar sakte hain.</p>
+        <form action="/requests/banner/<%= bannerPage %>/<%= slideIndex %>/delete" method="POST">
+          <button
+            type="submit"
+            onclick="return confirm('Are you sure you want to delete this banner?');"
+            class="inline-flex items-center justify-center rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-rose-500 transition">
+            Delete Banner
+          </button>
+        </form>
+      </div>
+    <% } %>
+  </div>
+</div>

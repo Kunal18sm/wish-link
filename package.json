@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "build:css": "npx tailwindcss -i ./public/output.css -o ./public/style.css --minify",
+    "build:css": "npx tailwindcss -i ./public/tailwind.input.css -o ./public/output.css --minify",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

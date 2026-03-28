@@ -3,9 +3,16 @@ const mongoose = require("mongoose");
 const router = express.Router({ mergeParams: true });
 const wrapAsync = require("../utils/wrapAsync.js");
 const Chat = require("../models/chat.js");
+const user = require("../models/user.js");
 const { isLoggedIn, isAdmin } = require("../middleware.js");
+const {
+  cache,
+  getChatInboxCacheKey,
+  invalidateChatInboxCache,
+} = require("../utils/runtimeCaches.js");
 
 const MAX_MESSAGE_LENGTH = 1500;
+const CHAT_INBOX_SELECT = "user lastMessage lastMessageAt adminUnreadCount";
 
 function parseMessage(req) {
   const raw = req.body?.chat?.message ?? req.body?.message ?? "";
@@ -43,6 +50,20 @@ function serializeMessage(messageDoc) {
   };
 }
 
+async function loadAdminInboxChats() {
+  return cache.getOrSet(getChatInboxCacheKey(), async () => {
+    return Chat.find({})
+      .select(CHAT_INBOX_SELECT)
+      .populate({
+        path: "user",
+        select: "username email",
+        options: { lean: true },
+      })
+      .sort({ lastMessageAt: -1 })
+      .lean();
+  }, 5 * 1000);
+}
+
 // User chat with admin
 router.get(
   "/",
@@ -52,15 +73,14 @@ router.get(
       return res.redirect("/chat/admin");
     }
 
-    const chat = await Chat.findOne({ user: req.user._id }).populate(
-      "messages.sender",
-      "username email isAdmin"
+    await Chat.updateOne(
+      { user: req.user._id, userUnreadCount: { $gt: 0 } },
+      { $set: { userUnreadCount: 0 } }
     );
 
-    if (chat && chat.userUnreadCount > 0) {
-      chat.userUnreadCount = 0;
-      await chat.save();
-    }
+    const chat = await Chat.findOne({ user: req.user._id })
+      .select("user messages lastMessageAt")
+      .lean();
 
     res.render("chat/userChat", {
       chat,
@@ -108,7 +128,7 @@ router.post(
     chat.adminUnreadCount += 1;
 
     await chat.save();
-    await chat.populate("user", "username email");
+    invalidateChatInboxCache();
     const latestMessage = chat.messages[chat.messages.length - 1];
 
     const io = req.app.get("io");
@@ -127,8 +147,8 @@ router.post(
 
       io.to("admins").emit("chatThreadUpdated", {
         chatId,
-        userName: chat.user?.username || "Unknown User",
-        userEmail: chat.user?.email || "No email",
+        userName: req.user.username || "Unknown User",
+        userEmail: req.user.email || "No email",
         lastMessage: chat.lastMessage || "",
         lastMessageAt: chat.lastMessageAt,
         adminUnreadCount: chat.adminUnreadCount || 0,
@@ -154,9 +174,7 @@ router.get(
   isLoggedIn,
   isAdmin,
   wrapAsync(async (req, res) => {
-    const chats = await Chat.find({})
-      .populate("user", "username email")
-      .sort({ lastMessageAt: -1 });
+    const chats = await loadAdminInboxChats();
 
     res.render("chat/adminInbox", {
       chats,
@@ -182,8 +200,13 @@ router.get(
     }
 
     const chat = await Chat.findById(chatId)
-      .populate("user", "username email")
-      .populate("messages.sender", "username email isAdmin");
+      .select("user messages adminUnreadCount")
+      .populate({
+        path: "user",
+        select: "username email",
+        options: { lean: true },
+      })
+      .lean();
 
     if (!chat) {
       req.flash("error", "Chat not found.");
@@ -191,8 +214,11 @@ router.get(
     }
 
     if (chat.adminUnreadCount > 0) {
-      chat.adminUnreadCount = 0;
-      await chat.save();
+      await Chat.updateOne(
+        { _id: chatId, adminUnreadCount: { $gt: 0 } },
+        { $set: { adminUnreadCount: 0 } }
+      );
+      invalidateChatInboxCache();
     }
 
     res.render("chat/adminChat", {
@@ -229,7 +255,9 @@ router.post(
       return res.redirect(`/chat/admin/${chatId}`);
     }
 
-    const chat = await Chat.findById(chatId);
+    const chat = await Chat.findById(chatId).select(
+      "user messages lastMessage lastMessageAt userUnreadCount adminUnreadCount"
+    );
     if (!chat) {
       req.flash("error", "Chat not found.");
       return res.redirect("/chat/admin");
@@ -245,8 +273,9 @@ router.post(
     chat.userUnreadCount += 1;
 
     await chat.save();
-    await chat.populate("user", "username email");
+    invalidateChatInboxCache();
     const latestMessage = chat.messages[chat.messages.length - 1];
+    const chatOwner = await user.findById(chat.user).select("username email").lean();
 
     const io = req.app.get("io");
     if (io) {
@@ -264,8 +293,8 @@ router.post(
 
       io.to("admins").emit("chatThreadUpdated", {
         chatId: currentChatId,
-        userName: chat.user?.username || "Unknown User",
-        userEmail: chat.user?.email || "No email",
+        userName: chatOwner?.username || "Unknown User",
+        userEmail: chatOwner?.email || "No email",
         lastMessage: chat.lastMessage || "",
         lastMessageAt: chat.lastMessageAt,
         adminUnreadCount: chat.adminUnreadCount || 0,
@@ -301,6 +330,8 @@ router.delete(
       return res.redirect("/chat/admin");
     }
 
+    invalidateChatInboxCache();
+
     const io = req.app.get("io");
     if (io) {
       io.to(`chat:${chatId}`).emit("chatThreadDeleted", { chatId });
@@ -320,7 +351,9 @@ router.get(
       return res.status(403).json({ ok: false, error: "Forbidden" });
     }
 
-    const chat = await Chat.findOne({ user: req.user._id });
+    const chat = await Chat.findOne({ user: req.user._id })
+      .select("messages lastMessageAt")
+      .lean();
     if (!chat) {
       return res.json({ ok: true, chat: null });
     }
@@ -345,7 +378,7 @@ router.get(
       return res.status(400).json({ ok: false, error: "Invalid chat id." });
     }
 
-    const chat = await Chat.findById(chatId);
+    const chat = await Chat.findById(chatId).select("user messages lastMessageAt").lean();
     if (!chat || !canAccessChat(req.user, chat)) {
       return res.status(403).json({ ok: false, error: "Forbidden" });
     }
@@ -369,9 +402,7 @@ router.get(
   isLoggedIn,
   isAdmin,
   wrapAsync(async (_req, res) => {
-    const chats = await Chat.find({})
-      .populate("user", "username email")
-      .sort({ lastMessageAt: -1 });
+    const chats = await loadAdminInboxChats();
 
     return res.json({
       ok: true,

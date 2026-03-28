@@ -52,109 +52,7 @@
     <!-- Header Section -->
     <header class="relative max-w-7xl mx-auto px-4 md:px-6 pt-8 pb-10 text-center flex flex-col items-center">
       <!-- 2. Optimized Slidable Image Banner -->
-      <div class="w-full max-w-4xl mb-8">
-        <div class="relative w-full rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-950 group">
-          <!-- Slider Wrapper -->
-          <div id="banner-slider" class="flex transition-transform duration-700 ease-in-out
-            h-auto py-5 lg:py-8">
-
-            <!-- Slide 1 -->
-            <div class="min-w-full relative flex items-center justify-center bg-purple-900/20">
-              <a href="/game/" class="relative block
-                  w-[80%] sm:w-[65%] md:w-[50%] lg:w-[10%]
-                  aspect-[11/16]">
-
-                <!-- Main image -->
-                <img
-                  src="<%= getOptimizedCloudinaryUrl('https://res.cloudinary.com/drzq6kjgp/image/upload/v1770794063/Gemini_Generated_Image_4qzfxy4qzfxy4qzf_l5tidy.png', 'card') %>"
-                  srcset="<%= getResponsiveCloudinarySrcSet('https://res.cloudinary.com/drzq6kjgp/image/upload/v1770794063/Gemini_Generated_Image_4qzfxy4qzfxy4qzf_l5tidy.png', 'card') %>"
-                  sizes="(max-width: 768px) 80vw, 30vw"
-                  width="660" height="960"
-                  loading="eager" decoding="async" fetchpriority="high"
-                  class="relative z-10 w-full h-full object-cover rounded-xl shadow-2xl" alt="Play and win free template game on VishLink">
-
-                <!-- Text overlay -->
-                <div class="absolute inset-0 z-20
-                bg-gradient-to-t from-black/90 via-black/40 to-transparent
-                flex items-end justify-center p-2">
-                  <p class="px-3 py-1 text-sm md:text-base font-semibold
-                      text-white
-                      bg-black/50
-                      rounded-md shadow-lg">
-                    Play and Win Free Template
-                  </p>
-                </div>
-              </a>
-            </div>
-
-            <!-- Slide 2 -->
-            <div class="min-w-full relative flex items-center justify-center bg-indigo-900/20">
-              <a href="/category/birthday" class="relative block
-                  w-[80%] sm:w-[65%] md:w-[50%] lg:w-[10%]
-                  aspect-[11/16]">
-
-                <img
-                  src="<%= getOptimizedCloudinaryUrl('https://res.cloudinary.com/dcw90tnk1/image/upload/v1768805703/wishLink_dev/zehl3lsqfj0gdsaguevn.jpg', 'card') %>"
-                  srcset="<%= getResponsiveCloudinarySrcSet('https://res.cloudinary.com/dcw90tnk1/image/upload/v1768805703/wishLink_dev/zehl3lsqfj0gdsaguevn.jpg', 'card') %>"
-                  sizes="(max-width: 768px) 80vw, 30vw"
-                  loading="lazy" decoding="async" fetchpriority="low"
-                  class="relative z-10 w-full h-full object-cover rounded-xl" alt="Best-selling birthday template preview on VishLink">
-                <div class="absolute inset-0 z-20
-                bg-gradient-to-t from-black/90 via-black/40 to-transparent
-                flex items-end justify-center p-2">
-                  <p class="px-3 py-1 text-sm md:text-base font-semibold
-                      text-white
-                      bg-black/50
-                      rounded-md shadow-lg">
-                    Best-Selling Birthday Templates
-                  </p>
-                </div>
-              </a>
-            </div>
-
-            <!-- Slide 3 -->
-            <div class="min-w-full relative flex items-center justify-center bg-purple-900/20">
-              <a href="/category/valentine's" class="relative block
-                  w-[80%] sm:w-[65%] md:w-[50%] lg:w-[10%]
-                  aspect-[11/16]">
-
-                <img src="<%= getOptimizedCloudinaryUrl('https://res.cloudinary.com/dcw90tnk1/image/upload/v1769509941/thumbnailV_k7rfkr.jpg', 'card') %>"
-                  srcset="<%= getResponsiveCloudinarySrcSet('https://res.cloudinary.com/dcw90tnk1/image/upload/v1769509941/thumbnailV_k7rfkr.jpg', 'card') %>"
-                  sizes="(max-width: 768px) 80vw, 30vw"
-                  loading="lazy" decoding="async" fetchpriority="low"
-                  class="relative z-10 w-full h-full object-cover rounded-xl" alt="Valentine's Day template preview on VishLink">
-
-                <div class="absolute inset-0 z-20
-                bg-gradient-to-t from-black/90 via-black/40 to-transparent
-                flex items-end justify-center p-2">
-                  <p class="px-3 py-1 text-sm md:text-base font-semibold
-                      text-white
-                      bg-black/50
-                      rounded-md shadow-lg">
-                    Valentine’s Day Special
-                  </p>
-                </div>
-              </a>
-            </div>
-
-          </div>
-
-
-          <!-- Compact Navigation Dots -->
-
-        </div>
-        <div class="mt-0 absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-1.5 z-40">
-          <button type="button" class="banner-dot" data-slide-index="0" aria-label="Show banner slide 1">
-            <span class="banner-dot-indicator"></span>
-          </button>
-          <button type="button" class="banner-dot" data-slide-index="1" aria-label="Show banner slide 2">
-            <span class="banner-dot-indicator"></span>
-          </button>
-          <button type="button" class="banner-dot" data-slide-index="2" aria-label="Show banner slide 3">
-            <span class="banner-dot-indicator"></span>
-          </button>
-        </div>
-      </div>
+      <%- include("includes/bannerSlider", { bannerSlides }) %>
 
       <!-- 5. User Feedback Link (More subtle) -->
       <div class="mb-6 mt-4">
@@ -334,7 +232,7 @@
       </h1>
 
       <p class="mb-6">
-        In today’s fast-paced digital world, the way people celebrate special moments has changed dramatically.
+        In todayÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢s fast-paced digital world, the way people celebrate special moments has changed dramatically.
         Traditional gifts and greeting cards still hold emotional value, but they are no longer the only way to
         express love, appreciation, and connection. With technology becoming an integral part of daily life,
         digital celebrations are emerging as a meaningful and creative alternative.
@@ -352,7 +250,7 @@
       </p>
 
       <p class="mb-6">
-        Digital surprises are not just replacements for physical gifts — they are experiences. A thoughtfully
+        Digital surprises are not just replacements for physical gifts ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â they are experiences. A thoughtfully
         designed digital page filled with photos, music, and personal messages creates a deeper emotional impact
         than a simple text message or social media post.
       </p>
@@ -364,11 +262,11 @@
       <p class="mb-6">
         One of the biggest advantages of digital gifting is personalization. Generic wishes feel impersonal,
         whereas customized digital content reflects effort and intention. Personalization allows individuals to
-        tailor designs, messages, and layouts according to the recipient’s personality and the occasion.
+        tailor designs, messages, and layouts according to the recipientÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢s personality and the occasion.
       </p>
 
       <p class="mb-6">
-        Whether it’s a birthday, anniversary, graduation, or a simple appreciation message, a personalized digital
+        Whether itÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢s a birthday, anniversary, graduation, or a simple appreciation message, a personalized digital
         experience shows emotional involvement and creativity. This level of customization is difficult to
         achieve with traditional gifting methods.
       </p>
@@ -380,7 +278,7 @@
       <p class="mb-6">
         Digital celebrations are also environmentally friendly. By reducing paper usage, packaging waste, and
         transportation, digital gifting supports sustainable practices. At the same time, it offers unmatched
-        convenience — no shipping, no delays, and no geographical restrictions.
+        convenience ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â no shipping, no delays, and no geographical restrictions.
       </p>
 
       <p class="mb-6">

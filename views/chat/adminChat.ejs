@@ -116,6 +116,7 @@
     const knownMessageIds = new Set();
     let lastSeenMessageId = "";
     let pollingInFlight = false;
+    let realtimeConnected = false;
 
     function scrollToBottom() {
       if (chatScrollBox) chatScrollBox.scrollTop = chatScrollBox.scrollHeight;
@@ -189,6 +190,7 @@
     }
 
     async function pollUpdates() {
+      if (realtimeConnected) return;
       if (pollingInFlight) return;
       pollingInFlight = true;
       try {
@@ -221,7 +223,12 @@
       socket = io();
 
       socket.on("connect", function () {
+        realtimeConnected = true;
         socket.emit("joinChat", { chatId: activeChatId });
+      });
+
+      socket.on("disconnect", function () {
+        realtimeConnected = false;
       });
 
       socket.on("newChatMessage", function (payload) {
@@ -269,7 +276,11 @@
     });
 
     pollUpdates();
-    setInterval(pollUpdates, 2500);
+    setInterval(function () {
+      if (!realtimeConnected) {
+        pollUpdates();
+      }
+    }, 8000);
 
   })();
 </script>

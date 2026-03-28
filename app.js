@@ -14,6 +14,7 @@ const methodOverride = require("method-override");
 const path = require("path");
 const { createWindowRateLimiter } = require("./utils/rateLimiter.js");
 const { toOptimizedCloudinaryUrl } = require("./utils/cloudinaryUrl.js");
+const { invalidateChatInboxCache } = require("./utils/runtimeCaches.js");
 const {
   getCreditDateKey,
   getDailyRewardCredits,
@@ -44,11 +45,25 @@ const io = new Server(server);
 const PORT = process.env.PORT || 8080;
 const SITE_URL = (process.env.SITE_URL || "https://wishlink-7j0a.onrender.com").replace(/\/+$/, "");
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || "";
-const ASSET_VERSION = process.env.ASSET_VERSION || "20260327a";
+const ASSET_VERSION = process.env.ASSET_VERSION || "20260328c";
+const ENABLE_CLOUDINARY_IMAGE_PROXY = process.env.CLOUDINARY_IMAGE_PROXY !== "false";
+const ENABLE_ANALYTICS = process.env.ENABLE_ANALYTICS === "true";
 const MUTATING_REQUEST_WINDOW_MS = Number(process.env.MUTATING_REQUEST_WINDOW_MS || 10 * 60 * 1000);
 const MUTATING_REQUEST_LIMIT = Number(process.env.MUTATING_REQUEST_LIMIT || 5);
 const MUTATING_REQUEST_WINDOW_MINUTES = Math.max(1, Math.round(MUTATING_REQUEST_WINDOW_MS / (60 * 1000)));
 const RATE_LIMIT_MESSAGE = `Rate limit exceeded: ${MUTATING_REQUEST_LIMIT} requests allowed every ${MUTATING_REQUEST_WINDOW_MINUTES} minutes.`;
+const AUTH_USER_SELECT = "_id username email isAdmin winnerCount dailyCreditClaim";
+const SOCKET_USER_SELECT = "_id username email isAdmin";
+const MONGODB_CONNECT_OPTIONS = {
+  maxPoolSize: Number(process.env.MONGO_MAX_POOL_SIZE || 20),
+  minPoolSize: Number(process.env.MONGO_MIN_POOL_SIZE || 2),
+  serverSelectionTimeoutMS: Number(process.env.MONGO_SERVER_SELECTION_TIMEOUT_MS || 10000),
+  socketTimeoutMS: Number(process.env.MONGO_SOCKET_TIMEOUT_MS || 45000),
+  maxIdleTimeMS: Number(process.env.MONGO_MAX_IDLE_TIME_MS || 30000),
+  heartbeatFrequencyMS: Number(process.env.MONGO_HEARTBEAT_FREQUENCY_MS || 10000),
+  autoIndex: process.env.NODE_ENV !== "production",
+};
+const RUN_CHAT_MESSAGE_CLEANUP = process.env.RUN_CHAT_CREATED_AT_CLEANUP === "true";
 let permanentDbConnection = null;
 const socketChatRateStore = new Map();
 
@@ -64,25 +79,53 @@ function getResponsiveWidth(variant) {
   const normalizedVariant = String(variant || "default").toLowerCase();
   if (normalizedVariant === "avatar") return 220;
   if (normalizedVariant === "payment") return 1200;
-  return 1200;
+  if (normalizedVariant === "banner") return 840;
+  if (normalizedVariant === "card") return 640;
+  return 640;
 }
 
 function buildCloudinaryTransforms(variant, width) {
-  const normalizedVariant = String(variant || "default").toLowerCase();
-  const finalWidth = Number(width) > 0 ? Number(width) : getResponsiveWidth(normalizedVariant);
+  const finalWidth = Number(width) > 0 ? Number(width) : getResponsiveWidth(variant);
 
-  if (normalizedVariant === "avatar") {
-    return ["f_auto", "q_80", "c_limit", `w_${finalWidth}`, "dpr_auto"];
-  }
-
-  return ["f_auto", "q_80", "c_limit", `w_${finalWidth}`, "dpr_auto"];
+  return ["f_auto", "q_auto:eco", "c_limit", `w_${finalWidth}`];
 }
 
-app.locals.getOptimizedCloudinaryUrl = (url, variant = "default", width) =>
-  toOptimizedCloudinaryUrl(url, buildCloudinaryTransforms(variant, width));
+function getResponsiveSrcWidths(variant) {
+  const normalizedVariant = String(variant || "default").toLowerCase();
+  if (normalizedVariant === "avatar") return [96, 160, 220];
+  if (normalizedVariant === "payment") return [480, 768, 1024, 1200];
+  if (normalizedVariant === "banner") return [320, 480, 640, 840];
+  return [200, 320, 480, 640];
+}
+
+function isCloudinaryImageUrl(url) {
+  const rawUrl = String(url || "").trim();
+  if (!rawUrl) return false;
+
+  try {
+    const parsedUrl = new URL(rawUrl);
+    return parsedUrl.protocol === "https:" && parsedUrl.hostname === "res.cloudinary.com";
+  } catch (_err) {
+    return false;
+  }
+}
+
+function toSameOriginImageUrl(url) {
+  const rawUrl = String(url || "").trim();
+  if (!rawUrl) return rawUrl;
+  if (!ENABLE_CLOUDINARY_IMAGE_PROXY) return rawUrl;
+  if (!isCloudinaryImageUrl(rawUrl)) return rawUrl;
+
+  return `/cdn/image?u=${encodeURIComponent(rawUrl)}`;
+}
+
+app.locals.getOptimizedCloudinaryUrl = (url, variant = "default", width) => {
+  const optimizedUrl = toOptimizedCloudinaryUrl(url, buildCloudinaryTransforms(variant, width));
+  return toSameOriginImageUrl(optimizedUrl);
+};
 
 app.locals.getResponsiveCloudinarySrcSet = (url, variant = "default") =>
-  [480, 768, 1200]
+  getResponsiveSrcWidths(variant)
     .map((width) => `${app.locals.getOptimizedCloudinaryUrl(url, variant, width)} ${width}w`)
     .join(", ");
 
@@ -126,6 +169,9 @@ app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  if (process.env.NODE_ENV === "production") {
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  }
   next();
 });
 
@@ -137,7 +183,7 @@ const staticAssetCacheControl = (res, filePath) => {
   }
 
   if ([".css", ".js", ".mjs", ".json", ".webmanifest"].includes(ext)) {
-    res.setHeader("Cache-Control", "public, max-age=604800, stale-while-revalidate=86400");
+    res.setHeader("Cache-Control", "public, max-age=2592000, immutable");
     return;
   }
 
@@ -151,19 +197,78 @@ app.use(
     setHeaders: staticAssetCacheControl,
   })
 );
+
+app.get("/cdn/image", async (req, res) => {
+  if (!ENABLE_CLOUDINARY_IMAGE_PROXY) {
+    return res.status(404).send("Image proxy is disabled.");
+  }
+
+  const targetUrl = String(req.query?.u || "").trim();
+  if (!isCloudinaryImageUrl(targetUrl)) {
+    return res.status(400).send("Invalid image url.");
+  }
+
+  const abortController = new AbortController();
+  const timeoutRef = setTimeout(() => abortController.abort(), 10 * 1000);
+
+  try {
+    const acceptHeader = String(req.get("accept") || "*/*");
+    const remoteResponse = await fetch(targetUrl, {
+      method: "GET",
+      redirect: "follow",
+      signal: abortController.signal,
+      headers: {
+        Accept: acceptHeader,
+      },
+    });
+
+    if (!remoteResponse.ok) {
+      return res.status(remoteResponse.status).send("Image not available.");
+    }
+
+    const contentType = String(remoteResponse.headers.get("content-type") || "").toLowerCase();
+    if (!contentType.startsWith("image/")) {
+      return res.status(415).send("Unsupported asset type.");
+    }
+
+    const eTagHeader = remoteResponse.headers.get("etag");
+    const lastModifiedHeader = remoteResponse.headers.get("last-modified");
+    const cacheControlHeader = remoteResponse.headers.get("cache-control");
+
+    res.setHeader("Content-Type", contentType);
+    res.setHeader(
+      "Cache-Control",
+      cacheControlHeader || "public, max-age=2592000, stale-while-revalidate=86400"
+    );
+
+    if (eTagHeader) res.setHeader("ETag", eTagHeader);
+    if (lastModifiedHeader) res.setHeader("Last-Modified", lastModifiedHeader);
+
+    const imageBuffer = Buffer.from(await remoteResponse.arrayBuffer());
+    return res.send(imageBuffer);
+  } catch (_err) {
+    return res.status(502).send("Unable to fetch remote image.");
+  } finally {
+    clearTimeout(timeoutRef);
+  }
+});
+
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 
 const connectDb = async () => {
   try {
-    await mongoose.connect(process.env.MongoDB_URL);
+    await mongoose.connect(process.env.MongoDB_URL, MONGODB_CONNECT_OPTIONS);
 
-    // Cleanup old per-message timestamps to keep chat payload minimal.
-    await Chat.updateMany(
-      { "messages.createdAt": { $exists: true } },
-      { $unset: { "messages.$[].createdAt": "" } }
-    );
+    // One-time optional migration cleanup (kept behind env flag to speed cold starts).
+    if (RUN_CHAT_MESSAGE_CLEANUP) {
+      await Chat.updateMany(
+        { "messages.createdAt": { $exists: true } },
+        { $unset: { "messages.$[].createdAt": "" } }
+      );
+      console.log("Chat message timestamp cleanup completed.");
+    }
 
     console.log("DataBase Connected");
   } catch (err) {
@@ -176,7 +281,10 @@ const connectDb = async () => {
       return;
     }
 
-    permanentDbConnection = mongoose.createConnection(process.env.PERMANENT_MONGODB_URL);
+    permanentDbConnection = mongoose.createConnection(
+      process.env.PERMANENT_MONGODB_URL,
+      MONGODB_CONNECT_OPTIONS
+    );
     await permanentDbConnection.asPromise();
 
     app.locals.permanentPurchasedWeb = getPermanentPurchasedWebModel(permanentDbConnection);
@@ -219,7 +327,7 @@ app.use(async (req, res, next) => {
       return next();
     }
 
-    const loggedInUser = await user.findById(payload.sub);
+    const loggedInUser = await user.findById(payload.sub).select(AUTH_USER_SELECT).lean();
     if (!loggedInUser) {
       req.user = null;
       clearAuthCookie(res);
@@ -296,6 +404,8 @@ app.use((req, res, next) => {
         }
       : null;
   res.locals.googleClientId = GOOGLE_CLIENT_ID;
+  res.locals.enableAnalytics = ENABLE_ANALYTICS;
+  res.locals.designCssVariant = "full";
   res.locals.assetVersion = ASSET_VERSION;
   res.locals.getOptimizedCloudinaryUrl = app.locals.getOptimizedCloudinaryUrl;
   res.locals.getResponsiveCloudinarySrcSet = app.locals.getResponsiveCloudinarySrcSet;
@@ -328,6 +438,34 @@ app.use((req, res, next) => {
   res.locals.ogType = "website";
   res.locals.twitterCard = "summary_large_image";
   next();
+});
+
+app.use((req, res, next) => {
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    return next();
+  }
+
+  if (req.user) {
+    res.setHeader("Cache-Control", "private, no-cache, max-age=0, must-revalidate");
+    return next();
+  }
+
+  const requestPath = String(req.path || "");
+  const isPublicCacheablePath =
+    requestPath === "/" ||
+    requestPath === "/about" ||
+    requestPath === "/contact" ||
+    requestPath === "/terms" ||
+    requestPath === "/privacy-policy" ||
+    requestPath.startsWith("/category/");
+
+  if (isPublicCacheablePath) {
+    res.setHeader("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
+  } else {
+    res.setHeader("Cache-Control", "public, max-age=15, stale-while-revalidate=60");
+  }
+
+  return next();
 });
 
 app.use("/", routes);
@@ -395,7 +533,7 @@ io.use(async (socket, next) => {
     const payload = verifyAuthToken(token);
     if (!payload?.sub) return next(new Error("Unauthorized"));
 
-    const currentUser = await user.findById(payload.sub);
+    const currentUser = await user.findById(payload.sub).select(SOCKET_USER_SELECT).lean();
     if (!currentUser) return next(new Error("Unauthorized"));
 
     socket.user = currentUser;
@@ -418,7 +556,7 @@ io.on("connection", (socket) => {
         return;
       }
 
-      const chat = await Chat.findById(chatId);
+      const chat = await Chat.findById(chatId).select("user").lean();
       if (!chat || !hasChatAccess(socket.user, chat)) {
         if (typeof cb === "function") cb({ ok: false, error: "Access denied." });
         return;
@@ -492,11 +630,15 @@ io.on("connection", (socket) => {
       }
 
       await chat.save();
-      await chat.populate("user", "username email");
+      invalidateChatInboxCache();
 
       const latestMessage = chat.messages[chat.messages.length - 1];
       const room = `chat:${chat._id}`;
       socket.join(room);
+      const chatOwner =
+        senderRole === "admin"
+          ? await user.findById(chat.user).select("username email").lean()
+          : socket.user;
 
       io.to(room).emit("newChatMessage", {
         chatId: String(chat._id),
@@ -510,8 +652,8 @@ io.on("connection", (socket) => {
 
       io.to("admins").emit("chatThreadUpdated", {
         chatId: String(chat._id),
-        userName: chat.user?.username || "Unknown User",
-        userEmail: chat.user?.email || "No email",
+        userName: chatOwner?.username || "Unknown User",
+        userEmail: chatOwner?.email || "No email",
         lastMessage: chat.lastMessage || "",
         lastMessageAt: chat.lastMessageAt,
         adminUnreadCount: chat.adminUnreadCount || 0,

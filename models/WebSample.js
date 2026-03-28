@@ -63,4 +63,7 @@ const WebSampleSchema = new Schema({
 
 })
 
+WebSampleSchema.index({ priority: -1, _id: -1 });
+WebSampleSchema.index({ tags: 1, priority: -1, _id: -1 });
+
 module.exports = mongoose.model("WebSamples", WebSampleSchema);

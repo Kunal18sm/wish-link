@@ -7,6 +7,7 @@ const purchasedWeb = require("../models/purchasedWeb.js");
 const user = require("../models/user.js");
 const wrapAsync = require("../utils/wrapAsync.js");
 const { isLoggedIn, isAdmin, validatepurchase } = require("../middleware.js");
+const { getTemplateByIdCached, invalidateWebSampleCache } = require("../utils/webSampleCache.js");
 const {
   storage,
   permanentStorage,
@@ -65,6 +66,12 @@ const TEMPLATE_CATEGORIES = [
   "eid",
   "holi",
 ];
+const PURCHASE_TEMPLATE_SELECT = "webName webUrl priceForTemporary priceForPermanent purchaseCredits";
+const PREVIEW_TEMPLATE_SELECT = "webUrl previewCredits";
+const PURCHASE_FORM_TEMPLATE_SELECT =
+  "webName webUrl priceForTemporary priceForPermanent purchaseCredits previewCredits imageNeeded description";
+const EDIT_TEMPLATE_SELECT =
+  "webName priceForTemporary priceForPermanent previewCredits purchaseCredits imageUrl webUrl description imageNeeded tags articleTitle articleContent priority";
 
 const getRedirectBack = (req) => req.get("Referrer") || "/";
 
@@ -196,7 +203,9 @@ const createPurchaseHandler = (expectedIsTemporary) =>
         : null;
 
       const { id } = req.params;
-      const selectedWeb = await WebSample.findById(id);
+      const selectedWeb = await WebSample.findById(id)
+        .select(PURCHASE_TEMPLATE_SELECT)
+        .lean();
 
       if (!selectedWeb) {
         throw new Error("Selected website template not found.");
@@ -310,7 +319,7 @@ router.post(
   isLoggedIn,
   wrapAsync(async (req, res) => {
     const { id } = req.params;
-    const selectedWeb = await WebSample.findById(id).select("webUrl previewCredits");
+    const selectedWeb = await getTemplateByIdCached(id, PREVIEW_TEMPLATE_SELECT, 30 * 1000);
 
     if (!selectedWeb || !selectedWeb.webUrl) {
       return res.status(404).json({
@@ -407,6 +416,7 @@ router.post(
       priority: payload.priority,
     });
     await newSample.save();
+    invalidateWebSampleCache(newSample._id);
     req.flash("success", "Added new website");
     res.redirect("/");
   })
@@ -418,7 +428,7 @@ router.get(
   isLoggedIn,
   isAdmin,
   wrapAsync(async (req, res) => {
-    const selectedWeb = await WebSample.findById(req.params.id);
+    const selectedWeb = await getTemplateByIdCached(req.params.id, EDIT_TEMPLATE_SELECT, 30 * 1000);
     if (!selectedWeb) {
       req.flash("error", "Template not found.");
       return res.redirect("/");
@@ -441,7 +451,7 @@ router.put(
   isAdmin,
   upload.single("imageUrl"),
   wrapAsync(async (req, res) => {
-    const selectedWeb = await WebSample.findById(req.params.id);
+    const selectedWeb = await WebSample.findById(req.params.id).select("imageUrl").lean();
     if (!selectedWeb) {
       req.flash("error", "Template not found.");
       return res.redirect("/");
@@ -471,6 +481,7 @@ router.put(
     }
 
     await WebSample.findByIdAndUpdate(req.params.id, updateData);
+    invalidateWebSampleCache(req.params.id);
 
     if (req.file && selectedWeb.imageUrl?.filename) {
       await cloudinary.uploader.destroy(selectedWeb.imageUrl.filename);
@@ -487,7 +498,7 @@ router.get(
   isLoggedIn,
   wrapAsync(async (req, res) => {
     const { id } = req.params;
-    const selectedWeb = await WebSample.findById(id);
+    const selectedWeb = await getTemplateByIdCached(id, PURCHASE_FORM_TEMPLATE_SELECT, 30 * 1000);
     if (!selectedWeb) {
       req.flash("error", "Template not found.");
       return res.redirect("/");
@@ -520,7 +531,7 @@ router.get(
   isLoggedIn,
   wrapAsync(async (req, res) => {
     const { id } = req.params;
-    const selectedWeb = await WebSample.findById(id);
+    const selectedWeb = await getTemplateByIdCached(id, PURCHASE_FORM_TEMPLATE_SELECT, 30 * 1000);
     if (!selectedWeb) {
       req.flash("error", "Template not found.");
       return res.redirect("/");

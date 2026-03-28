@@ -31,58 +31,71 @@
   }
 
   function initBannerSlider() {
-    const sliderEl = document.getElementById("banner-slider");
-    const dotEls = Array.from(document.querySelectorAll(".banner-dot[data-slide-index]"));
-    if (!sliderEl || !dotEls.length) return;
+    const carouselEls = Array.from(document.querySelectorAll("[data-banner-carousel]"));
+    if (!carouselEls.length) return;
 
-    const totalSlides = Math.max(sliderEl.children.length, dotEls.length);
-    let activeSlide = 0;
-    let autoSlideTimer = null;
+    carouselEls.forEach((carouselEl) => {
+      const sliderEl = carouselEl.querySelector("[data-banner-slider]");
+      if (!sliderEl) return;
 
-    const updateDots = () => {
-      dotEls.forEach((dotEl, index) => {
-        dotEl.setAttribute("aria-current", index === activeSlide ? "true" : "false");
+      const dotEls = Array.from(
+        carouselEl.querySelectorAll(".banner-dot[data-slide-index]")
+      );
+      const totalSlides = sliderEl.children.length;
+      if (totalSlides <= 0) return;
+
+      let activeSlide = 0;
+      let autoSlideTimer = null;
+
+      const updateDots = () => {
+        dotEls.forEach((dotEl, index) => {
+          dotEl.setAttribute("aria-current", index === activeSlide ? "true" : "false");
+        });
+      };
+
+      const moveSlide = (index) => {
+        const boundedIndex = Math.max(0, Math.min(index, totalSlides - 1));
+        activeSlide = boundedIndex;
+        sliderEl.style.transform = `translateX(-${boundedIndex * 100}%)`;
+        updateDots();
+      };
+
+      const stopAutoSlide = () => {
+        if (!autoSlideTimer) return;
+        window.clearInterval(autoSlideTimer);
+        autoSlideTimer = null;
+      };
+
+      dotEls.forEach((dotEl) => {
+        dotEl.addEventListener("click", () => {
+          const requestedIndex = Number.parseInt(dotEl.dataset.slideIndex || "0", 10);
+          moveSlide(Number.isFinite(requestedIndex) ? requestedIndex : 0);
+          stopAutoSlide();
+        });
       });
-    };
 
-    const moveSlide = (index) => {
-      const boundedIndex = Math.max(0, Math.min(index, totalSlides - 1));
-      activeSlide = boundedIndex;
-      sliderEl.style.transform = `translateX(-${boundedIndex * 100}%)`;
+      // Keep first render stable across reloads before autoplay kicks in.
+      sliderEl.style.transform = "translateX(0%)";
       updateDots();
-    };
 
-    const stopAutoSlide = () => {
-      if (!autoSlideTimer) return;
-      window.clearInterval(autoSlideTimer);
-      autoSlideTimer = null;
-    };
-
-    dotEls.forEach((dotEl) => {
-      dotEl.addEventListener("click", () => {
-        const requestedIndex = Number.parseInt(dotEl.dataset.slideIndex || "0", 10);
-        moveSlide(Number.isFinite(requestedIndex) ? requestedIndex : 0);
-        stopAutoSlide();
-      });
+      if (totalSlides > 1) {
+        autoSlideTimer = window.setInterval(() => {
+          moveSlide((activeSlide + 1) % totalSlides);
+        }, 5000);
+      }
     });
-
-    moveSlide(0);
-
-    if (totalSlides > 1) {
-      autoSlideTimer = window.setInterval(() => {
-        moveSlide((activeSlide + 1) % totalSlides);
-      }, 5000);
-    }
   }
 
   function initTemplateScroller() {
     const scroller = document.getElementById("templateScroller");
     if (!scroller) return;
 
-    let scrollStep = Math.max(Math.round(scroller.clientWidth * 0.9), 280);
+    let scrollStep = 320;
+    let resizeRaf = null;
     const updateScrollStep = () => {
       scrollStep = Math.max(Math.round(scroller.clientWidth * 0.9), 280);
     };
+    window.requestAnimationFrame(updateScrollStep);
 
     scroller.addEventListener(
       "wheel",
@@ -109,7 +122,13 @@
       });
     }
 
-    window.addEventListener("resize", updateScrollStep, { passive: true });
+    window.addEventListener("resize", () => {
+      if (resizeRaf) return;
+      resizeRaf = window.requestAnimationFrame(() => {
+        resizeRaf = null;
+        updateScrollStep();
+      });
+    }, { passive: true });
   }
 
   function initFeedbackForm() {

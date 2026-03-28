@@ -1,12 +1,13 @@
-const STATIC_CACHE_NAME = "vishlink-static-v9";
+const STATIC_CACHE_NAME = "vishlink-static-v12";
 const STATIC_ASSETS = [
-  "/design.css?v=20260327a",
-  "/output.css?v=20260327a",
-  "/installPrompt.js?v=20260327a",
-  "/script.js?v=20260327a",
-  "/homeCollection.js?v=20260327a",
-  "/dailyReward.js?v=20260327a",
-  "/manifest.webmanifest?v=20260327a",
+  "/design.css?v=20260328c",
+  "/homeCollectionLite.css?v=20260328c",
+  "/output.css?v=20260328c",
+  "/installPrompt.js?v=20260328c",
+  "/script.js?v=20260328c",
+  "/homeCollection.js?v=20260328c",
+  "/dailyReward.js?v=20260328c",
+  "/manifest.webmanifest?v=20260328c",
   "/assets/icon-192.png",
   "/assets/icon-512.png",
   "/assets/icons/coin.svg",
