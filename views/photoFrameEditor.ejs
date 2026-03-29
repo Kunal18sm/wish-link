@@ -2,7 +2,7 @@
 
 <% const selectedTemplate = (frameTemplates && frameTemplates[0]) ? frameTemplates[0] : null; %>
 
-<section class="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8">
+<section id="photoFrameEditorSection" class="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8 overflow-x-hidden">
   <div class="flex flex-wrap items-center justify-between gap-3">
     <h1 class="text-2xl md:text-3xl font-bold text-white"><%= (selectedTemplate && selectedTemplate.name) ? selectedTemplate.name : "Photo Frame Studio" %></h1>
     <a href="/photo-frames" class="text-sm text-slate-300 hover:text-white transition">
@@ -25,7 +25,7 @@
         <p id="selectedTemplateMeta" class="mt-1 text-xs text-slate-500"></p>
 
         <div class="mt-4">
-          <div id="frameEditorStage" class="relative mx-auto overflow-hidden rounded-lg bg-slate-900"
+          <div id="frameEditorStage" class="relative mx-auto w-full overflow-hidden rounded-lg bg-slate-900"
             style="width:min(100%,680px);aspect-ratio:1/1;">
             <div id="frameImageSlotsLayer" class="absolute inset-0"></div>
             <div id="frameTextLayer" class="absolute inset-0 pointer-events-none"></div>
@@ -57,6 +57,33 @@
     </div>
   <% } %>
 </section>
+
+<style>
+  #photoFrameEditorSection {
+    width: 100%;
+    max-width: 72rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 16px;
+    padding-right: 16px;
+    box-sizing: border-box;
+  }
+
+  #frameEditorStage {
+    width: 100%;
+    max-width: 680px;
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
+  }
+
+  @media (min-width: 768px) {
+    #photoFrameEditorSection {
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+  }
+</style>
 
 <div
   id="photoFrameStudioBootstrap"

@@ -43,6 +43,11 @@
   let textValues = new Map();
   const ZOOM_MIN = 1;
   const ZOOM_MAX = 4;
+  const MAX_RENDER_RETRIES = 6;
+  let renderRetryCount = 0;
+  let renderRafId = null;
+  let stageResizeObserver = null;
+  let delayedRenderTimers = [];
 
   function clamp(value, min, max, fallback) {
     const parsed = Number(value);
@@ -77,11 +82,25 @@
     slotInputRefs = new Map();
   }
 
-  function cleanupUserUploads() {
+  function resetSlotInputs() {
+    for (const input of slotInputRefs.values()) {
+      try {
+        input.value = "";
+      } catch (_err) {
+        // noop
+      }
+    }
+  }
+
+  function clearSlotImageState() {
     for (const entry of slotImageState.values()) {
       if (entry && entry.objectUrl) URL.revokeObjectURL(entry.objectUrl);
     }
     slotImageState = new Map();
+  }
+
+  function cleanupUserUploads() {
+    clearSlotImageState();
     removeSlotInputs();
   }
 
@@ -99,6 +118,39 @@
       offsetX: clamp(state.offsetX, -100, 100, 0),
       offsetY: clamp(state.offsetY, -100, 100, 0),
     };
+  }
+
+  function scheduleRenderEditorLayers() {
+    if (renderRafId) {
+      window.cancelAnimationFrame(renderRafId);
+    }
+    renderRafId = window.requestAnimationFrame(() => {
+      renderRafId = null;
+      renderEditorLayers();
+    });
+  }
+
+  function clearDelayedRenderTimers() {
+    delayedRenderTimers.forEach((timerId) => {
+      window.clearTimeout(timerId);
+    });
+    delayedRenderTimers = [];
+  }
+
+  function scheduleRenderBurst() {
+    clearDelayedRenderTimers();
+    scheduleRenderEditorLayers();
+    delayedRenderTimers.push(window.setTimeout(scheduleRenderEditorLayers, 80));
+    delayedRenderTimers.push(window.setTimeout(scheduleRenderEditorLayers, 240));
+  }
+
+  function setupStageResizeObserver() {
+    if (!frameEditorStage || typeof ResizeObserver !== "function") return;
+    if (stageResizeObserver) return;
+    stageResizeObserver = new ResizeObserver(() => {
+      scheduleRenderEditorLayers();
+    });
+    stageResizeObserver.observe(frameEditorStage);
   }
 
   function getCoverPlacement(imgWidth, imgHeight, boxWidth, boxHeight, zoom, offsetX, offsetY) {
@@ -322,7 +374,7 @@
           offsetX: 0,
           offsetY: 0,
         });
-        renderEditorLayers();
+        scheduleRenderBurst();
         setStatus("Photo uploaded. Drag to move, pinch to zoom.", "success");
       };
       image.onerror = () => {
@@ -549,10 +601,27 @@
 
     const canvasWidth = Number((activeTemplate.canvas && activeTemplate.canvas.width) || 1080);
     const canvasHeight = Number((activeTemplate.canvas && activeTemplate.canvas.height) || 1080);
+    frameEditorStage.style.aspectRatio = `${canvasWidth} / ${canvasHeight}`;
+
     const stageRect = frameEditorStage.getBoundingClientRect();
+    if (!stageRect.width || !stageRect.height) {
+      if (renderRetryCount < MAX_RENDER_RETRIES) {
+        renderRetryCount += 1;
+        scheduleRenderEditorLayers();
+      }
+      return;
+    }
+
+    const expectedHeight = (stageRect.width * canvasHeight) / Math.max(1, canvasWidth);
+    if (Math.abs(stageRect.height - expectedHeight) > 4 && renderRetryCount < MAX_RENDER_RETRIES) {
+      renderRetryCount += 1;
+      scheduleRenderEditorLayers();
+      return;
+    }
+
+    renderRetryCount = 0;
     const scale = stageRect.width ? stageRect.width / canvasWidth : 1;
 
-    frameEditorStage.style.aspectRatio = `${canvasWidth} / ${canvasHeight}`;
     frameImageSlotsLayer.innerHTML = "";
     frameTextLayer.innerHTML = "";
     frameOverlayImage.src =
@@ -677,10 +746,10 @@
         textarea.maxLength = 240;
         textarea.value = currentValue;
         textarea.className =
-          "w-full rounded-lg border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500";
+          "w-full rounded-lg border border-slate-700 bg-slate-900/70 px-3 py-2 text-base md:text-sm text-slate-100 focus:outline-none focus:border-indigo-500";
         textarea.addEventListener("input", () => {
           textValues.set(key, textarea.value);
-          renderEditorLayers();
+          scheduleRenderEditorLayers();
         });
         control.appendChild(textarea);
       } else {
@@ -724,7 +793,7 @@
     }
 
     buildTextControls();
-    renderEditorLayers();
+    scheduleRenderBurst();
     setStatus("Slot par tap karke image upload karo. Drag se move, pinch se zoom.", "default");
   }
 
@@ -793,21 +862,52 @@
 
   function resetCurrentTemplate() {
     if (!activeTemplate) return;
-    cleanupUserUploads();
+    if (document.activeElement && typeof document.activeElement.blur === "function") {
+      document.activeElement.blur();
+    }
+    clearSlotImageState();
+    resetSlotInputs();
     textValues = new Map();
+    let editableControlIndex = 0;
+    const textareas = textControls ? Array.from(textControls.querySelectorAll("textarea")) : [];
     (activeTemplate.texts || []).forEach((textLayer) => {
-      textValues.set(String(textLayer.key || ""), String(textLayer.value || ""));
+      const defaultValue = String(textLayer.value || "");
+      textValues.set(String(textLayer.key || ""), defaultValue);
+      if (textLayer.editable) {
+        const textarea = textareas[editableControlIndex];
+        if (textarea) textarea.value = defaultValue;
+        editableControlIndex += 1;
+      }
     });
-    rebuildSlotInputs();
-    buildTextControls();
-    renderEditorLayers();
+    scheduleRenderBurst();
     setStatus("Current template reset ho gaya.", "default");
   }
 
-  window.addEventListener("resize", renderEditorLayers);
+  const onVisualViewportChange = () => {
+    scheduleRenderEditorLayers();
+  };
+
+  window.addEventListener("resize", scheduleRenderEditorLayers);
+  window.addEventListener("load", scheduleRenderEditorLayers);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", onVisualViewportChange);
+    window.visualViewport.addEventListener("scroll", onVisualViewportChange);
+  }
+  setupStageResizeObserver();
   if (downloadButton) downloadButton.addEventListener("click", downloadComposedImage);
   if (resetButton) resetButton.addEventListener("click", resetCurrentTemplate);
-  window.addEventListener("beforeunload", cleanupUserUploads);
+  window.addEventListener("beforeunload", () => {
+    clearDelayedRenderTimers();
+    if (stageResizeObserver) {
+      stageResizeObserver.disconnect();
+      stageResizeObserver = null;
+    }
+    if (window.visualViewport) {
+      window.visualViewport.removeEventListener("resize", onVisualViewportChange);
+      window.visualViewport.removeEventListener("scroll", onVisualViewportChange);
+    }
+    cleanupUserUploads();
+  });
 
   setTemplate(selectedSlug);
 })();
