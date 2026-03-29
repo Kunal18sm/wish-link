@@ -39,6 +39,11 @@ const userSchema = new Schema({
     type: Number,
     default: 0,
   },
+  lightPalette: {
+    type: String,
+    enum: ["blue", "pink"],
+    default: "blue",
+  },
   dailyCreditClaim: {
     dateKey: {
       type: String,

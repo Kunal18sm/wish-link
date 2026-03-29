@@ -82,7 +82,7 @@
           <div class="flex flex-col sm:flex-row gap-3">
             <button id="downloadFrameBtn" type="button"
               class="rounded-xl bg-indigo-600 hover:bg-indigo-500 px-5 py-3 text-white font-semibold transition">
-              Download Final Image
+              Download Final Image (<%= Number(photoFrameDownloadCredits || 1) %> Credit<%= Number(photoFrameDownloadCredits || 1) === 1 ? "" : "s" %>)
             </button>
             <button id="resetFrameBtn" type="button"
               class="rounded-xl border border-slate-600 hover:border-slate-500 px-5 py-3 text-slate-200 font-semibold transition">
@@ -99,6 +99,9 @@
 <div
   id="photoFrameStudioBootstrap"
   data-selected-slug="<%= selectedTemplateSlug || '' %>"
+  data-is-logged-in="<%= currUser ? 'true' : 'false' %>"
+  data-download-credit-cost="<%= Number(photoFrameDownloadCredits || 1) %>"
+  data-login-url="/logInForm"
 ></div>
 <script id="photoFrameTemplatesData" type="application/json"><%- JSON.stringify(frameTemplates || []).replace(/</g, "\\u003c") %></script>
 <script defer src="/photoFrameStudio.js?v=<%= assetVersion %>"></script>

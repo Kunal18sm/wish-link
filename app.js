@@ -46,14 +46,14 @@ const io = new Server(server);
 const PORT = process.env.PORT || 8080;
 const SITE_URL = (process.env.SITE_URL || "https://wishlink-7j0a.onrender.com").replace(/\/+$/, "");
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || "";
-const ASSET_VERSION = process.env.ASSET_VERSION || "20260328o";
+const ASSET_VERSION = process.env.ASSET_VERSION || "20260329l";
 const ENABLE_CLOUDINARY_IMAGE_PROXY = process.env.CLOUDINARY_IMAGE_PROXY !== "false";
 const ENABLE_ANALYTICS = process.env.ENABLE_ANALYTICS === "true";
 const MUTATING_REQUEST_WINDOW_MS = Number(process.env.MUTATING_REQUEST_WINDOW_MS || 10 * 60 * 1000);
 const MUTATING_REQUEST_LIMIT = Number(process.env.MUTATING_REQUEST_LIMIT || 5);
 const MUTATING_REQUEST_WINDOW_MINUTES = Math.max(1, Math.round(MUTATING_REQUEST_WINDOW_MS / (60 * 1000)));
 const RATE_LIMIT_MESSAGE = `Rate limit exceeded: ${MUTATING_REQUEST_LIMIT} requests allowed every ${MUTATING_REQUEST_WINDOW_MINUTES} minutes.`;
-const AUTH_USER_SELECT = "_id username email isAdmin winnerCount dailyCreditClaim";
+const AUTH_USER_SELECT = "_id username email isAdmin winnerCount dailyCreditClaim lightPalette";
 const SOCKET_USER_SELECT = "_id username email isAdmin";
 const MONGODB_CONNECT_OPTIONS = {
   maxPoolSize: Number(process.env.MONGO_MAX_POOL_SIZE || 20),
@@ -91,7 +91,58 @@ function shouldSkipGlobalRateLimit(req) {
   const requestPath = String(req.path || "");
   if (requestPath === "/credits/claim-daily") return true;
   if (requestPath.startsWith("/web/template/") && requestPath.endsWith("/preview/unlock")) return true;
+  if (requestPath === "/photo-frames/download/unlock") return true;
   return false;
+}
+
+function wantsJsonResponse(req) {
+  const acceptHeader = String(req.get("accept") || "");
+  return req.xhr || acceptHeader.includes("application/json");
+}
+
+function normalizeUpstreamFailureStatus(statusCode) {
+  const numericStatus = Number(statusCode);
+  if (!Number.isInteger(numericStatus) || numericStatus < 400 || numericStatus > 599) {
+    return 502;
+  }
+
+  if (numericStatus >= 500) return 502;
+  return numericStatus;
+}
+
+function isServiceUnavailableError(err) {
+  const statusCode = Number(err?.statusCode);
+  if (statusCode === 503) return true;
+
+  const errorName = String(err?.name || "");
+  if (
+    errorName === "MongooseServerSelectionError" ||
+    errorName === "MongoServerSelectionError" ||
+    errorName === "MongoNetworkError" ||
+    errorName === "MongoTopologyClosedError"
+  ) {
+    return true;
+  }
+
+  const normalizedMessage = String(err?.message || "").toLowerCase();
+  return (
+    normalizedMessage.includes("server selection timed out") ||
+    normalizedMessage.includes("failed to connect to server") ||
+    normalizedMessage.includes("topology is closed") ||
+    normalizedMessage.includes("econnrefused")
+  );
+}
+
+function toErrorResponseMessage(err, statusCode) {
+  if (statusCode === 503) {
+    return "Service is temporarily unavailable. Please try again in a moment.";
+  }
+
+  if (statusCode >= 500) {
+    return "Something went wrong on our side. Please try again.";
+  }
+
+  return String(err?.message || "Something went wrong.");
 }
 
 app.locals.permanentPurchasedWeb = null;
@@ -244,7 +295,9 @@ app.get("/cdn/image", async (req, res) => {
     });
 
     if (!remoteResponse.ok) {
-      return res.status(remoteResponse.status).send("Image not available.");
+      return res
+        .status(normalizeUpstreamFailureStatus(remoteResponse.status))
+        .send("Image not available.");
     }
 
     const contentType = String(remoteResponse.headers.get("content-type") || "").toLowerCase();
@@ -267,7 +320,10 @@ app.get("/cdn/image", async (req, res) => {
 
     const imageBuffer = Buffer.from(await remoteResponse.arrayBuffer());
     return res.send(imageBuffer);
-  } catch (_err) {
+  } catch (err) {
+    if (err?.name === "AbortError") {
+      return res.status(504).send("Image request timed out.");
+    }
     return res.status(502).send("Unable to fetch remote image.");
   } finally {
     clearTimeout(timeoutRef);
@@ -277,6 +333,7 @@ app.get("/cdn/image", async (req, res) => {
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
+app.locals.primaryDbReady = false;
 
 const connectDb = async () => {
   const primaryMongoUrl = String(process.env.MongoDB_URL || "").trim();
@@ -288,6 +345,7 @@ const connectDb = async () => {
     }
 
     await mongoose.connect(primaryMongoUrl, MONGODB_CONNECT_OPTIONS);
+    app.locals.primaryDbReady = true;
 
     // One-time optional migration cleanup (kept behind env flag to speed cold starts).
     if (RUN_CHAT_MESSAGE_CLEANUP) {
@@ -300,7 +358,8 @@ const connectDb = async () => {
 
     console.log("DataBase Connected");
   } catch (err) {
-    console.log(err);
+    app.locals.primaryDbReady = false;
+    console.log("Primary DB connection failed:", err.message);
   }
 
   try {
@@ -329,6 +388,20 @@ const connectDb = async () => {
     console.log("Permanent DB connection failed:", err.message);
   }
 };
+
+mongoose.connection.on("connected", () => {
+  app.locals.primaryDbReady = true;
+});
+
+mongoose.connection.on("disconnected", () => {
+  app.locals.primaryDbReady = false;
+  console.log("Primary DB disconnected.");
+});
+
+mongoose.connection.on("error", (err) => {
+  app.locals.primaryDbReady = false;
+  console.log("Primary DB runtime error:", err.message);
+});
 
 const sessionOptions = {
   secret: process.env.SESSION_SECRET,
@@ -425,6 +498,7 @@ app.use((req, res, next) => {
   res.locals.success = req.flash("success");
   res.locals.error = req.flash("error");
   res.locals.currUser = req.user;
+  res.locals.userLightPalette = req.user?.lightPalette === "pink" ? "pink" : "blue";
   res.locals.userCredits = Number(req.user?.winnerCount || 0);
   res.locals.hideFooter = false;
   res.locals.chatLayout = false;
@@ -441,6 +515,7 @@ app.use((req, res, next) => {
   res.locals.googleClientId = GOOGLE_CLIENT_ID;
   res.locals.enableAnalytics = ENABLE_ANALYTICS;
   res.locals.designCssVariant = "full";
+  res.locals.disableDesignCss = false;
   res.locals.assetVersion = ASSET_VERSION;
   res.locals.getOptimizedCloudinaryUrl = app.locals.getOptimizedCloudinaryUrl;
   res.locals.getResponsiveCloudinarySrcSet = app.locals.getResponsiveCloudinarySrcSet;
@@ -520,18 +595,35 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, _next) => {
-  const statusCode = err.statusCode || 500;
-  const message = err.message || "Something went wrong.";
+  const requestedStatus = Number(err?.statusCode);
+  const normalizedRequestedStatus =
+    Number.isInteger(requestedStatus) && requestedStatus >= 400 && requestedStatus <= 599
+      ? requestedStatus
+      : 500;
+  const statusCode = isServiceUnavailableError(err) ? 503 : normalizedRequestedStatus;
+  const responseMessage = toErrorResponseMessage(err, statusCode);
   const redirectBack = req.get("Referrer") || "/";
 
-  console.log("Unhandled error:", err.message);
+  console.log("Unhandled error:", {
+    name: err?.name || "Error",
+    statusCode,
+    message: err?.message || "Unknown error",
+    path: req.originalUrl,
+  });
 
   if (req.originalUrl.startsWith("/web/purchase/")) {
     req.flash("error", getPurchaseErrorMessage(err));
     return res.redirect(redirectBack);
   }
 
-  return res.status(statusCode).send(message);
+  if (wantsJsonResponse(req)) {
+    return res.status(statusCode).json({
+      ok: false,
+      message: responseMessage,
+    });
+  }
+
+  return res.status(statusCode).send(responseMessage);
 });
 
 function normalizeChatMessage(rawMessage) {
@@ -702,6 +794,6 @@ io.on("connection", (socket) => {
 });
 
 server.listen(PORT, async () => {
-  console.log(`Listning to port ${PORT}`);
+  console.log(`Listening on port ${PORT}`);
   connectDb();
 });

@@ -239,10 +239,14 @@
 
     const keyRow = document.createElement("p");
     keyRow.className = "text-xs text-slate-400";
-    keyRow.textContent = `Selected: ${type} / ${layer.key}`;
+    keyRow.textContent = type === "text" ? "Selected: Text layer" : "Selected: Image slot";
     layerSettings.appendChild(keyRow);
 
     if (type === "slot") {
+      const hint = document.createElement("p");
+      hint.className = "text-xs text-slate-500";
+      hint.textContent = "Font options dekhne ke liye kisi Text layer ko select karein.";
+      layerSettings.appendChild(hint);
       return;
     }
 
@@ -301,6 +305,51 @@
     });
     fontWrap.appendChild(fontSelect);
     layerSettings.appendChild(fontWrap);
+
+    const fontSizeWrap = document.createElement("div");
+    fontSizeWrap.className = "block space-y-1";
+    fontSizeWrap.innerHTML = '<span class="text-xs text-slate-300">Font Size (px)</span>';
+
+    const fontSizeInputRow = document.createElement("div");
+    fontSizeInputRow.className = "flex items-center gap-2";
+
+    const fontSizeNumberInput = document.createElement("input");
+    fontSizeNumberInput.type = "number";
+    fontSizeNumberInput.min = "8";
+    fontSizeNumberInput.max = "300";
+    fontSizeNumberInput.step = "1";
+    fontSizeNumberInput.value = String(clamp(layer.fontSize, 8, 300, 48));
+    fontSizeNumberInput.className =
+      "w-24 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500";
+
+    const fontSizeRangeInput = document.createElement("input");
+    fontSizeRangeInput.type = "range";
+    fontSizeRangeInput.min = "8";
+    fontSizeRangeInput.max = "300";
+    fontSizeRangeInput.step = "1";
+    fontSizeRangeInput.value = fontSizeNumberInput.value;
+    fontSizeRangeInput.className = "w-full accent-indigo-500";
+
+    const applyFontSizeValue = (rawValue) => {
+      const nextSize = clamp(rawValue, 8, 300, Number(layer.fontSize || 48));
+      layer.fontSize = nextSize;
+      fontSizeNumberInput.value = String(nextSize);
+      fontSizeRangeInput.value = String(nextSize);
+      renderCanvasLayers();
+      syncPayloads();
+    };
+
+    fontSizeNumberInput.addEventListener("input", () => {
+      applyFontSizeValue(fontSizeNumberInput.value);
+    });
+    fontSizeRangeInput.addEventListener("input", () => {
+      applyFontSizeValue(fontSizeRangeInput.value);
+    });
+
+    fontSizeInputRow.appendChild(fontSizeNumberInput);
+    fontSizeInputRow.appendChild(fontSizeRangeInput);
+    fontSizeWrap.appendChild(fontSizeInputRow);
+    layerSettings.appendChild(fontSizeWrap);
 
   }
   function createLayerElement(item, type) {
@@ -545,7 +594,9 @@
     if (!slots.length) slots.push(createSlot());
     if (!texts.length) texts.push(createText());
 
-    selected = { type: "slot", key: slots[0].key };
+    selected = texts.length
+      ? { type: "text", key: texts[0].key }
+      : { type: "slot", key: slots[0].key };
   }
 
   addSlotBtn?.addEventListener("click", () => {

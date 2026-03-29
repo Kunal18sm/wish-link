@@ -6,19 +6,43 @@
     <script>
         (function () {
             try {
+                var serverPalette = <%- JSON.stringify(userLightPalette || "blue") %>;
+                if (serverPalette !== "blue" && serverPalette !== "pink") serverPalette = "blue";
                 var t = localStorage.getItem("vishlink-theme");
-                if (t !== "light" && t !== "dark") t = "light";
+                if (t !== "light" && t !== "dark") t = "dark";
+                var lp = localStorage.getItem("vishlink-light-palette");
+                if (lp !== "blue" && lp !== "pink") lp = serverPalette;
                 document.documentElement.setAttribute("data-theme", t);
+                document.documentElement.setAttribute("data-light-palette", lp);
+                document.documentElement.setAttribute("data-default-light-palette", serverPalette);
+                window.__VISHLINK_DEFAULT_LIGHT_PALETTE = serverPalette;
             } catch (_err) {
-                document.documentElement.setAttribute("data-theme", "light");
+                document.documentElement.setAttribute("data-theme", "dark");
+                document.documentElement.setAttribute("data-light-palette", "blue");
+                document.documentElement.setAttribute("data-default-light-palette", "blue");
+                window.__VISHLINK_DEFAULT_LIGHT_PALETTE = "blue";
             }
         })();
     </script>
 
-    <% const resolvedDesignCss = designCssVariant === "lite" ? "/homeCollectionLite.css" : "/design.css"; %>
+    <% const normalizedDesignCssVariant = (typeof designCssVariant === "string" && designCssVariant) ? designCssVariant : "full"; %>
+    <% const useLiteDesignCss = normalizedDesignCssVariant === "lite"; %>
+    <% const loadDesignCss = (typeof disableDesignCss === "boolean") ? !disableDesignCss : true; %>
     <link rel="stylesheet" href="/output.css?v=<%= assetVersion %>">
-    <link rel="stylesheet" href="<%= resolvedDesignCss %>?v=<%= assetVersion %>" media="print" onload="this.media='all'">
-    <noscript><link rel="stylesheet" href="<%= resolvedDesignCss %>?v=<%= assetVersion %>"></noscript>
+    <% if (loadDesignCss) { %>
+        <link rel="stylesheet" href="/design.css?v=<%= assetVersion %>" media="print" onload="this.media='all'">
+    <% } %>
+    <% if (loadDesignCss && useLiteDesignCss) { %>
+        <link rel="stylesheet" href="/homeCollectionLite.css?v=<%= assetVersion %>" media="print" onload="this.media='all'">
+    <% } %>
+    <noscript>
+        <% if (loadDesignCss) { %>
+            <link rel="stylesheet" href="/design.css?v=<%= assetVersion %>">
+        <% } %>
+        <% if (loadDesignCss && useLiteDesignCss) { %>
+            <link rel="stylesheet" href="/homeCollectionLite.css?v=<%= assetVersion %>">
+        <% } %>
+    </noscript>
     <% if (enableAnalytics) { %>
     <!-- Google Analytics (lazy loaded after page becomes idle) -->
     <script>
@@ -64,8 +88,12 @@
                 <div id="installPromptModal" class="fixed hidden"
                     style="z-index:230;top:10px;left:50%;transform:translateX(-50%);width:min(94%,560px);background:rgba(15,23,42,0.98);border:1px solid rgba(99,102,241,0.45);border-radius:14px;box-shadow:0 18px 46px rgba(2,6,23,0.58);padding:14px 16px;">
                     <div class="flex items-start gap-4">
-                        <img src="/assets/icon-192.png" alt="VishLink app logo" loading="lazy" decoding="async" width="52"
-                            height="52" class="rounded-xl object-cover" style="width:52px;height:52px;">
+                        <div
+                            aria-hidden="true"
+                            class="rounded-xl flex items-center justify-center font-extrabold text-white"
+                            style="width:52px;height:52px;background:linear-gradient(135deg,#4f46e5,#2563eb);letter-spacing:0.02em;">
+                            VL
+                        </div>
                         <div class="flex-1">
                             <h3 class="text-white font-semibold leading-tight" style="font-size:1.05rem;">Install VishLink</h3>
                             <p id="installPromptMessage" class="mt-1 text-slate-300 leading-relaxed" style="font-size:0.92rem;">
@@ -92,29 +120,29 @@
                 </div>
                 <style>
                     html[data-theme="light"] #installPromptBackdrop {
-                        background: rgba(244, 114, 182, 0.18) !important;
+                        background: rgba(148, 163, 184, 0.14) !important;
                     }
                     html[data-theme="light"] #installPromptModal {
-                        background: rgba(255, 248, 250, 0.98) !important;
-                        border-color: rgba(225, 29, 72, 0.24) !important;
-                        box-shadow: 0 18px 46px rgba(190, 24, 93, 0.2) !important;
+                        background: rgba(255, 255, 255, 0.98) !important;
+                        border-color: rgba(148, 163, 184, 0.28) !important;
+                        box-shadow: 0 18px 46px rgba(15, 23, 42, 0.12) !important;
                     }
                     html[data-theme="light"] #installPromptModal h3,
                     html[data-theme="light"] #installPromptModal p,
                     html[data-theme="light"] #installPromptModal #installPromptCloseBtn {
-                        color: #5b2a40 !important;
+                        color: #334155 !important;
                     }
                     html[data-theme="light"] #installPromptModal #installPromptLaterBtn {
-                        color: #7a3f57 !important;
-                        border-color: rgba(225, 29, 72, 0.24) !important;
+                        color: #475569 !important;
+                        border-color: rgba(148, 163, 184, 0.32) !important;
                     }
                     html[data-theme="light"] #installPromptModal #installPromptLaterBtn:hover {
-                        background: rgba(251, 113, 133, 0.14) !important;
-                        color: #4b1f33 !important;
+                        background: rgba(79, 70, 229, 0.1) !important;
+                        color: #1e293b !important;
                     }
                     html[data-theme="light"] #installPromptModal #installPromptInstallBtn {
-                        background: linear-gradient(135deg, #f43f5e, #fb7185) !important;
-                        color: #fff7f9 !important;
+                        background: linear-gradient(135deg, #4f46e5, #6366f1) !important;
+                        color: #eef2ff !important;
                     }
                 </style>
             <% } %>
@@ -205,49 +233,49 @@
                     }
 
                     html[data-theme="light"] #dailyRewardModal {
-                        background: linear-gradient(148deg, #fff8fa 0%, #ffeef4 52%, #ffe6ee 100%) !important;
-                        border-color: rgba(225, 29, 72, 0.28) !important;
-                        box-shadow: 0 24px 54px rgba(190, 24, 93, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.65) !important;
+                        background: linear-gradient(148deg, #ffffff 0%, #f8fafc 52%, #f1f5f9 100%) !important;
+                        border-color: rgba(148, 163, 184, 0.3) !important;
+                        box-shadow: 0 24px 54px rgba(15, 23, 42, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.75) !important;
                     }
                     html[data-theme="light"] #dailyRewardModal::before {
                         background:
-                            radial-gradient(circle at 16% 14%, rgba(251, 113, 133, 0.2), transparent 36%),
-                            radial-gradient(circle at 85% 20%, rgba(251, 146, 60, 0.18), transparent 38%),
-                            radial-gradient(circle at 50% 95%, rgba(244, 114, 182, 0.16), transparent 42%) !important;
+                            radial-gradient(circle at 16% 14%, rgba(99, 102, 241, 0.14), transparent 36%),
+                            radial-gradient(circle at 85% 20%, rgba(56, 189, 248, 0.12), transparent 38%),
+                            radial-gradient(circle at 50% 95%, rgba(148, 163, 184, 0.14), transparent 42%) !important;
                     }
                     html[data-theme="light"] #dailyRewardModal .day-box {
-                        background: linear-gradient(180deg, rgba(255, 251, 252, 0.97), rgba(255, 240, 244, 0.95)) !important;
-                        border-color: rgba(225, 29, 72, 0.18) !important;
+                        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(241, 245, 249, 0.96)) !important;
+                        border-color: rgba(148, 163, 184, 0.2) !important;
                     }
                     html[data-theme="light"] #dailyRewardModal .day-box:hover:not(.claimed):not(.locked) {
-                        background: linear-gradient(180deg, rgba(255, 244, 248, 1), rgba(255, 233, 239, 0.98)) !important;
-                        border-color: rgba(225, 29, 72, 0.3) !important;
+                        background: linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(226, 232, 240, 0.98)) !important;
+                        border-color: rgba(79, 70, 229, 0.28) !important;
                     }
                     html[data-theme="light"] #dailyRewardModal .claimed {
                         background: linear-gradient(180deg, rgba(217, 249, 228, 0.95), rgba(236, 253, 245, 0.98)) !important;
                         border-color: rgba(22, 163, 74, 0.35) !important;
                     }
                     html[data-theme="light"] #dailyRewardModal .active-day {
-                        border-color: rgba(225, 29, 72, 0.52) !important;
-                        background: linear-gradient(180deg, rgba(255, 230, 238, 0.98), rgba(255, 244, 247, 0.96)) !important;
-                        box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.14), 0 12px 18px rgba(190, 24, 93, 0.16) !important;
+                        border-color: rgba(79, 70, 229, 0.5) !important;
+                        background: linear-gradient(180deg, rgba(224, 231, 255, 0.98), rgba(248, 250, 252, 0.96)) !important;
+                        box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.12), 0 12px 18px rgba(15, 23, 42, 0.1) !important;
                     }
                     html[data-theme="light"] #dailyRewardModal h2,
                     html[data-theme="light"] #dailyRewardModal p,
                     html[data-theme="light"] #dailyRewardModal span {
-                        color: #5b2a40 !important;
+                        color: #334155 !important;
                     }
                     html[data-theme="light"] #dailyRewardModal #dailyRewardClaimBtn {
-                        background: linear-gradient(135deg, #f43f5e, #fb7185) !important;
-                        color: #fff7f9 !important;
+                        background: linear-gradient(135deg, #4f46e5, #6366f1) !important;
+                        color: #eef2ff !important;
                     }
                     html[data-theme="light"] #dailyRewardToast {
-                        background: rgba(255, 245, 247, 0.98) !important;
-                        border-color: rgba(225, 29, 72, 0.26) !important;
-                        box-shadow: 0 16px 38px rgba(190, 24, 93, 0.18) !important;
+                        background: rgba(255, 255, 255, 0.98) !important;
+                        border-color: rgba(148, 163, 184, 0.28) !important;
+                        box-shadow: 0 16px 38px rgba(15, 23, 42, 0.12) !important;
                     }
                     html[data-theme="light"] #dailyRewardToast span {
-                        color: #6b2541 !important;
+                        color: #334155 !important;
                     }
                 </style>
 
@@ -329,6 +357,574 @@
                 <% if (typeof hideFooter === "undefined" || !hideFooter) { %>
                     <%- include("../includes/footer.ejs") %>
                 <% } %>
+
+                    <style>
+                        /* Final global light-theme override (applies after page-level styles) */
+                        html[data-theme="light"] {
+                            --sky-bg: #ffffff;
+                            --sky-bg-soft: #f8fbff;
+                            --sky-surface: #ffffff;
+                            --sky-surface-alt: #f7fbff;
+                            --sky-border: #c9dcf5;
+                            --sky-text: #1a365d;
+                            --sky-text-soft: #365574;
+                            --sky-muted: #607fa2;
+                            --sky-accent: #2563eb;
+                            --sky-accent-hover: #1d4ed8;
+                            --sky-accent-soft: rgba(37, 99, 235, 0.12);
+                            --sky-accent-soft-strong: rgba(37, 99, 235, 0.2);
+                            --sky-accent-border: rgba(37, 99, 235, 0.38);
+                            --sky-accent-border-strong: rgba(37, 99, 235, 0.56);
+                            --sky-button-border: rgba(37, 99, 235, 0.34);
+                            --sky-accent-shadow: rgba(37, 99, 235, 0.38);
+                            --sky-accent-text: #1e3a8a;
+                            --sky-overlay: rgba(148, 163, 184, 0.2);
+                            --sky-gradient-from-rgb: 96, 165, 250;
+                            --sky-gradient-to-rgb: 56, 189, 248;
+                            --sky-glow-a-rgb: 125, 211, 252;
+                            --sky-glow-b-rgb: 147, 197, 253;
+                            --sky-scroll-track: #eff6ff;
+                            --sky-scroll-thumb: #93c5fd;
+                            --sky-scroll-thumb-hover: #60a5fa;
+                            --theme-toggle-bg: rgba(255, 255, 255, 0.95);
+                            --theme-toggle-border: rgba(37, 99, 235, 0.42);
+                            --sky-contrast: #eff6ff;
+                        }
+
+                        html[data-theme="light"][data-light-palette="pink"] {
+                            --sky-bg: #fff6fb;
+                            --sky-bg-soft: #ffeaf5;
+                            --sky-surface: #ffffff;
+                            --sky-surface-alt: #fff1f8;
+                            --sky-border: #f3c7df;
+                            --sky-text: #5a2347;
+                            --sky-text-soft: #7a3a61;
+                            --sky-muted: #98567b;
+                            --sky-accent: #db2777;
+                            --sky-accent-hover: #be185d;
+                            --sky-accent-soft: rgba(219, 39, 119, 0.14);
+                            --sky-accent-soft-strong: rgba(219, 39, 119, 0.24);
+                            --sky-accent-border: rgba(219, 39, 119, 0.42);
+                            --sky-accent-border-strong: rgba(219, 39, 119, 0.58);
+                            --sky-button-border: rgba(219, 39, 119, 0.34);
+                            --sky-accent-shadow: rgba(219, 39, 119, 0.42);
+                            --sky-accent-text: #831843;
+                            --sky-overlay: rgba(249, 168, 212, 0.24);
+                            --sky-gradient-from-rgb: 244, 114, 182;
+                            --sky-gradient-to-rgb: 251, 113, 133;
+                            --sky-glow-a-rgb: 251, 207, 232;
+                            --sky-glow-b-rgb: 244, 114, 182;
+                            --sky-scroll-track: #fce7f3;
+                            --sky-scroll-thumb: #f9a8d4;
+                            --sky-scroll-thumb-hover: #f472b6;
+                            --theme-toggle-bg: rgba(255, 255, 255, 0.96);
+                            --theme-toggle-border: rgba(219, 39, 119, 0.42);
+                            --sky-contrast: #fff7fb;
+                        }
+
+                        html[data-theme="light"] body {
+                            background: var(--sky-bg) !important;
+                            color: var(--sky-text) !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette="pink"] body {
+                            background:
+                                radial-gradient(circle at 8% 8%, rgba(var(--sky-glow-a-rgb), 0.18), transparent 34%),
+                                radial-gradient(circle at 90% 88%, rgba(var(--sky-glow-b-rgb), 0.18), transparent 40%),
+                                var(--sky-bg) !important;
+                        }
+
+                        html[data-theme="light"] .home-page,
+                        html[data-theme="light"] .collection-page {
+                            background: transparent !important;
+                            color: var(--sky-text) !important;
+                        }
+
+                        html[data-theme="light"] .bg-\[\#020617\],
+                        html[data-theme="light"] .bg-\[\#0B1120\],
+                        html[data-theme="light"] .bg-\[\#1e293b\],
+                        html[data-theme="light"] .bg-\[\#161e2b\],
+                        html[data-theme="light"] .bg-slate-900,
+                        html[data-theme="light"] .bg-slate-900\/60,
+                        html[data-theme="light"] .bg-slate-900\/50,
+                        html[data-theme="light"] .bg-slate-800,
+                        html[data-theme="light"] .bg-slate-800\/80,
+                        html[data-theme="light"] .bg-slate-800\/60,
+                        html[data-theme="light"] .bg-slate-800\/50,
+                        html[data-theme="light"] .bg-slate-800\/40,
+                        html[data-theme="light"] .bg-slate-700,
+                        html[data-theme="light"] .glass-effect,
+                        html[data-theme="light"] .glass-card,
+                        html[data-theme="light"] .glass-box,
+                        html[data-theme="light"] .glass {
+                            background: var(--sky-surface) !important;
+                            border-color: var(--sky-border) !important;
+                            box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08) !important;
+                        }
+
+                        html[data-theme="light"] .text-white,
+                        html[data-theme="light"] .text-slate-100 {
+                            color: var(--sky-text) !important;
+                        }
+
+                        html[data-theme="light"] .text-slate-200,
+                        html[data-theme="light"] .text-slate-300 {
+                            color: var(--sky-text-soft) !important;
+                        }
+
+                        html[data-theme="light"] .text-slate-400,
+                        html[data-theme="light"] .text-slate-500,
+                        html[data-theme="light"] .text-slate-600 {
+                            color: var(--sky-muted) !important;
+                        }
+
+                        html[data-theme="light"] .theme-switch-btn,
+                        html[data-theme="light"] #navThemeToggleBtn {
+                            border-color: var(--theme-toggle-border) !important;
+                            color: var(--sky-accent) !important;
+                            background: var(--theme-toggle-bg) !important;
+                        }
+
+                        html[data-theme="light"] .theme-switch-btn:hover {
+                            border-color: var(--sky-accent-border-strong) !important;
+                            background: var(--sky-accent-soft) !important;
+                            color: var(--sky-accent) !important;
+                        }
+
+                        html[data-theme="light"] .text-indigo-300,
+                        html[data-theme="light"] .text-indigo-400,
+                        html[data-theme="light"] .text-indigo-500,
+                        html[data-theme="light"] .text-blue-300,
+                        html[data-theme="light"] .text-blue-400,
+                        html[data-theme="light"] .text-blue-500,
+                        html[data-theme="light"] .text-sky-300,
+                        html[data-theme="light"] .text-sky-400,
+                        html[data-theme="light"] .text-cyan-300,
+                        html[data-theme="light"] .text-cyan-400,
+                        html[data-theme="light"] .text-violet-300,
+                        html[data-theme="light"] .text-violet-400,
+                        html[data-theme="light"] .text-emerald-300,
+                        html[data-theme="light"] .text-emerald-400,
+                        html[data-theme="light"] .text-rose-300,
+                        html[data-theme="light"] .text-rose-400 {
+                            color: var(--sky-accent) !important;
+                        }
+
+                        html[data-theme="light"] .bg-indigo-600,
+                        html[data-theme="light"] .bg-indigo-500,
+                        html[data-theme="light"] .bg-blue-600,
+                        html[data-theme="light"] .bg-blue-500,
+                        html[data-theme="light"] .bg-sky-600,
+                        html[data-theme="light"] .bg-cyan-600,
+                        html[data-theme="light"] .bg-violet-600,
+                        html[data-theme="light"] .bg-emerald-600,
+                        html[data-theme="light"] .bg-emerald-500,
+                        html[data-theme="light"] .bg-rose-600,
+                        html[data-theme="light"] .bg-rose-500,
+                        html[data-theme="light"] .leaderboard-result-btn {
+                            background: var(--sky-accent) !important;
+                            color: var(--sky-contrast) !important;
+                            border-color: var(--sky-accent-border) !important;
+                            box-shadow: 0 12px 22px -14px var(--sky-accent-shadow) !important;
+                        }
+
+                        html[data-theme="light"] .hover\:bg-indigo-500:hover,
+                        html[data-theme="light"] .hover\:bg-indigo-600:hover,
+                        html[data-theme="light"] .hover\:bg-blue-500:hover,
+                        html[data-theme="light"] .hover\:bg-blue-600:hover,
+                        html[data-theme="light"] .hover\:bg-sky-500:hover,
+                        html[data-theme="light"] .hover\:bg-cyan-500:hover,
+                        html[data-theme="light"] .hover\:bg-violet-500:hover,
+                        html[data-theme="light"] .hover\:bg-emerald-500:hover,
+                        html[data-theme="light"] .hover\:bg-emerald-600:hover,
+                        html[data-theme="light"] .hover\:bg-rose-600:hover,
+                        html[data-theme="light"] .hover\:bg-pink-600:hover,
+                        html[data-theme="light"] .leaderboard-result-btn:hover {
+                            background: var(--sky-accent-hover) !important;
+                            color: var(--sky-contrast) !important;
+                        }
+
+                        html[data-theme="light"] .bg-indigo-500\/10,
+                        html[data-theme="light"] .bg-indigo-500\/20,
+                        html[data-theme="light"] .bg-blue-500\/10,
+                        html[data-theme="light"] .bg-blue-500\/20,
+                        html[data-theme="light"] .bg-sky-500\/10,
+                        html[data-theme="light"] .bg-cyan-500\/10,
+                        html[data-theme="light"] .bg-violet-500\/10,
+                        html[data-theme="light"] .bg-emerald-500\/10,
+                        html[data-theme="light"] .bg-rose-500\/10 {
+                            background-color: var(--sky-accent-soft) !important;
+                            color: var(--sky-accent-text) !important;
+                        }
+
+                        html[data-theme="light"] .border-indigo-500\/10,
+                        html[data-theme="light"] .border-indigo-500\/20,
+                        html[data-theme="light"] .border-indigo-500\/30,
+                        html[data-theme="light"] .border-indigo-500\/40,
+                        html[data-theme="light"] .border-blue-500\/20,
+                        html[data-theme="light"] .border-sky-500\/20,
+                        html[data-theme="light"] .border-cyan-500\/20,
+                        html[data-theme="light"] .border-violet-500\/20,
+                        html[data-theme="light"] .border-emerald-500\/20,
+                        html[data-theme="light"] .border-rose-500\/20,
+                        html[data-theme="light"] .border-slate-900,
+                        html[data-theme="light"] .border-slate-800,
+                        html[data-theme="light"] .border-slate-700,
+                        html[data-theme="light"] .border-slate-700\/60,
+                        html[data-theme="light"] .border-slate-700\/50 {
+                            border-color: var(--sky-border) !important;
+                        }
+
+                        html[data-theme="light"] .from-indigo-600,
+                        html[data-theme="light"] .from-indigo-400,
+                        html[data-theme="light"] .from-blue-600,
+                        html[data-theme="light"] .from-blue-400,
+                        html[data-theme="light"] .from-sky-600 {
+                            --tw-gradient-from: rgba(var(--sky-gradient-from-rgb), 0.26) var(--tw-gradient-from-position) !important;
+                            --tw-gradient-to: rgba(var(--sky-gradient-from-rgb), 0) var(--tw-gradient-to-position) !important;
+                            --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+                        }
+
+                        html[data-theme="light"] .to-purple-800,
+                        html[data-theme="light"] .to-purple-600,
+                        html[data-theme="light"] .to-purple-400,
+                        html[data-theme="light"] .to-violet-600,
+                        html[data-theme="light"] .to-blue-600,
+                        html[data-theme="light"] .to-cyan-600 {
+                            --tw-gradient-to: rgba(var(--sky-gradient-to-rgb), 0.2) var(--tw-gradient-to-position) !important;
+                        }
+
+                        html[data-theme="light"] #installPromptBackdrop,
+                        html[data-theme="light"] #templatePreviewCreditBackdrop,
+                        html[data-theme="light"] #deleteModal,
+                        html[data-theme="light"] #resultModal {
+                            background: var(--sky-overlay) !important;
+                        }
+
+                        html[data-theme="light"] #installPromptModal,
+                        html[data-theme="light"] #templatePreviewCreditModal,
+                        html[data-theme="light"] #dailyRewardModal,
+                        html[data-theme="light"] #dailyRewardToast {
+                            background: rgba(255, 255, 255, 0.98) !important;
+                            border-color: var(--sky-border) !important;
+                            color: var(--sky-text) !important;
+                            box-shadow: 0 18px 38px rgba(15, 23, 42, 0.12) !important;
+                        }
+
+                        html[data-theme="light"] #installPromptInstallBtn,
+                        html[data-theme="light"] #dailyRewardModal #dailyRewardClaimBtn,
+                        html[data-theme="light"] #templatePreviewCreditModal #templatePreviewUseBtn,
+                        html[data-theme="light"] #templatePreviewCreditModal #templatePreviewLoginBtn {
+                            background: var(--sky-accent) !important;
+                            color: var(--sky-contrast) !important;
+                            border-color: var(--sky-button-border) !important;
+                        }
+
+                        html[data-theme="light"] #installPromptInstallBtn:hover,
+                        html[data-theme="light"] #dailyRewardModal #dailyRewardClaimBtn:hover,
+                        html[data-theme="light"] #templatePreviewCreditModal #templatePreviewUseBtn:hover,
+                        html[data-theme="light"] #templatePreviewCreditModal #templatePreviewLoginBtn:hover {
+                            background: var(--sky-accent-hover) !important;
+                        }
+
+                        html[data-theme="light"] ::-webkit-scrollbar-track {
+                            background: var(--sky-scroll-track) !important;
+                        }
+
+                        html[data-theme="light"] ::-webkit-scrollbar-thumb {
+                            background: var(--sky-scroll-thumb) !important;
+                        }
+
+                        html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+                            background: var(--sky-scroll-thumb-hover) !important;
+                        }
+
+                        /* Palette enforcement (optimized): keep explicit utility targets only */
+
+                        html[data-theme="light"][data-light-palette] body .bg-indigo-600,
+                        html[data-theme="light"][data-light-palette] body .bg-indigo-500,
+                        html[data-theme="light"][data-light-palette] body .bg-blue-600,
+                        html[data-theme="light"][data-light-palette] body .bg-blue-500,
+                        html[data-theme="light"][data-light-palette] body .bg-sky-600,
+                        html[data-theme="light"][data-light-palette] body .bg-cyan-600,
+                        html[data-theme="light"][data-light-palette] body .bg-violet-600,
+                        html[data-theme="light"][data-light-palette] body .bg-emerald-600,
+                        html[data-theme="light"][data-light-palette] body .bg-emerald-500,
+                        html[data-theme="light"][data-light-palette] body .bg-rose-600,
+                        html[data-theme="light"][data-light-palette] body .bg-rose-500,
+                        html[data-theme="light"][data-light-palette] body .bg-pink-600,
+                        html[data-theme="light"][data-light-palette] body .bg-pink-500,
+                        html[data-theme="light"][data-light-palette] body .leaderboard-result-btn {
+                            background: var(--sky-accent) !important;
+                            color: var(--sky-contrast) !important;
+                            border-color: var(--sky-accent-border) !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette] body .hover\:bg-indigo-500:hover,
+                        html[data-theme="light"][data-light-palette] body .hover\:bg-indigo-600:hover,
+                        html[data-theme="light"][data-light-palette] body .hover\:bg-blue-500:hover,
+                        html[data-theme="light"][data-light-palette] body .hover\:bg-blue-600:hover,
+                        html[data-theme="light"][data-light-palette] body .hover\:bg-sky-500:hover,
+                        html[data-theme="light"][data-light-palette] body .hover\:bg-cyan-500:hover,
+                        html[data-theme="light"][data-light-palette] body .hover\:bg-violet-500:hover,
+                        html[data-theme="light"][data-light-palette] body .hover\:bg-emerald-500:hover,
+                        html[data-theme="light"][data-light-palette] body .hover\:bg-emerald-600:hover,
+                        html[data-theme="light"][data-light-palette] body .hover\:bg-rose-500:hover,
+                        html[data-theme="light"][data-light-palette] body .hover\:bg-rose-600:hover,
+                        html[data-theme="light"][data-light-palette] body .hover\:bg-pink-500:hover,
+                        html[data-theme="light"][data-light-palette] body .hover\:bg-pink-600:hover,
+                        html[data-theme="light"][data-light-palette] body .leaderboard-result-btn:hover {
+                            background: var(--sky-accent-hover) !important;
+                            color: var(--sky-contrast) !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette] body .bg-indigo-500\/10,
+                        html[data-theme="light"][data-light-palette] body .bg-indigo-500\/20,
+                        html[data-theme="light"][data-light-palette] body .bg-blue-500\/10,
+                        html[data-theme="light"][data-light-palette] body .bg-blue-500\/20,
+                        html[data-theme="light"][data-light-palette] body .bg-sky-500\/10,
+                        html[data-theme="light"][data-light-palette] body .bg-cyan-500\/10,
+                        html[data-theme="light"][data-light-palette] body .bg-violet-500\/10,
+                        html[data-theme="light"][data-light-palette] body .bg-emerald-500\/10,
+                        html[data-theme="light"][data-light-palette] body .bg-rose-500\/10,
+                        html[data-theme="light"][data-light-palette] body .bg-pink-500\/10 {
+                            background-color: var(--sky-accent-soft) !important;
+                            color: var(--sky-accent-text) !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette] body .border-indigo-500\/10,
+                        html[data-theme="light"][data-light-palette] body .border-indigo-500\/20,
+                        html[data-theme="light"][data-light-palette] body .border-indigo-500\/30,
+                        html[data-theme="light"][data-light-palette] body .border-indigo-500\/40,
+                        html[data-theme="light"][data-light-palette] body .border-blue-500\/20,
+                        html[data-theme="light"][data-light-palette] body .border-sky-500\/20,
+                        html[data-theme="light"][data-light-palette] body .border-cyan-500\/20,
+                        html[data-theme="light"][data-light-palette] body .border-violet-500\/20,
+                        html[data-theme="light"][data-light-palette] body .border-emerald-500\/20,
+                        html[data-theme="light"][data-light-palette] body .border-rose-500\/20,
+                        html[data-theme="light"][data-light-palette] body .border-pink-500\/20 {
+                            border-color: var(--sky-border) !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette] body .from-indigo-600,
+                        html[data-theme="light"][data-light-palette] body .from-indigo-400,
+                        html[data-theme="light"][data-light-palette] body .from-blue-600,
+                        html[data-theme="light"][data-light-palette] body .from-blue-400,
+                        html[data-theme="light"][data-light-palette] body .from-sky-600,
+                        html[data-theme="light"][data-light-palette] body .from-pink-600,
+                        html[data-theme="light"][data-light-palette] body .from-rose-600 {
+                            --tw-gradient-from: rgba(var(--sky-gradient-from-rgb), 0.26) var(--tw-gradient-from-position) !important;
+                            --tw-gradient-to: rgba(var(--sky-gradient-from-rgb), 0) var(--tw-gradient-to-position) !important;
+                            --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette] body .to-purple-800,
+                        html[data-theme="light"][data-light-palette] body .to-purple-600,
+                        html[data-theme="light"][data-light-palette] body .to-purple-400,
+                        html[data-theme="light"][data-light-palette] body .to-violet-600,
+                        html[data-theme="light"][data-light-palette] body .to-blue-600,
+                        html[data-theme="light"][data-light-palette] body .to-cyan-600,
+                        html[data-theme="light"][data-light-palette] body .to-pink-600,
+                        html[data-theme="light"][data-light-palette] body .to-rose-600 {
+                            --tw-gradient-to: rgba(var(--sky-gradient-to-rgb), 0.2) var(--tw-gradient-to-position) !important;
+                        }
+
+                        /* Absolute lock for blue palette: no pink/peach/warm shades */
+                        html[data-theme="light"][data-light-palette="blue"] {
+                            --sky-bg: #ffffff;
+                            --sky-surface: #ffffff;
+                            --sky-surface-alt: #f7fbff;
+                            --sky-border: #c9dcf5;
+                            --sky-accent: #2563eb;
+                            --sky-accent-hover: #1d4ed8;
+                            --sky-accent-soft: rgba(37, 99, 235, 0.12);
+                            --sky-accent-border: rgba(37, 99, 235, 0.38);
+                            --sky-accent-text: #1e3a8a;
+                            --sky-overlay: rgba(148, 163, 184, 0.2);
+                        }
+
+                        html[data-theme="light"][data-light-palette="blue"] body,
+                        html[data-theme="light"][data-light-palette="blue"] .home-page,
+                        html[data-theme="light"][data-light-palette="blue"] .collection-page {
+                            background: #ffffff !important;
+                            color: var(--sky-text) !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette="blue"] .fixed.inset-0.-z-10 {
+                            background: #ffffff !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette="blue"] .bg-rose-600,
+                        html[data-theme="light"][data-light-palette="blue"] .bg-rose-500,
+                        html[data-theme="light"][data-light-palette="blue"] .bg-pink-600,
+                        html[data-theme="light"][data-light-palette="blue"] .bg-pink-500,
+                        html[data-theme="light"][data-light-palette="blue"] .bg-red-600,
+                        html[data-theme="light"][data-light-palette="blue"] .bg-red-500,
+                        html[data-theme="light"][data-light-palette="blue"] .bg-orange-600,
+                        html[data-theme="light"][data-light-palette="blue"] .bg-orange-500,
+                        html[data-theme="light"][data-light-palette="blue"] .bg-amber-600,
+                        html[data-theme="light"][data-light-palette="blue"] .bg-amber-500 {
+                            background: var(--sky-accent) !important;
+                            color: var(--sky-contrast) !important;
+                            border-color: var(--sky-accent-border) !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette="blue"] .hover\:bg-rose-600:hover,
+                        html[data-theme="light"][data-light-palette="blue"] .hover\:bg-rose-500:hover,
+                        html[data-theme="light"][data-light-palette="blue"] .hover\:bg-pink-600:hover,
+                        html[data-theme="light"][data-light-palette="blue"] .hover\:bg-pink-500:hover,
+                        html[data-theme="light"][data-light-palette="blue"] .hover\:bg-red-600:hover,
+                        html[data-theme="light"][data-light-palette="blue"] .hover\:bg-red-500:hover,
+                        html[data-theme="light"][data-light-palette="blue"] .hover\:bg-orange-600:hover,
+                        html[data-theme="light"][data-light-palette="blue"] .hover\:bg-orange-500:hover,
+                        html[data-theme="light"][data-light-palette="blue"] .hover\:bg-amber-600:hover,
+                        html[data-theme="light"][data-light-palette="blue"] .hover\:bg-amber-500:hover {
+                            background: var(--sky-accent-hover) !important;
+                            color: var(--sky-contrast) !important;
+                        }
+
+                        /* Ultimate blue normalization pass (all pages) */
+                        html[data-theme="light"][data-light-palette="blue"] body,
+                        html[data-theme="light"][data-light-palette="blue"] main,
+                        html[data-theme="light"][data-light-palette="blue"] section,
+                        html[data-theme="light"][data-light-palette="blue"] article,
+                        html[data-theme="light"][data-light-palette="blue"] aside {
+                            background-color: #ffffff !important;
+                            color: #1e3a5f !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette="blue"] .glass,
+                        html[data-theme="light"][data-light-palette="blue"] .glass-card,
+                        html[data-theme="light"][data-light-palette="blue"] .glass-effect,
+                        html[data-theme="light"][data-light-palette="blue"] .glass-box,
+                        html[data-theme="light"][data-light-palette="blue"] .input-field,
+                        html[data-theme="light"][data-light-palette="blue"] .input-style {
+                            background: #ffffff !important;
+                            border-color: rgba(37, 99, 235, 0.24) !important;
+                            color: #1e3a5f !important;
+                            box-shadow: 0 10px 24px rgba(37, 99, 235, 0.06) !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette="blue"] .input-field::placeholder,
+                        html[data-theme="light"][data-light-palette="blue"] .input-style::placeholder,
+                        html[data-theme="light"][data-light-palette="blue"] input::placeholder,
+                        html[data-theme="light"][data-light-palette="blue"] textarea::placeholder {
+                            color: #6b86a3 !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette="blue"] .input-field:focus,
+                        html[data-theme="light"][data-light-palette="blue"] .input-style:focus,
+                        html[data-theme="light"][data-light-palette="blue"] input:focus,
+                        html[data-theme="light"][data-light-palette="blue"] textarea:focus,
+                        html[data-theme="light"][data-light-palette="blue"] select:focus {
+                            border-color: #2563eb !important;
+                            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16) !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette="blue"] h1,
+                        html[data-theme="light"][data-light-palette="blue"] h2,
+                        html[data-theme="light"][data-light-palette="blue"] h3,
+                        html[data-theme="light"][data-light-palette="blue"] h4,
+                        html[data-theme="light"][data-light-palette="blue"] h5,
+                        html[data-theme="light"][data-light-palette="blue"] h6,
+                        html[data-theme="light"][data-light-palette="blue"] .text-white {
+                            color: #1e3a5f !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette="blue"] p,
+                        html[data-theme="light"][data-light-palette="blue"] li,
+                        html[data-theme="light"][data-light-palette="blue"] .text-slate-300,
+                        html[data-theme="light"][data-light-palette="blue"] .text-slate-400,
+                        html[data-theme="light"][data-light-palette="blue"] .text-slate-500,
+                        html[data-theme="light"][data-light-palette="blue"] .text-slate-600 {
+                            color: #5f7d9b !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette="blue"] .gradient-text,
+                        html[data-theme="light"][data-light-palette="blue"] .glow-text {
+                            background: linear-gradient(90deg, #2563eb, #38bdf8) !important;
+                            background-clip: text !important;
+                            -webkit-background-clip: text !important;
+                            -webkit-text-fill-color: transparent !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette="blue"] .bg-mesh .blob,
+                        html[data-theme="light"][data-light-palette="blue"] .blob {
+                            background: rgba(96, 165, 250, 0.12) !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette="blue"] .section-icon {
+                            background: rgba(37, 99, 235, 0.14) !important;
+                            color: #1d4ed8 !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette="blue"] a {
+                            color: #2563eb !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette="blue"] a:hover {
+                            color: #1d4ed8 !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette="blue"] a[href^="/category/"],
+                        html[data-theme="light"][data-light-palette="blue"] a[href*="/web/purchase/permanent/"],
+                        html[data-theme="light"][data-light-palette="blue"] #feedbackform,
+                        html[data-theme="light"][data-light-palette="blue"] #feedbackform input[name="message"] {
+                            background: #ffffff !important;
+                            color: #1d4ed8 !important;
+                            border-color: rgba(37, 99, 235, 0.32) !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette="blue"] a[href^="/category/"]:hover,
+                        html[data-theme="light"][data-light-palette="blue"] a[href*="/web/purchase/permanent/"]:hover {
+                            background: rgba(37, 99, 235, 0.1) !important;
+                            color: #1e40af !important;
+                            border-color: rgba(37, 99, 235, 0.5) !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette="blue"] .leaderboard-result-btn,
+                        html[data-theme="light"][data-light-palette="blue"] .submitBtnLink,
+                        html[data-theme="light"][data-light-palette="blue"] .bg-indigo-600 {
+                            background: #2563eb !important;
+                            color: #eff6ff !important;
+                            border-color: rgba(37, 99, 235, 0.36) !important;
+                            box-shadow: 0 12px 22px -14px rgba(37, 99, 235, 0.42) !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette="blue"] .leaderboard-result-btn:hover,
+                        html[data-theme="light"][data-light-palette="blue"] .submitBtnLink:hover,
+                        html[data-theme="light"][data-light-palette="blue"] .hover\:bg-indigo-500:hover,
+                        html[data-theme="light"][data-light-palette="blue"] .hover\:bg-indigo-600:hover {
+                            background: #1d4ed8 !important;
+                            color: #eff6ff !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette="blue"] footer a:hover,
+                        html[data-theme="light"][data-light-palette="blue"] .hover\:bg-pink-500:hover,
+                        html[data-theme="light"][data-light-palette="blue"] .hover\:bg-pink-600:hover,
+                        html[data-theme="light"][data-light-palette="blue"] .hover\:bg-rose-500:hover,
+                        html[data-theme="light"][data-light-palette="blue"] .hover\:bg-rose-600:hover,
+                        html[data-theme="light"][data-light-palette="blue"] .hover\:bg-amber-500:hover,
+                        html[data-theme="light"][data-light-palette="blue"] .hover\:bg-amber-600:hover,
+                        html[data-theme="light"][data-light-palette="blue"] .hover\:bg-orange-500:hover,
+                        html[data-theme="light"][data-light-palette="blue"] .hover\:bg-orange-600:hover {
+                            background: rgba(37, 99, 235, 0.1) !important;
+                            color: #1d4ed8 !important;
+                            border-color: rgba(37, 99, 235, 0.34) !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette="blue"] ::-webkit-scrollbar-track {
+                            background: #eff6ff !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette="blue"] ::-webkit-scrollbar-thumb {
+                            background: #93c5fd !important;
+                        }
+
+                        html[data-theme="light"][data-light-palette="blue"] ::-webkit-scrollbar-thumb:hover {
+                            background: #60a5fa !important;
+                        }
+                    </style>
 
                     <script defer src="/script.js?v=<%= assetVersion %>"></script>
                     <% if (showInstallPrompt) { %>

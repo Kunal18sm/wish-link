@@ -25,6 +25,20 @@
   )
     .trim()
     .toLowerCase();
+  const isLoggedInForDownload =
+    String((bootstrapNode && bootstrapNode.dataset ? bootstrapNode.dataset.isLoggedIn : "") || "")
+      .trim()
+      .toLowerCase() === "true";
+  const downloadCreditCost = Math.max(
+    1,
+    Number.parseInt(
+      (bootstrapNode && bootstrapNode.dataset ? bootstrapNode.dataset.downloadCreditCost : "") || "1",
+      10
+    ) || 1
+  );
+  const loginUrl = String(
+    (bootstrapNode && bootstrapNode.dataset ? bootstrapNode.dataset.loginUrl : "") || "/logInForm"
+  );
   const selectedTemplateName = document.getElementById("selectedTemplateName");
   const selectedTemplateDesc = document.getElementById("selectedTemplateDesc");
   const selectedTemplateMeta = document.getElementById("selectedTemplateMeta");
@@ -32,22 +46,48 @@
   const frameImageSlotsLayer = document.getElementById("frameImageSlotsLayer");
   const frameTextLayer = document.getElementById("frameTextLayer");
   const frameOverlayImage = document.getElementById("frameOverlayImage");
+  const slotUploadControls = document.getElementById("slotUploadControls");
   const textControls = document.getElementById("textControls");
   const statusNode = document.getElementById("frameStudioStatus");
   const downloadButton = document.getElementById("downloadFrameBtn");
   const resetButton = document.getElementById("resetFrameBtn");
+  if (frameTextLayer) {
+    frameTextLayer.style.pointerEvents = "none";
+  }
 
   let activeTemplate = null;
   let slotInputRefs = new Map();
   let slotImageState = new Map();
   let textValues = new Map();
+  let textFontFamilyValues = new Map();
   const ZOOM_MIN = 1;
   const ZOOM_MAX = 4;
   const MAX_RENDER_RETRIES = 6;
+  const FONT_FAMILY_OPTIONS = [
+    "Poppins",
+    "Montserrat",
+    "Raleway",
+    "Oswald",
+    "Lora",
+    "Merriweather",
+    "Playfair Display",
+    "Pacifico",
+    "Dancing Script",
+    "Caveat",
+    "Lobster",
+    "Bangers",
+  ];
+  const TEXT_EDIT_MAX_LENGTH = 240;
+  const textMeasureCanvas = document.createElement("canvas");
+  const textMeasureCtx = textMeasureCanvas.getContext("2d");
   let renderRetryCount = 0;
   let renderRafId = null;
   let stageResizeObserver = null;
   let delayedRenderTimers = [];
+  let isDownloadInProgress = false;
+  let inlineTextEditor = null;
+  let activeInlineTextContext = null;
+  let isInlineTextEditorPointerListenerAttached = false;
 
   function clamp(value, min, max, fallback) {
     const parsed = Number(value);
@@ -69,6 +109,58 @@
       return;
     }
     statusNode.classList.add("text-slate-400");
+  }
+
+  function updateUserCreditsUi(remainingCredits) {
+    const numericCredits = Number(remainingCredits);
+    if (!Number.isFinite(numericCredits)) return;
+    const formatted = Math.max(0, numericCredits).toLocaleString("en-IN");
+    document.querySelectorAll("[data-user-credits]").forEach((node) => {
+      node.textContent = formatted;
+    });
+  }
+
+  function formatCreditsLabel(value) {
+    const numeric = Math.max(0, Number.parseInt(value || "0", 10) || 0);
+    return `${numeric} credit${numeric === 1 ? "" : "s"}`;
+  }
+
+  async function consumeDownloadCredit() {
+    if (!isLoggedInForDownload) {
+      const loginError = new Error("Please login to download this photo frame.");
+      loginError.code = "LOGIN_REQUIRED";
+      throw loginError;
+    }
+
+    const response = await fetch("/photo-frames/download/unlock", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        templateSlug: String(activeTemplate?.slug || ""),
+      }),
+    });
+
+    let payload = null;
+    try {
+      payload = await response.json();
+    } catch (_err) {
+      payload = null;
+    }
+
+    if (!response.ok || !payload?.ok) {
+      const apiError = new Error(payload?.message || "Unable to use credits for download right now.");
+      if (payload?.loginRequired) apiError.code = "LOGIN_REQUIRED";
+      throw apiError;
+    }
+
+    if (Number.isFinite(Number(payload?.remainingCredits))) {
+      updateUserCreditsUi(payload.remainingCredits);
+    }
+
+    return payload;
   }
 
   function removeSlotInputs() {
@@ -106,6 +198,272 @@
 
   function getActiveTextValue(textLayer) {
     return textValues.has(textLayer.key) ? textValues.get(textLayer.key) : String(textLayer.value || "");
+  }
+
+  function getTextLayerByKey(textKey, fallbackIndex) {
+    const textLayers = (activeTemplate && activeTemplate.texts) || [];
+    const byKey = textLayers.find((textLayer) => String(textLayer?.key || "") === String(textKey || ""));
+    if (byKey) return byKey;
+    if (Number.isInteger(fallbackIndex) && fallbackIndex >= 0 && fallbackIndex < textLayers.length) {
+      return textLayers[fallbackIndex];
+    }
+    return null;
+  }
+
+  function isInlineTextEditorOpen() {
+    return Boolean(inlineTextEditor?.root && inlineTextEditor.root.style.display !== "none");
+  }
+
+  function updateInlineTextCounter(value) {
+    if (!inlineTextEditor?.counter) return;
+    const textLength = String(value || "").length;
+    inlineTextEditor.counter.textContent = `${textLength}/${TEXT_EDIT_MAX_LENGTH}`;
+    inlineTextEditor.counter.style.color = textLength >= TEXT_EDIT_MAX_LENGTH ? "#fca5a5" : "#94a3b8";
+  }
+
+  function positionInlineTextEditor(textLayer) {
+    if (!inlineTextEditor?.root || !frameEditorStage || !textLayer) return;
+
+    const canvasWidth = Number((activeTemplate?.canvas && activeTemplate.canvas.width) || 1080);
+    const stageWidth = Number(frameEditorStage.clientWidth || 0);
+    const stageHeight = Number(frameEditorStage.clientHeight || 0);
+    if (!stageWidth || !stageHeight) return;
+    const scale = canvasWidth ? stageWidth / canvasWidth : 1;
+
+    const baseX = Number(textLayer.x || 0) * scale;
+    const baseY = Number(textLayer.y || 0) * scale;
+    const boxWidth = Number(textLayer.width || 200) * scale;
+    const boxHeight = Number(textLayer.height || 120) * scale;
+    const popupWidth = Number(inlineTextEditor.root.offsetWidth || 320);
+    const popupHeight = Number(inlineTextEditor.root.offsetHeight || 176);
+    const safePadding = 10;
+    const gapAbove = 18;
+    const gapBelow = 10;
+
+    let left = baseX + boxWidth / 2 - popupWidth / 2;
+    left = clamp(left, safePadding, Math.max(safePadding, stageWidth - popupWidth - safePadding), safePadding);
+
+    let top = baseY - popupHeight - gapAbove;
+    if (top < safePadding) {
+      top = baseY + boxHeight + gapBelow;
+    }
+    top = clamp(top, safePadding, Math.max(safePadding, stageHeight - popupHeight - safePadding), safePadding);
+
+    inlineTextEditor.root.style.left = `${Math.round(left)}px`;
+    inlineTextEditor.root.style.top = `${Math.round(top)}px`;
+    inlineTextEditor.root.style.visibility = "visible";
+  }
+
+  function refreshInlineTextEditorPosition() {
+    if (!isInlineTextEditorOpen() || !activeInlineTextContext) return;
+    const textLayer = getTextLayerByKey(activeInlineTextContext.key, activeInlineTextContext.index);
+    if (!textLayer || !textLayer.editable) {
+      hideInlineTextEditor(true);
+      return;
+    }
+    positionInlineTextEditor(textLayer);
+  }
+
+  function hideInlineTextEditor(resetContext) {
+    if (!inlineTextEditor?.root) return;
+    inlineTextEditor.root.style.display = "none";
+    inlineTextEditor.root.style.visibility = "hidden";
+    if (resetContext) activeInlineTextContext = null;
+  }
+
+  function applyInlineTextEditorChanges() {
+    if (!inlineTextEditor || !activeInlineTextContext) return;
+
+    const nextValue = String(inlineTextEditor.textarea.value || "").slice(0, TEXT_EDIT_MAX_LENGTH);
+    textValues.set(activeInlineTextContext.key, nextValue);
+
+    hideInlineTextEditor(true);
+    buildTextControls();
+    scheduleRenderBurst();
+    setStatus("Text updated.", "success");
+  }
+
+  function handleInlineTextEditorOutsidePointer(event) {
+    if (!isInlineTextEditorOpen()) return;
+
+    const target = event.target;
+    if (inlineTextEditor?.root && inlineTextEditor.root.contains(target)) return;
+    if (target && typeof target.closest === "function" && target.closest("[data-editable-text-layer='1']")) return;
+
+    hideInlineTextEditor(true);
+  }
+
+  function ensureInlineTextEditor() {
+    if (!frameEditorStage) return null;
+    if (inlineTextEditor?.root) return inlineTextEditor;
+
+    const root = document.createElement("div");
+    root.style.position = "absolute";
+    root.style.left = "8px";
+    root.style.top = "8px";
+    root.style.zIndex = "9999";
+    root.style.width = "320px";
+    root.style.maxWidth = "calc(100% - 20px)";
+    root.style.boxSizing = "border-box";
+    root.style.padding = "10px";
+    root.style.borderRadius = "14px";
+    root.style.border = "1px solid rgba(99, 102, 241, 0.55)";
+    root.style.background = "linear-gradient(160deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.94))";
+    root.style.boxShadow = "0 18px 45px rgba(2, 6, 23, 0.45)";
+    root.style.backdropFilter = "none";
+    root.style.transform = "translateZ(0)";
+    root.style.isolation = "isolate";
+    root.style.display = "none";
+    root.style.visibility = "hidden";
+
+    const title = document.createElement("div");
+    title.textContent = "Edit Text";
+    title.style.fontSize = "12px";
+    title.style.fontWeight = "700";
+    title.style.letterSpacing = "0.04em";
+    title.style.textTransform = "uppercase";
+    title.style.color = "#c7d2fe";
+    title.style.marginBottom = "8px";
+    root.appendChild(title);
+
+    const textarea = document.createElement("textarea");
+    textarea.rows = 4;
+    textarea.maxLength = TEXT_EDIT_MAX_LENGTH;
+    textarea.style.width = "100%";
+    textarea.style.resize = "vertical";
+    textarea.style.minHeight = "84px";
+    textarea.style.maxHeight = "220px";
+    textarea.style.borderRadius = "10px";
+    textarea.style.border = "1px solid rgba(71, 85, 105, 0.7)";
+    textarea.style.background = "rgba(15, 23, 42, 0.85)";
+    textarea.style.color = "#e2e8f0";
+    textarea.style.padding = "8px 10px";
+    textarea.style.fontSize = "14px";
+    textarea.style.lineHeight = "1.4";
+    textarea.style.outline = "none";
+    root.appendChild(textarea);
+
+    const footer = document.createElement("div");
+    footer.style.marginTop = "10px";
+    footer.style.display = "flex";
+    footer.style.alignItems = "center";
+    footer.style.justifyContent = "space-between";
+    footer.style.gap = "10px";
+    root.appendChild(footer);
+
+    const counter = document.createElement("span");
+    counter.style.fontSize = "11px";
+    counter.style.color = "#94a3b8";
+    footer.appendChild(counter);
+
+    const actionWrap = document.createElement("div");
+    actionWrap.style.display = "flex";
+    actionWrap.style.gap = "8px";
+    footer.appendChild(actionWrap);
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.style.borderRadius = "8px";
+    cancelBtn.style.border = "1px solid rgba(71, 85, 105, 0.8)";
+    cancelBtn.style.background = "rgba(30, 41, 59, 0.85)";
+    cancelBtn.style.color = "#cbd5e1";
+    cancelBtn.style.padding = "6px 10px";
+    cancelBtn.style.fontSize = "12px";
+    cancelBtn.style.fontWeight = "600";
+    actionWrap.appendChild(cancelBtn);
+
+    const saveBtn = document.createElement("button");
+    saveBtn.type = "button";
+    saveBtn.textContent = "Save";
+    saveBtn.style.borderRadius = "8px";
+    saveBtn.style.border = "1px solid rgba(99, 102, 241, 0.85)";
+    saveBtn.style.background = "rgba(79, 70, 229, 0.95)";
+    saveBtn.style.color = "#ffffff";
+    saveBtn.style.padding = "6px 12px";
+    saveBtn.style.fontSize = "12px";
+    saveBtn.style.fontWeight = "700";
+    actionWrap.appendChild(saveBtn);
+
+    textarea.addEventListener("input", () => {
+      updateInlineTextCounter(textarea.value);
+    });
+    saveBtn.addEventListener("click", applyInlineTextEditorChanges);
+    cancelBtn.addEventListener("click", () => hideInlineTextEditor(true));
+    root.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        hideInlineTextEditor(true);
+      }
+      if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+        event.preventDefault();
+        applyInlineTextEditorChanges();
+      }
+    });
+
+    frameEditorStage.appendChild(root);
+
+    inlineTextEditor = {
+      root,
+      textarea,
+      counter,
+    };
+
+    if (!isInlineTextEditorPointerListenerAttached) {
+      document.addEventListener("pointerdown", handleInlineTextEditorOutsidePointer, true);
+      isInlineTextEditorPointerListenerAttached = true;
+    }
+
+    return inlineTextEditor;
+  }
+
+  function editTextLayerFromCanvas(textLayer, index) {
+    if (!textLayer || !textLayer.editable) return;
+    const editor = ensureInlineTextEditor();
+    if (!editor) return;
+
+    const textKey = String(textLayer.key || `text_${index + 1}`);
+    const currentValue = textValues.has(textKey) ? textValues.get(textKey) : String(textLayer.value || "");
+
+    activeInlineTextContext = {
+      key: textKey,
+      index,
+    };
+    editor.textarea.value = String(currentValue || "").slice(0, TEXT_EDIT_MAX_LENGTH);
+    updateInlineTextCounter(editor.textarea.value);
+
+    editor.root.style.display = "block";
+    editor.root.style.visibility = "hidden";
+    positionInlineTextEditor(textLayer);
+
+    window.requestAnimationFrame(() => {
+      editor.textarea.focus();
+      editor.textarea.select();
+    });
+  }
+
+  function getNormalizedFontName(fontFamily) {
+    return String(fontFamily || "")
+      .split(",")[0]
+      .replace(/['"]/g, "")
+      .trim()
+      .toLowerCase();
+  }
+
+  function resolveFontFamilyValue(rawFontFamily) {
+    const normalized = getNormalizedFontName(rawFontFamily);
+    const matchedOption = FONT_FAMILY_OPTIONS.find(
+      (fontName) => getNormalizedFontName(fontName) === normalized
+    );
+    return matchedOption || "Poppins";
+  }
+
+  function getActiveTextFontFamily(textLayer) {
+    const key = String(textLayer?.key || "");
+    const currentFont = textFontFamilyValues.has(key)
+      ? textFontFamilyValues.get(key)
+      : textLayer?.fontFamily;
+    return resolveFontFamilyValue(currentFont);
   }
 
   function getSlotFitState(slotKey) {
@@ -255,7 +613,7 @@
     if (!value.trim()) return;
 
     const fontSize = Number(textLayer.fontSize || 32);
-    const fontFamily = String(textLayer.fontFamily || "Poppins");
+    const fontFamily = getActiveTextFontFamily(textLayer);
     const fontWeight = String(textLayer.fontWeight || "600");
     const textAlign = ["left", "center", "right"].includes(String(textLayer.textAlign || "center"))
       ? String(textLayer.textAlign)
@@ -319,6 +677,124 @@
     ctx.restore();
   }
 
+  function measureLineWidthWithLetterSpacing(ctx, line, letterSpacing) {
+    const lineValue = String(line || "");
+    const baseWidth = Number(ctx.measureText(lineValue).width || 0);
+    const charsCount = Array.from(lineValue).length;
+    return baseWidth + Math.max(0, charsCount - 1) * Number(letterSpacing || 0);
+  }
+
+  function getWrappedTextLayout(textLayer, textValue) {
+    const ctx = textMeasureCtx;
+    if (!ctx) {
+      return {
+        lines: [],
+        lineGap: Number(textLayer?.fontSize || 32) * Number(textLayer?.lineHeight || 1.2),
+        maxLineWidth: 0,
+      };
+    }
+
+    const value = String(textValue || "");
+    const fontSize = Number(textLayer?.fontSize || 32);
+    const fontFamily = getActiveTextFontFamily(textLayer);
+    const fontWeight = String(textLayer?.fontWeight || "600");
+    const lineHeight = Number(textLayer?.lineHeight || 1.2);
+    const letterSpacing = Number(textLayer?.letterSpacing || 0);
+    const width = Number(textLayer?.width || 200);
+    const height = Number(textLayer?.height || 120);
+    const lineGap = fontSize * lineHeight;
+
+    ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+
+    const lines = [];
+    let lineIndex = 0;
+    let isHeightExceeded = false;
+    const paragraphs = value.split(/\n/g);
+
+    for (let paragraphIndex = 0; paragraphIndex < paragraphs.length; paragraphIndex += 1) {
+      if (isHeightExceeded) break;
+
+      const paragraph = paragraphs[paragraphIndex];
+      const words = paragraph.split(/\s+/g).filter(Boolean);
+
+      if (!words.length) {
+        if ((lineIndex + 1) * lineGap > height) {
+          isHeightExceeded = true;
+          break;
+        }
+        lines.push("");
+        lineIndex += 1;
+        continue;
+      }
+
+      let line = words[0];
+      for (let wordIndex = 1; wordIndex < words.length; wordIndex += 1) {
+        const nextLine = `${line} ${words[wordIndex]}`;
+        if (ctx.measureText(nextLine).width <= width) {
+          line = nextLine;
+        } else {
+          if ((lineIndex + 1) * lineGap > height) {
+            isHeightExceeded = true;
+            break;
+          }
+          lines.push(line);
+          lineIndex += 1;
+          line = words[wordIndex];
+        }
+      }
+
+      if (isHeightExceeded) break;
+      if ((lineIndex + 1) * lineGap > height) break;
+      lines.push(line);
+      lineIndex += 1;
+    }
+
+    const maxLineWidth = lines.reduce((maxWidth, line) => {
+      return Math.max(maxWidth, measureLineWidthWithLetterSpacing(ctx, line, letterSpacing));
+    }, 0);
+
+    return {
+      lines,
+      lineGap,
+      maxLineWidth,
+    };
+  }
+
+  function getEditableTextHotspotRect(textLayer, textValue, scale) {
+    const layout = getWrappedTextLayout(textLayer, textValue);
+    const layerX = Number(textLayer?.x || 0) * scale;
+    const layerY = Number(textLayer?.y || 0) * scale;
+    const layerWidth = Number(textLayer?.width || 200) * scale;
+    const layerHeight = Number(textLayer?.height || 120) * scale;
+    const textAlign = ["left", "center", "right"].includes(String(textLayer?.textAlign || "center"))
+      ? String(textLayer.textAlign)
+      : "center";
+
+    const lineCount = Math.max(1, layout.lines.length);
+    const contentHeight = Math.min(
+      layerHeight,
+      Math.max(24, lineCount * Number(layout.lineGap || 0) * scale + 6)
+    );
+    const contentWidth = layout.lines.length
+      ? Math.min(layerWidth, Math.max(42, Number(layout.maxLineWidth || 0) * scale + 12))
+      : Math.min(layerWidth, 110);
+
+    let left = layerX;
+    if (textAlign === "center") {
+      left = layerX + (layerWidth - contentWidth) / 2;
+    } else if (textAlign === "right") {
+      left = layerX + (layerWidth - contentWidth);
+    }
+
+    left = clamp(left, layerX, layerX + Math.max(0, layerWidth - contentWidth), layerX);
+    return {
+      left,
+      top: layerY,
+      width: contentWidth,
+      height: contentHeight,
+    };
+  }
+
   function loadImageFromUrl(url) {
     return new Promise((resolve, reject) => {
       const image = new Image();
@@ -374,6 +850,7 @@
           offsetX: 0,
           offsetY: 0,
         });
+        buildSlotUploadControls();
         scheduleRenderBurst();
         setStatus("Photo uploaded. Drag to move, pinch to zoom.", "success");
       };
@@ -391,6 +868,88 @@
   function rebuildSlotInputs() {
     removeSlotInputs();
     ((activeTemplate && activeTemplate.imageSlots) || []).forEach((slot) => createSlotInput(slot));
+    buildSlotUploadControls();
+  }
+
+  function openSlotPicker(slotKey) {
+    const input = slotInputRefs.get(String(slotKey || ""));
+    if (!input) return;
+    input.click();
+  }
+
+  function clearSlotImage(slotKey) {
+    const key = String(slotKey || "");
+    const existing = slotImageState.get(key);
+    if (existing?.objectUrl) {
+      URL.revokeObjectURL(existing.objectUrl);
+    }
+    slotImageState.delete(key);
+    const input = slotInputRefs.get(key);
+    if (input) input.value = "";
+    buildSlotUploadControls();
+    scheduleRenderBurst();
+  }
+
+  function buildSlotUploadControls() {
+    if (!slotUploadControls) return;
+    slotUploadControls.innerHTML = "";
+
+    const imageSlots = (activeTemplate && activeTemplate.imageSlots) || [];
+    imageSlots.forEach((slot, index) => {
+      const slotKey = String(slot.key || "");
+      const uploadedState = slotImageState.get(slotKey);
+      const wrapper = document.createElement("div");
+      wrapper.className = "rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-2.5 space-y-2";
+
+      const labelText = String(slot.label || "").trim() || `Photo ${index + 1}`;
+      const header = document.createElement("div");
+      header.className = "flex items-center justify-between gap-2";
+      header.innerHTML = `
+        <span class="text-sm font-medium text-slate-100">${labelText}</span>
+        <span class="text-[11px] ${uploadedState ? "text-emerald-300" : "text-slate-500"}">
+          ${uploadedState ? "Uploaded" : "Pending"}
+        </span>
+      `;
+      wrapper.appendChild(header);
+
+      if (uploadedState?.fileName) {
+        const fileName = document.createElement("p");
+        fileName.className = "text-[11px] text-slate-400 truncate";
+        fileName.textContent = uploadedState.fileName;
+        wrapper.appendChild(fileName);
+      }
+
+      const actions = document.createElement("div");
+      actions.className = "flex flex-wrap gap-2";
+
+      const uploadBtn = document.createElement("button");
+      uploadBtn.type = "button";
+      uploadBtn.className =
+        "rounded-md border border-indigo-500/40 bg-indigo-500/10 px-2.5 py-1.5 text-xs font-semibold text-indigo-200 hover:bg-indigo-500/20 transition";
+      uploadBtn.textContent = uploadedState ? "Replace" : "Upload";
+      uploadBtn.addEventListener("click", () => openSlotPicker(slotKey));
+      actions.appendChild(uploadBtn);
+
+      if (uploadedState) {
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className =
+          "rounded-md border border-rose-500/40 bg-rose-500/10 px-2.5 py-1.5 text-xs font-semibold text-rose-200 hover:bg-rose-500/20 transition";
+        removeBtn.textContent = "Remove";
+        removeBtn.addEventListener("click", () => clearSlotImage(slotKey));
+        actions.appendChild(removeBtn);
+      }
+
+      wrapper.appendChild(actions);
+      slotUploadControls.appendChild(wrapper);
+    });
+
+    if (!imageSlots.length) {
+      const empty = document.createElement("p");
+      empty.className = "text-sm text-slate-500";
+      empty.textContent = "Is template me image slot nahi hai.";
+      slotUploadControls.appendChild(empty);
+    }
   }
 
   function applySlotImageStyles(slotNode, slot, state, scale) {
@@ -422,6 +981,7 @@
     if (!slotKey) return;
 
     const pointers = new Map();
+    let visualUpdateRafId = null;
     let mode = "none";
     let moved = false;
     let panPointerStart = null;
@@ -429,12 +989,29 @@
     let pinchStart = null;
 
     const openPicker = () => {
-      const input = slotInputRefs.get(slotKey);
-      if (!input) return;
-      input.click();
+      openSlotPicker(slotKey);
     };
 
     const getCurrentState = () => slotImageState.get(slotKey) || null;
+    const applySlotVisualUpdate = () => {
+      const state = getCurrentState();
+      if (!state || !state.img) return;
+      applySlotImageStyles(slotNode, slot, state, scale);
+    };
+    const scheduleSlotVisualUpdate = () => {
+      if (visualUpdateRafId) return;
+      visualUpdateRafId = window.requestAnimationFrame(() => {
+        visualUpdateRafId = null;
+        applySlotVisualUpdate();
+      });
+    };
+    const flushSlotVisualUpdate = () => {
+      if (visualUpdateRafId) {
+        window.cancelAnimationFrame(visualUpdateRafId);
+        visualUpdateRafId = null;
+      }
+      applySlotVisualUpdate();
+    };
 
     slotNode.style.touchAction = "none";
 
@@ -505,7 +1082,7 @@
         state.offsetX = fit.offsetX;
         state.offsetY = fit.offsetY;
 
-        applySlotImageStyles(slotNode, slot, state, scale);
+        scheduleSlotVisualUpdate();
         moved = true;
         return;
       }
@@ -550,7 +1127,7 @@
           state.offsetY = 0;
         }
 
-        applySlotImageStyles(slotNode, slot, state, scale);
+        scheduleSlotVisualUpdate();
         if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) moved = true;
       }
     });
@@ -572,6 +1149,7 @@
       }
 
       if (pointers.size === 0) {
+        flushSlotVisualUpdate();
         const elapsed = Date.now() - pointerInfo.downAt;
         if (!moved && elapsed < 230) {
           openPicker();
@@ -695,12 +1273,13 @@
     });
 
     const sortedTexts = [...(activeTemplate.texts || [])].sort((a, b) => Number(a.zIndex || 0) - Number(b.zIndex || 0));
-    sortedTexts.forEach((textLayer) => {
-      const value = getActiveTextValue(textLayer);
+    sortedTexts.forEach((textLayer, textIndex) => {
+      const rawValue = getActiveTextValue(textLayer);
+      const value = rawValue || (textLayer.editable ? "Tap to edit" : "");
       if (!value) return;
 
       const textNode = document.createElement("div");
-      textNode.className = "absolute pointer-events-none whitespace-pre-line";
+      textNode.className = "absolute whitespace-pre-line";
       textNode.textContent = value;
       textNode.style.left = `${Number(textLayer.x || 0) * scale}px`;
       textNode.style.top = `${Number(textLayer.y || 0) * scale}px`;
@@ -708,7 +1287,7 @@
       textNode.style.height = `${Number(textLayer.height || 120) * scale}px`;
       textNode.style.overflow = "hidden";
       textNode.style.color = String(textLayer.color || "#ffffff");
-      textNode.style.fontFamily = String(textLayer.fontFamily || "Poppins");
+      textNode.style.fontFamily = getActiveTextFontFamily(textLayer);
       textNode.style.fontWeight = String(textLayer.fontWeight || "600");
       textNode.style.fontSize = `${Number(textLayer.fontSize || 32) * scale}px`;
       textNode.style.textAlign = ["left", "center", "right"].includes(String(textLayer.textAlign))
@@ -719,8 +1298,43 @@
       textNode.style.zIndex = String(Number(textLayer.zIndex || 2));
       textNode.style.transform = `rotate(${Number(textLayer.rotation || 0)}deg)`;
       textNode.style.transformOrigin = "center";
+      textNode.style.pointerEvents = "none";
+      if (!rawValue && textLayer.editable) {
+        textNode.style.border = "1px dashed rgba(148, 163, 184, 0.65)";
+        textNode.style.backgroundColor = "rgba(15, 23, 42, 0.2)";
+        textNode.style.padding = "4px";
+        textNode.style.color = "rgba(226, 232, 240, 0.9)";
+      }
       frameTextLayer.appendChild(textNode);
+
+      if (textLayer.editable) {
+        const hotspotRect = getEditableTextHotspotRect(textLayer, rawValue, scale);
+        const hotspot = document.createElement("button");
+        hotspot.type = "button";
+        hotspot.className = "absolute";
+        hotspot.style.left = `${hotspotRect.left}px`;
+        hotspot.style.top = `${hotspotRect.top}px`;
+        hotspot.style.width = `${hotspotRect.width}px`;
+        hotspot.style.height = `${hotspotRect.height}px`;
+        hotspot.style.background = "transparent";
+        hotspot.style.border = "none";
+        hotspot.style.outline = "none";
+        hotspot.style.padding = "0";
+        hotspot.style.cursor = "text";
+        hotspot.style.pointerEvents = "auto";
+        hotspot.style.zIndex = String(Number(textLayer.zIndex || 2) + 1);
+        hotspot.dataset.editableTextLayer = "1";
+        hotspot.dataset.textKey = String(textLayer.key || `text_${textIndex + 1}`);
+        hotspot.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          editTextLayerFromCanvas(textLayer, textIndex);
+        });
+        frameTextLayer.appendChild(hotspot);
+      }
     });
+
+    refreshInlineTextEditorPosition();
   }
 
   function buildTextControls() {
@@ -732,10 +1346,10 @@
       const currentValue = getActiveTextValue(textLayer);
 
       const control = document.createElement("div");
-      control.className = "space-y-1";
+      control.className = "space-y-2 rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-2.5";
       control.innerHTML = `
         <div class="flex items-center justify-between gap-2 pb-1 border-b border-slate-800/80">
-          <h4 class="text-sm font-medium text-slate-200">${key}</h4>
+          <h4 class="text-sm font-medium text-slate-200">Text ${index + 1}</h4>
           <span class="text-[11px] ${textLayer.editable ? "text-emerald-300" : "text-slate-500"}">${textLayer.editable ? "Editable" : "Locked"}</span>
         </div>
       `;
@@ -752,9 +1366,34 @@
           scheduleRenderEditorLayers();
         });
         control.appendChild(textarea);
+
+        const fontWrap = document.createElement("label");
+        fontWrap.className = "block space-y-1";
+        fontWrap.innerHTML = '<span class="text-[11px] text-slate-400">Font</span>';
+
+        const fontSelect = document.createElement("select");
+        fontSelect.className =
+          "w-full rounded-md border border-slate-700 bg-slate-900 px-2.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500";
+        const resolvedFontFamily = getActiveTextFontFamily(textLayer);
+        FONT_FAMILY_OPTIONS.forEach((fontName) => {
+          const option = document.createElement("option");
+          option.value = fontName;
+          option.textContent = `Aa - ${fontName}`;
+          option.style.fontFamily = `'${fontName}', sans-serif`;
+          if (fontName === resolvedFontFamily) option.selected = true;
+          fontSelect.appendChild(option);
+        });
+
+        fontSelect.addEventListener("change", () => {
+          textFontFamilyValues.set(key, fontSelect.value);
+          scheduleRenderEditorLayers();
+        });
+
+        fontWrap.appendChild(fontSelect);
+        control.appendChild(fontWrap);
       } else {
         const lockedValue = document.createElement("p");
-        lockedValue.className = "text-sm text-slate-300";
+        lockedValue.className = "text-sm text-slate-300 line-clamp-3";
         lockedValue.textContent = currentValue || "No text";
         control.appendChild(lockedValue);
       }
@@ -778,9 +1417,13 @@
     if (!selectedTemplate) return;
 
     cleanupUserUploads();
+    hideInlineTextEditor(true);
     textValues = new Map();
+    textFontFamilyValues = new Map();
     (selectedTemplate.texts || []).forEach((textLayer) => {
-      textValues.set(String(textLayer.key || ""), String(textLayer.value || ""));
+      const key = String(textLayer.key || "");
+      textValues.set(key, String(textLayer.value || ""));
+      textFontFamilyValues.set(key, resolveFontFamilyValue(textLayer.fontFamily));
     });
 
     activeTemplate = selectedTemplate;
@@ -793,15 +1436,23 @@
     }
 
     buildTextControls();
+    buildSlotUploadControls();
     scheduleRenderBurst();
-    setStatus("Slot par tap karke image upload karo. Drag se move, pinch se zoom.", "default");
+    setStatus("Slot par tap karke image upload karo. Text par tap karke edit karo.", "default");
   }
 
   async function downloadComposedImage() {
-    if (!activeTemplate) return;
+    if (!activeTemplate || isDownloadInProgress) return;
+    isDownloadInProgress = true;
+
+    const originalLabel = downloadButton ? downloadButton.textContent : "";
+    if (downloadButton) {
+      downloadButton.disabled = true;
+      downloadButton.textContent = "Please wait...";
+    }
 
     try {
-      setStatus("Preparing download image...", "default");
+      setStatus("Preparing final frame image...", "default");
       const canvas = document.createElement("canvas");
       canvas.width = Number((activeTemplate.canvas && activeTemplate.canvas.width) || 1080);
       canvas.height = Number((activeTemplate.canvas && activeTemplate.canvas.height) || 1080);
@@ -848,15 +1499,35 @@
         drawWrappedText(ctx, textLayer, getActiveTextValue(textLayer));
       });
 
+      const outputDataUrl = canvas.toDataURL("image/png");
+      setStatus(`Checking credits (${formatCreditsLabel(downloadCreditCost)})...`, "default");
+      const creditPayload = await consumeDownloadCredit();
+
       const downloadLink = document.createElement("a");
-      downloadLink.href = canvas.toDataURL("image/png");
+      downloadLink.href = outputDataUrl;
       downloadLink.download = `${activeTemplate.slug || "photo-frame"}-${Date.now()}.png`;
       document.body.appendChild(downloadLink);
       downloadLink.click();
       downloadLink.remove();
-      setStatus("Download complete.", "success");
-    } catch (_err) {
-      setStatus("Download failed. Please try again.", "error");
+      const chargedCredits = Number.isFinite(Number(creditPayload?.chargedCredits))
+        ? Number(creditPayload.chargedCredits)
+        : downloadCreditCost;
+      setStatus(`Download complete. ${formatCreditsLabel(chargedCredits)} used.`, "success");
+    } catch (err) {
+      if (err && err.code === "LOGIN_REQUIRED") {
+        setStatus(err.message || "Please login to continue.", "error");
+        window.setTimeout(() => {
+          window.location.href = loginUrl;
+        }, 500);
+      } else {
+        setStatus(err?.message || "Download failed. Please try again.", "error");
+      }
+    } finally {
+      if (downloadButton) {
+        downloadButton.disabled = false;
+        downloadButton.textContent = originalLabel;
+      }
+      isDownloadInProgress = false;
     }
   }
 
@@ -867,18 +1538,24 @@
     }
     clearSlotImageState();
     resetSlotInputs();
+    hideInlineTextEditor(true);
     textValues = new Map();
+    textFontFamilyValues = new Map();
     let editableControlIndex = 0;
     const textareas = textControls ? Array.from(textControls.querySelectorAll("textarea")) : [];
     (activeTemplate.texts || []).forEach((textLayer) => {
+      const key = String(textLayer.key || "");
       const defaultValue = String(textLayer.value || "");
-      textValues.set(String(textLayer.key || ""), defaultValue);
+      textValues.set(key, defaultValue);
+      textFontFamilyValues.set(key, resolveFontFamilyValue(textLayer.fontFamily));
       if (textLayer.editable) {
         const textarea = textareas[editableControlIndex];
         if (textarea) textarea.value = defaultValue;
         editableControlIndex += 1;
       }
     });
+    buildTextControls();
+    buildSlotUploadControls();
     scheduleRenderBurst();
     setStatus("Current template reset ho gaya.", "default");
   }
@@ -898,6 +1575,16 @@
   if (resetButton) resetButton.addEventListener("click", resetCurrentTemplate);
   window.addEventListener("beforeunload", () => {
     clearDelayedRenderTimers();
+    hideInlineTextEditor(true);
+    if (isInlineTextEditorPointerListenerAttached) {
+      document.removeEventListener("pointerdown", handleInlineTextEditorOutsidePointer, true);
+      isInlineTextEditorPointerListenerAttached = false;
+    }
+    if (inlineTextEditor?.root && inlineTextEditor.root.parentNode) {
+      inlineTextEditor.root.parentNode.removeChild(inlineTextEditor.root);
+    }
+    inlineTextEditor = null;
+    activeInlineTextContext = null;
     if (stageResizeObserver) {
       stageResizeObserver.disconnect();
       stageResizeObserver = null;

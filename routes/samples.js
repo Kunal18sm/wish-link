@@ -19,6 +19,11 @@ const REQUEST_SCOPE = {
   DEFAULT: "default",
   PERMANENT: "permanent",
 };
+const LIGHT_PALETTE_OPTIONS = new Set(["blue", "pink"]);
+const PHOTO_FRAME_DOWNLOAD_CREDITS = Math.max(
+  1,
+  Number.parseInt(process.env.PHOTO_FRAME_DOWNLOAD_CREDITS || "1", 10) || 1
+);
 const NEW_SIGNUP_CREDITS = 15;
 const PROFILE_PURCHASE_SELECT = "webName webUrl receiver price isLive isTemporary date author";
 const HERO_PRIMARY_IMAGE =
@@ -105,6 +110,11 @@ function makeUsernameSlug(rawValue) {
     .slice(0, 20);
 
   return normalized || "vishlink_user";
+}
+
+function normalizeLightPalette(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return LIGHT_PALETTE_OPTIONS.has(normalized) ? normalized : null;
 }
 
 async function buildUniqueUsername(seedText) {
@@ -223,6 +233,7 @@ router.get("/photo-frames", wrapAsync(async (req, res) => {
     frameTemplates: clientTemplates,
     permanentTemplatesReady: Boolean(FrameTemplate),
     isAdminViewer,
+    disableDesignCss: true,
     title: "Photo Frame Templates - VishLink",
     description: "Browse beautiful photo frame templates and open one to create your final frame image.",
     canonical: `${SITE_URL}/photo-frames`,
@@ -261,11 +272,73 @@ router.get("/photo-frames/:slug", wrapAsync(async (req, res) => {
     frameTemplates: [selectedTemplate],
     selectedTemplateSlug,
     permanentTemplatesReady: Boolean(FrameTemplate),
+    photoFrameDownloadCredits: PHOTO_FRAME_DOWNLOAD_CREDITS,
+    disableDesignCss: true,
     title: `${selectedTemplate.name} - Photo Frame Studio | VishLink`,
     description: `Customize ${selectedTemplate.name} with your photos and text, then download instantly.`,
     canonical: `${SITE_URL}/photo-frames/${encodeURIComponent(selectedTemplateSlug)}`,
     robots: "index, follow",
   });
+}));
+
+router.post("/photo-frames/download/unlock", wrapAsync(async (req, res) => {
+  const acceptHeader = String(req.get("accept") || "");
+  const wantsJson = req.xhr || acceptHeader.includes("application/json");
+  const requiredCredits = PHOTO_FRAME_DOWNLOAD_CREDITS;
+
+  if (!req.user?._id) {
+    const message = "Please login to download this photo frame.";
+    if (wantsJson) {
+      return res.status(401).json({
+        ok: false,
+        message,
+        loginRequired: true,
+      });
+    }
+    req.flash("error", message);
+    return res.redirect("/logInForm");
+  }
+
+  const updatedUser = await user.findOneAndUpdate(
+    {
+      _id: req.user._id,
+      winnerCount: { $gte: requiredCredits },
+    },
+    {
+      $inc: { winnerCount: -requiredCredits },
+    },
+    {
+      new: true,
+      projection: { winnerCount: 1 },
+    }
+  );
+
+  if (!updatedUser) {
+    const message = `Insufficient credits. You need ${requiredCredits} credit${requiredCredits === 1 ? "" : "s"} to download this frame.`;
+    if (wantsJson) {
+      return res.status(400).json({
+        ok: false,
+        message,
+        requiredCredits,
+        currentCredits: Number(req.user?.winnerCount || 0),
+      });
+    }
+    req.flash("error", message);
+    return res.redirect(req.get("Referrer") || "/photo-frames");
+  }
+
+  req.user.winnerCount = Number(updatedUser.winnerCount || 0);
+
+  if (wantsJson) {
+    return res.json({
+      ok: true,
+      chargedCredits: requiredCredits,
+      remainingCredits: Number(updatedUser.winnerCount || 0),
+    });
+  }
+
+  req.flash("success", `${requiredCredits} credit${requiredCredits === 1 ? "" : "s"} used for frame download.`);
+  return res.redirect(req.get("Referrer") || "/photo-frames");
 }));
 
 // Get signUp form
@@ -468,8 +541,59 @@ router.get("/logout", isLoggedIn, (req, res) => {
   return res.redirect("/");
 });
 
+router.post("/profile/light-palette", isLoggedIn, wrapAsync(async (req, res) => {
+  const palette = normalizeLightPalette(req.body?.palette);
+  const acceptHeader = String(req.get("accept") || "");
+  const wantsJson = req.xhr || acceptHeader.includes("application/json");
+
+  if (!palette) {
+    const message = "Invalid light theme palette.";
+    if (wantsJson) {
+      return res.status(400).json({
+        ok: false,
+        message,
+      });
+    }
+    req.flash("error", message);
+    return res.redirect("/profile");
+  }
+
+  const updatedUser = await user.findByIdAndUpdate(
+    req.user._id,
+    { $set: { lightPalette: palette } },
+    {
+      new: true,
+      projection: { lightPalette: 1 },
+    }
+  );
+
+  if (!updatedUser) {
+    const message = "Unable to save light theme palette right now.";
+    if (wantsJson) {
+      return res.status(404).json({
+        ok: false,
+        message,
+      });
+    }
+    req.flash("error", message);
+    return res.redirect("/profile");
+  }
+
+  req.user.lightPalette = updatedUser.lightPalette;
+
+  if (wantsJson) {
+    return res.json({
+      ok: true,
+      palette: updatedUser.lightPalette,
+    });
+  }
+
+  req.flash("success", "Light theme palette updated.");
+  return res.redirect("/profile");
+}));
+
 // render profile page
-router.get("/profile", isLoggedIn, async (req, res) => {
+router.get("/profile", isLoggedIn, wrapAsync(async (req, res) => {
   const purchasedLinks = await loadMergedPurchases(req, req.user._id);
   const [stats] = await user.aggregate([
     { $match: { _id: req.user._id } },
@@ -495,13 +619,13 @@ router.get("/profile", isLoggedIn, async (req, res) => {
     canonical: `${SITE_URL}/profile`,
     robots: "noindex, nofollow"
   });
-});
+}));
 
 // render all creation page
-router.get("/viewHistory", isLoggedIn, async (req, res) => {
+router.get("/viewHistory", isLoggedIn, wrapAsync(async (req, res) => {
   const profileUser = await user
     .findById(req.user._id)
-    .select("_id username email winnerCount webCollection")
+    .select("_id username email winnerCount lightPalette webCollection")
     .lean();
   const purchasedLinks = Array.isArray(profileUser?.webCollection) ? profileUser.webCollection : [];
   const viewHistory = true;
@@ -516,7 +640,7 @@ router.get("/viewHistory", isLoggedIn, async (req, res) => {
     canonical: `${SITE_URL}/profile`,
     robots: "noindex, nofollow"
   });
-});
+}));
 
 // footer pages
 router.get("/about", (req, res) => {
