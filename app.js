@@ -38,6 +38,7 @@ const chatRoutes = require("./routes/chat.js");
 const user = require("./models/user.js");
 const Chat = require("./models/chat.js");
 const getPermanentPurchasedWebModel = require("./models/permanentPurchasedWeb.js");
+const getPermanentFrameTemplateModel = require("./models/permanentFrameTemplate.js");
 
 const app = express();
 const server = http.createServer(app);
@@ -45,7 +46,7 @@ const io = new Server(server);
 const PORT = process.env.PORT || 8080;
 const SITE_URL = (process.env.SITE_URL || "https://wishlink-7j0a.onrender.com").replace(/\/+$/, "");
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || "";
-const ASSET_VERSION = process.env.ASSET_VERSION || "20260328c";
+const ASSET_VERSION = process.env.ASSET_VERSION || "20260328o";
 const ENABLE_CLOUDINARY_IMAGE_PROXY = process.env.CLOUDINARY_IMAGE_PROXY !== "false";
 const ENABLE_ANALYTICS = process.env.ENABLE_ANALYTICS === "true";
 const MUTATING_REQUEST_WINDOW_MS = Number(process.env.MUTATING_REQUEST_WINDOW_MS || 10 * 60 * 1000);
@@ -67,6 +68,25 @@ const RUN_CHAT_MESSAGE_CLEANUP = process.env.RUN_CHAT_CREATED_AT_CLEANUP === "tr
 let permanentDbConnection = null;
 const socketChatRateStore = new Map();
 
+function getFirstEnv(...keys) {
+  for (const key of keys) {
+    const value = String(process.env[key] || "").trim();
+    if (value) return value;
+  }
+  return "";
+}
+
+function resolvePermanentMongoUrl() {
+  return getFirstEnv(
+    "PERMANENT_MONGODB_URL",
+    "PERMANENT_MONGO_URL",
+    "PERMANENT_DB_URL",
+    "SECONDARY_MONGODB_URL",
+    "SECONDARY_MONGO_URL",
+    "MongoDB_URL"
+  );
+}
+
 function shouldSkipGlobalRateLimit(req) {
   const requestPath = String(req.path || "");
   if (requestPath === "/credits/claim-daily") return true;
@@ -75,6 +95,7 @@ function shouldSkipGlobalRateLimit(req) {
 }
 
 app.locals.permanentPurchasedWeb = null;
+app.locals.permanentFrameTemplate = null;
 function getResponsiveWidth(variant) {
   const normalizedVariant = String(variant || "default").toLowerCase();
   if (normalizedVariant === "avatar") return 220;
@@ -258,8 +279,15 @@ app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 
 const connectDb = async () => {
+  const primaryMongoUrl = String(process.env.MongoDB_URL || "").trim();
+  const permanentMongoUrl = resolvePermanentMongoUrl();
+
   try {
-    await mongoose.connect(process.env.MongoDB_URL, MONGODB_CONNECT_OPTIONS);
+    if (!primaryMongoUrl) {
+      throw new Error("MongoDB_URL is not configured.");
+    }
+
+    await mongoose.connect(primaryMongoUrl, MONGODB_CONNECT_OPTIONS);
 
     // One-time optional migration cleanup (kept behind env flag to speed cold starts).
     if (RUN_CHAT_MESSAGE_CLEANUP) {
@@ -276,21 +304,28 @@ const connectDb = async () => {
   }
 
   try {
-    if (!process.env.PERMANENT_MONGODB_URL) {
+    if (!permanentMongoUrl) {
       console.log("PERMANENT_MONGODB_URL not configured. Permanent requests are disabled.");
       return;
     }
 
-    permanentDbConnection = mongoose.createConnection(
-      process.env.PERMANENT_MONGODB_URL,
-      MONGODB_CONNECT_OPTIONS
-    );
-    await permanentDbConnection.asPromise();
+    if (permanentMongoUrl === primaryMongoUrl) {
+      permanentDbConnection = mongoose.connection;
+      console.log("Permanent DataBase Connected (shared primary connection)");
+    } else {
+      permanentDbConnection = mongoose.createConnection(
+        permanentMongoUrl,
+        MONGODB_CONNECT_OPTIONS
+      );
+      await permanentDbConnection.asPromise();
+      console.log("Permanent DataBase Connected");
+    }
 
     app.locals.permanentPurchasedWeb = getPermanentPurchasedWebModel(permanentDbConnection);
-    console.log("Permanent DataBase Connected");
+    app.locals.permanentFrameTemplate = getPermanentFrameTemplateModel(permanentDbConnection);
   } catch (err) {
     app.locals.permanentPurchasedWeb = null;
+    app.locals.permanentFrameTemplate = null;
     console.log("Permanent DB connection failed:", err.message);
   }
 };

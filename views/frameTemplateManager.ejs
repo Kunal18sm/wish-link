@@ -1,0 +1,244 @@
+﻿<% layout("/layouts/boilerplate") %>
+<% const isEditMode = editorMode === "edit"; %>
+
+<section class="max-w-7xl mx-auto px-4 md:px-6 py-7 md:py-10 space-y-6">
+  <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-7 shadow-xl">
+    <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-bold text-white">
+          <%= isEditMode ? "Edit Frame Template" : "Photo Frame Template Manager" %>
+        </h1>
+        <p class="text-slate-300 mt-2 max-w-3xl">
+          Image slot aur text layer ko mouse/touch se drag, resize, rotate karke set karein. Manual x/y typing ki need nahi.
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <% if (isEditMode && editableTemplate && editableTemplate._id) { %>
+          <a href="/requests/frame-templates" class="inline-flex items-center justify-center rounded-xl border border-slate-600 px-4 py-2 text-slate-200 hover:bg-slate-800 transition font-semibold">
+            + New Template
+          </a>
+        <% } %>
+        <a href="/photo-frames" class="inline-flex items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-2 transition">
+          Open User Studio
+        </a>
+      </div>
+    </div>
+
+    <% if (!permanentStorageReady) { %>
+      <div class="mt-5 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-rose-200">
+        Permanent database/cloudinary configure nahi hai. Setup ke baad hi save/update kaam karega.
+      </div>
+    <% } %>
+  </div>
+
+  <form
+    id="frameTemplateForm"
+    action="<%= (isEditMode && editableTemplate && editableTemplate._id) ? ('/requests/frame-templates/' + editableTemplate._id + '?_method=PUT') : '/requests/frame-templates' %>"
+    method="POST"
+    enctype="multipart/form-data"
+    class="grid grid-cols-1 xl:grid-cols-12 gap-6"
+  >
+    <div class="xl:col-span-8 rounded-3xl border border-slate-800 bg-slate-900/60 p-5 md:p-6 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h2 class="text-lg md:text-xl font-bold text-white">Visual Canvas Editor</h2>
+        <div class="text-xs text-slate-400">Drag to move, corner handle resize, top handle rotate</div>
+      </div>
+
+      <div class="rounded-2xl border border-slate-700 bg-slate-950/80 p-3 md:p-4">
+        <div id="adminFramePreviewStage" class="relative mx-auto overflow-hidden rounded-xl border border-slate-700 bg-slate-900"
+          style="width:min(100%,680px);aspect-ratio:1/1;touch-action:none;">
+          <div id="adminFramePreviewGrid" class="absolute inset-0 pointer-events-none opacity-25 z-[1]"></div>
+          <img id="adminFramePreviewImage" alt="Frame preview" class="absolute inset-0 h-full w-full object-cover pointer-events-none select-none z-[2] opacity-95" />
+          <div id="adminFramePreviewSlots" class="absolute inset-0 z-[4] pointer-events-none"></div>
+          <div id="adminFramePreviewTexts" class="absolute inset-0 z-[5] pointer-events-none"></div>
+        </div>
+      </div>
+      <p class="text-xs text-slate-400">
+        Agar frame layer opaque ho to bhi slots/text upar visible rahenge. Alignment ke liye frame ko direct canvas me dekha ja sakta hai.
+      </p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+        <button id="addSlotBtn" type="button" class="rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2.5 text-sm text-white font-semibold transition">
+          + Image Slot
+        </button>
+        <button id="addTextBtn" type="button" class="rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2.5 text-sm text-white font-semibold transition">
+          + Text Layer
+        </button>
+        <button id="duplicateLayerBtn" type="button" class="rounded-xl border border-slate-600 hover:bg-slate-800 px-4 py-2.5 text-sm text-slate-200 font-semibold transition">
+          Duplicate
+        </button>
+        <button id="deleteLayerBtn" type="button" class="rounded-xl border border-rose-500/40 hover:bg-rose-500/10 px-4 py-2.5 text-sm text-rose-300 font-semibold transition">
+          Delete Selected
+        </button>
+      </div>
+      <p id="frameEditorHint" class="text-xs text-slate-400"></p>
+    </div>
+
+    <div class="xl:col-span-4 rounded-3xl border border-slate-800 bg-slate-900/60 p-5 md:p-6 space-y-5">
+      <div>
+        <h3 class="text-base font-semibold text-white">Template Basics</h3>
+        <div class="mt-3 space-y-3">
+          <label class="block space-y-1">
+            <span class="text-xs text-slate-300">Template Name</span>
+            <input id="templateNameInput" name="name" type="text" maxlength="120" required
+              class="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+              placeholder="Birthday floral frame">
+          </label>
+          <label class="block space-y-1">
+            <span class="text-xs text-slate-300">Slug (optional)</span>
+            <input id="templateSlugInput" name="slug" type="text" maxlength="140"
+              class="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+              placeholder="birthday-floral-frame">
+          </label>
+          <label class="block space-y-1">
+            <span class="text-xs text-slate-300">Description</span>
+            <textarea id="templateDescriptionInput" name="description" rows="2" maxlength="500"
+              class="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+              placeholder="Short template details"></textarea>
+          </label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="block space-y-1">
+              <span class="text-xs text-slate-300">Canvas W</span>
+              <input id="canvasWidthInput" name="canvasWidth" type="number" min="100" max="5000" value="1080" required
+                class="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2.5 text-slate-100 focus:outline-none focus:border-indigo-500">
+            </label>
+            <label class="block space-y-1">
+              <span class="text-xs text-slate-300">Canvas H</span>
+              <input id="canvasHeightInput" name="canvasHeight" type="number" min="100" max="5000" value="1080" required
+                class="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2.5 text-slate-100 focus:outline-none focus:border-indigo-500">
+            </label>
+          </div>
+          <label class="block space-y-1">
+            <span class="text-xs text-slate-300">Frame Image <%= isEditMode ? "(optional replace)" : "" %></span>
+            <input id="adminFrameImageInput" name="frameImage" type="file" accept="image/png,image/jpeg,image/webp" <%= isEditMode ? "" : "required" %>
+              class="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-2 py-2 text-slate-200 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-600 file:px-3 file:py-1.5 file:text-white hover:file:bg-indigo-500">
+          </label>
+
+          <label class="inline-flex items-center gap-2 text-sm text-slate-300">
+            <input type="hidden" name="isActive" value="false">
+            <input id="templateActiveInput" type="checkbox" name="isActive" value="true" checked class="accent-indigo-500">
+            Active template
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="text-base font-semibold text-white">Layers</h3>
+        <div id="layerList" class="mt-3 space-y-2 max-h-52 overflow-auto pr-1"></div>
+      </div>
+
+      <div>
+        <h3 class="text-base font-semibold text-white">Selected Layer Settings</h3>
+        <div id="layerSettings" class="mt-3 space-y-3"></div>
+      </div>
+
+      <input type="hidden" id="slotsPayloadInput" name="slotsPayload">
+      <input type="hidden" id="textsPayloadInput" name="textsPayload">
+
+      <button type="submit"
+        class="w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 px-5 py-3 font-semibold text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+        <%= !permanentStorageReady ? "disabled" : "" %>>
+        <%= isEditMode ? "Update Template" : "Save Template" %>
+      </button>
+    </div>
+  </form>
+
+  <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-5 md:p-6">
+    <div class="flex items-center justify-between gap-3 mb-4">
+      <h2 class="text-xl font-bold text-white">Saved Templates</h2>
+      <span class="text-sm text-slate-400"><%= templates.length %></span>
+    </div>
+
+    <% if (!templates || !templates.length) { %>
+      <div class="rounded-2xl border border-dashed border-slate-700 bg-slate-950/40 px-5 py-8 text-center text-slate-400">
+        Abhi koi frame template save nahi hua hai.
+      </div>
+    <% } else { %>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <% templates.forEach((template) => { %>
+          <article class="rounded-2xl border border-slate-700 bg-slate-950/50 p-4 space-y-3">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <h3 class="text-white font-semibold"><%= template.name %></h3>
+                <p class="text-xs text-slate-500 mt-1">/<%= template.slug %></p>
+              </div>
+              <span class="text-xs rounded-full px-2 py-1 border <%= template.isActive ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-amber-500/30 bg-amber-500/10 text-amber-300' %>">
+                <%= template.isActive ? "Active" : "Hidden" %>
+              </span>
+            </div>
+            <p class="text-sm text-slate-300"><%= template.description || "No description" %></p>
+            <div class="text-xs text-slate-500">
+              Canvas: <%= template.canvas.width %> x <%= template.canvas.height %> | Slots: <%= template.imageSlots.length %> | Texts: <%= template.texts.length %>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <a href="/requests/frame-templates/<%= template._id %>/edit" class="rounded-lg border border-indigo-500/40 px-3 py-1.5 text-xs text-indigo-300 hover:bg-indigo-500/10 transition">
+                Edit
+              </a>
+              <form action="/requests/frame-templates/<%= template._id %>/toggle" method="POST">
+                <button type="submit" class="rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 transition">
+                  <%= template.isActive ? "Hide" : "Activate" %>
+                </button>
+              </form>
+              <form action="/requests/frame-templates/<%= template._id %>/delete" method="POST" onsubmit="return confirm('Delete this template permanently?');">
+                <button type="submit" class="rounded-lg border border-rose-500/40 px-3 py-1.5 text-xs text-rose-300 hover:bg-rose-500/10 transition">
+                  Delete
+                </button>
+              </form>
+            </div>
+          </article>
+        <% }); %>
+      </div>
+    <% } %>
+  </div>
+</section>
+
+<style>
+  #adminFramePreviewGrid {
+    background-image: linear-gradient(rgba(148,163,184,.26) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.26) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+  .ft-layer {
+    position: absolute;
+    border: 1.8px dashed rgba(99, 102, 241, .95);
+    background: rgba(99, 102, 241, .12);
+    user-select: none;
+    touch-action: none;
+  }
+  .ft-layer.is-text {
+    border-style: solid;
+    border-color: rgba(16, 185, 129, .88);
+    background: rgba(16, 185, 129, .10);
+  }
+  .ft-layer.selected {
+    box-shadow: 0 0 0 2px rgba(251, 191, 36, .78);
+  }
+  .ft-handle {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(15,23,42,.9);
+    background: #f8fafc;
+    z-index: 4;
+  }
+  .ft-handle.resize {
+    right: -8px;
+    bottom: -8px;
+    cursor: nwse-resize;
+  }
+  .ft-handle.rotate {
+    left: 50%;
+    top: -20px;
+    transform: translateX(-50%);
+    background: #f59e0b;
+    cursor: grab;
+  }
+</style>
+
+<div
+  id="frameTemplateBootstrap"
+  data-ready="<%= permanentStorageReady ? '1' : '0' %>"
+  data-mode="<%= isEditMode ? 'edit' : 'create' %>"
+></div>
+<script id="frameTemplateEditableTemplateData" type="application/json"><%- JSON.stringify(editableTemplate || null).replace(/</g, "\\u003c") %></script>
+<script defer src="/frameTemplateManager.js?v=<%= assetVersion %>"></script>

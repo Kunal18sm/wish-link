@@ -1,4 +1,4 @@
-<nav class="<%= (typeof chatLayout !== 'undefined' && chatLayout) ? 'fixed' : 'sticky' %> top-0 w-full glass-effect px-6 py-4 flex justify-between items-center"
+<nav class="<%= (typeof chatLayout !== 'undefined' && chatLayout) ? 'fixed top-0' : 'relative' %> w-full glass-effect bg-[#0b1120]/95 backdrop-blur-md border-b border-slate-800 px-6 py-4 flex justify-between items-center"
   style="z-index:210;">
   <% const navUser = (typeof currUser !== "undefined") ? currUser : null; %>
   <% const coinIconPath = `/assets/icons/coin.svg?v=${assetVersion}`; %>
@@ -7,67 +7,19 @@
   </a>
 
   <div class="flex items-center gap-4">
+    <% if(!navUser || !navUser.isAdmin) {%>
+      <a href="/photo-frames" class="hidden sm:block">
+        <button
+          class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-full text-sm font-semibold transition shadow-lg shadow-indigo-500/20">
+          Photo Frames
+        </button>
+      </a>
+    <% } %>
     <% if(navUser && !navUser.isAdmin) {%>
       <a href="/chat" class="hidden sm:block">
         <button
           class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-full text-sm font-semibold transition shadow-lg shadow-indigo-500/20">
           Chat Support
-        </button>
-      </a>
-    <% } %>
-    <% if(navUser && navUser.isAdmin) {%>
-      <a href="/web/new" class="hidden sm:block">
-        <button
-          class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-full text-sm font-semibold transition shadow-lg shadow-indigo-500/20">
-          Add new
-        </button>
-      </a>
-    <% } %>
-    <% if(navUser && navUser.isAdmin) {%>
-      <a href="/requests/" class="hidden sm:block">
-        <button
-          class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-full text-sm font-semibold transition shadow-lg shadow-indigo-500/20">
-          Requests
-        </button>
-      </a>
-    <% } %>
-    <% if(navUser && navUser.isAdmin) {%>
-      <a href="/requests/permanent" class="hidden sm:block">
-        <button
-          class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-full text-sm font-semibold transition shadow-lg shadow-indigo-500/20">
-          Permanent Req
-        </button>
-      </a>
-    <% } %>
-    <% if(navUser && navUser.isAdmin) {%>
-      <a href="/requests/allLive?scope=permanent" class="hidden sm:block">
-        <button
-          class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-full text-sm font-semibold transition shadow-lg shadow-indigo-500/20">
-          Permanent Live
-        </button>
-      </a>
-    <% } %>
-    <% if(navUser && navUser.isAdmin) {%>
-      <a href="/requests/users" class="hidden sm:block">
-        <button
-          class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-full text-sm font-semibold transition shadow-lg shadow-indigo-500/20">
-          Users
-        </button>
-      </a>
-    <% } %>
-    <% if(navUser && navUser.isAdmin) {%>
-      <a href="/requests/banner" class="hidden sm:block">
-        <button
-          class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-full text-sm font-semibold transition shadow-lg shadow-indigo-500/20">
-          Banners
-        </button>
-      </a>
-    <% } %>
-    <% if(navUser && navUser.isAdmin) {%>
-      <a href="/chat/admin" class="hidden sm:block">
-        <button
-          class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-full text-sm font-semibold transition shadow-lg shadow-indigo-500/20">
-          Chat Inbox
         </button>
       </a>
     <% } %>
@@ -113,6 +65,10 @@
         </div>
 
         <div class="py-1">
+          <a href="/photo-frames"
+            class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
+            <span>Photo Frames</span>
+          </a>
           <% if(!navUser) {%>
             <a href="/signUpForm"
               class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
@@ -147,6 +103,10 @@
             <a href="/requests/banner"
               class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
               <span>Banners</span>
+            </a>
+            <a href="/requests/frame-templates"
+              class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
+              <span>Frame Templates</span>
             </a>
             <a href="/feedback/feedbackpage"
               class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">

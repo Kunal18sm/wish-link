@@ -30,7 +30,17 @@ const USERS_PAGE_LIMIT = 20;
 const REQUEST_CARD_SELECT = "webName sender receiver price paymentProofUrl webUrl isLive isTemporary author";
 const PROFILE_PURCHASE_SELECT = "webName webUrl receiver price isLive isTemporary date author";
 const MAX_BANNER_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_FRAME_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024;
+const FRAME_SLOT_MAX_Z_INDEX = 999;
+const FRAME_TEXT_MIN_Z_INDEX = 1000;
+const FRAME_TEXT_MAX_Z_INDEX = 2000;
 const ALLOWED_BANNER_UPLOAD_MIME_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "image/webp",
+]);
+const ALLOWED_FRAME_UPLOAD_MIME_TYPES = new Set([
   "image/png",
   "image/jpeg",
   "image/jpg",
@@ -50,6 +60,20 @@ const bannerUpload = multer({
   limits: {
     fileSize: MAX_BANNER_UPLOAD_SIZE_BYTES,
     files: 80,
+  },
+});
+
+const frameUpload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (_req, file, cb) => {
+    if (!ALLOWED_FRAME_UPLOAD_MIME_TYPES.has(file?.mimetype)) {
+      return cb(new Error("Invalid frame file type. Only JPG, JPEG, PNG, and WEBP are allowed."));
+    }
+    return cb(null, true);
+  },
+  limits: {
+    fileSize: MAX_FRAME_UPLOAD_SIZE_BYTES,
+    files: 1,
   },
 });
 
@@ -105,6 +129,303 @@ function runBannerUpload(uploadMiddleware) {
 }
 
 const handleSingleBannerImageUpload = runBannerUpload(bannerUpload.single("imageFile"));
+
+function getFrameTemplateModel(req) {
+  return req.app.locals.permanentFrameTemplate || null;
+}
+
+function runFrameUploadWithRedirect(getRedirectPath) {
+  return (req, res, next) => {
+    frameUpload.single("frameImage")(req, res, (err) => {
+      if (!err) return next();
+      req.flash("error", String(err?.message || "Frame image upload failed. Please try again."));
+      const redirectPath =
+        typeof getRedirectPath === "function" ? getRedirectPath(req) : "/requests/frame-templates";
+      return res.redirect(redirectPath || "/requests/frame-templates");
+    });
+  };
+}
+
+const runSingleFrameUpload = runFrameUploadWithRedirect(() => "/requests/frame-templates");
+const runOptionalFrameUploadForEdit = runFrameUploadWithRedirect(
+  (req) => `/requests/frame-templates/${req.params.id}/edit`
+);
+
+function toSameOriginImageUrl(url) {
+  const rawUrl = String(url || "").trim();
+  if (!rawUrl) return "";
+  try {
+    const parsedUrl = new URL(rawUrl);
+    if (parsedUrl.protocol === "https:" && parsedUrl.hostname === "res.cloudinary.com") {
+      return `/cdn/image?u=${encodeURIComponent(rawUrl)}`;
+    }
+  } catch (_err) {
+    return rawUrl;
+  }
+  return rawUrl;
+}
+
+function toFrameTemplateEditorDoc(rawTemplate = {}) {
+  if (!rawTemplate?._id) return null;
+  return {
+    _id: String(rawTemplate._id),
+    name: String(rawTemplate.name || ""),
+    slug: String(rawTemplate.slug || ""),
+    description: String(rawTemplate.description || ""),
+    isActive: Boolean(rawTemplate.isActive),
+    canvas: {
+      width: Number(rawTemplate?.canvas?.width || 1080),
+      height: Number(rawTemplate?.canvas?.height || 1080),
+    },
+    frameImage: {
+      url: String(rawTemplate?.frameImage?.url || ""),
+      previewUrl: toSameOriginImageUrl(rawTemplate?.frameImage?.url),
+      publicId: String(rawTemplate?.frameImage?.publicId || ""),
+    },
+    imageSlots: Array.isArray(rawTemplate.imageSlots)
+      ? rawTemplate.imageSlots.map((slot, index) => ({
+        key: String(slot?.key || `slot_${index + 1}`),
+        label: String(slot?.label || `Photo ${index + 1}`),
+        x: Number(slot?.x || 0),
+        y: Number(slot?.y || 0),
+        width: Number(slot?.width || 200),
+        height: Number(slot?.height || 200),
+        borderRadius: Number(slot?.borderRadius || 0),
+        zIndex: Math.min(FRAME_SLOT_MAX_Z_INDEX, Math.max(0, Number(slot?.zIndex || 0))),
+        rotation: Number(slot?.rotation || 0),
+      }))
+      : [],
+    texts: Array.isArray(rawTemplate.texts)
+      ? rawTemplate.texts.map((textLayer, index) => ({
+        key: String(textLayer?.key || `text_${index + 1}`),
+        value: String(textLayer?.value || ""),
+        editable: parseBooleanValue(textLayer?.editable, true),
+        x: Number(textLayer?.x || 0),
+        y: Number(textLayer?.y || 0),
+        width: Number(textLayer?.width || 240),
+        height: Number(textLayer?.height || 120),
+        color: String(textLayer?.color || "#ffffff"),
+        fontSize: Number(textLayer?.fontSize || 30),
+        fontFamily: String(textLayer?.fontFamily || "Poppins"),
+        fontWeight: String(textLayer?.fontWeight || "600"),
+        textAlign: String(textLayer?.textAlign || "center"),
+        lineHeight: Number(textLayer?.lineHeight || 1.2),
+        letterSpacing: Number(textLayer?.letterSpacing || 0),
+        zIndex: Math.min(
+          FRAME_TEXT_MAX_Z_INDEX,
+          Math.max(FRAME_TEXT_MIN_Z_INDEX, Number(textLayer?.zIndex || FRAME_TEXT_MIN_Z_INDEX))
+        ),
+        rotation: Number(textLayer?.rotation || 0),
+      }))
+      : [],
+  };
+}
+
+function slugifyTemplateName(rawValue) {
+  const slug = String(rawValue || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120);
+
+  return slug || "frame-template";
+}
+
+async function buildUniqueTemplateSlug(FrameTemplate, rawSlug, excludeId = null) {
+  const baseSlug = slugifyTemplateName(rawSlug);
+  let candidate = baseSlug;
+  let suffix = 1;
+
+  while (true) {
+    const query = { slug: candidate };
+    if (excludeId) {
+      query._id = { $ne: excludeId };
+    }
+
+    // eslint-disable-next-line no-await-in-loop
+    const exists = await FrameTemplate.exists(query);
+    if (!exists) return candidate;
+
+    candidate = `${baseSlug}-${suffix}`.slice(0, 140);
+    suffix += 1;
+  }
+}
+
+function parseJsonArrayPayload(rawPayload) {
+  if (Array.isArray(rawPayload)) return rawPayload;
+  if (typeof rawPayload !== "string") return [];
+  const normalizedPayload = rawPayload.trim();
+  if (!normalizedPayload) return [];
+
+  const parsed = JSON.parse(normalizedPayload);
+  return Array.isArray(parsed) ? parsed : [];
+}
+
+function toBoundedNumber(rawValue, fallback, min, max) {
+  const parsed = Number(rawValue);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, parsed));
+}
+
+function normalizeSlotPayload(rawSlots = []) {
+  const normalizedSlots = (Array.isArray(rawSlots) ? rawSlots : [])
+    .map((slot, index) => {
+      const x = toBoundedNumber(slot?.x, 0, 0, 5000);
+      const y = toBoundedNumber(slot?.y, 0, 0, 5000);
+      const width = toBoundedNumber(slot?.width, 200, 20, 5000);
+      const height = toBoundedNumber(slot?.height, 200, 20, 5000);
+
+      return {
+        key: String(slot?.key || `slot_${index + 1}`)
+          .trim()
+          .slice(0, 60),
+        label: String(slot?.label || `Photo ${index + 1}`)
+          .trim()
+          .slice(0, 80),
+        x,
+        y,
+        width,
+        height,
+        borderRadius: toBoundedNumber(slot?.borderRadius, 0, 0, 1000),
+        zIndex: toBoundedNumber(slot?.zIndex, 0, 0, FRAME_SLOT_MAX_Z_INDEX),
+        rotation: toBoundedNumber(slot?.rotation, 0, -360, 360),
+      };
+    })
+    .filter((slot) => slot.width > 0 && slot.height > 0);
+
+  if (!normalizedSlots.length) {
+    throw new Error("At least one valid image slot is required.");
+  }
+
+  return normalizedSlots;
+}
+
+function normalizeTextPayload(rawTexts = []) {
+  return (Array.isArray(rawTexts) ? rawTexts : [])
+    .map((textLayer, index) => ({
+      key: String(textLayer?.key || `text_${index + 1}`)
+        .trim()
+        .slice(0, 60),
+      value: String(textLayer?.value || "")
+        .trim()
+        .slice(0, 240),
+      editable: parseBooleanValue(textLayer?.editable, true),
+      x: toBoundedNumber(textLayer?.x, 0, 0, 5000),
+      y: toBoundedNumber(textLayer?.y, 0, 0, 5000),
+      width: toBoundedNumber(textLayer?.width, 240, 20, 5000),
+      height: toBoundedNumber(textLayer?.height, 120, 20, 5000),
+      color: String(textLayer?.color || "#ffffff")
+        .trim()
+        .slice(0, 30),
+      fontSize: toBoundedNumber(textLayer?.fontSize, 30, 8, 300),
+      fontFamily: String(textLayer?.fontFamily || "Poppins")
+        .trim()
+        .slice(0, 80),
+      fontWeight: String(textLayer?.fontWeight || "600")
+        .trim()
+        .slice(0, 20),
+      textAlign: ["left", "center", "right"].includes(String(textLayer?.textAlign || "center"))
+        ? String(textLayer.textAlign)
+        : "center",
+      lineHeight: toBoundedNumber(textLayer?.lineHeight, 1.2, 0.6, 3),
+      letterSpacing: toBoundedNumber(textLayer?.letterSpacing, 0, -10, 30),
+      zIndex: toBoundedNumber(
+        textLayer?.zIndex,
+        FRAME_TEXT_MIN_Z_INDEX,
+        FRAME_TEXT_MIN_Z_INDEX,
+        FRAME_TEXT_MAX_Z_INDEX
+      ),
+      rotation: toBoundedNumber(textLayer?.rotation, 0, -360, 360),
+    }))
+    .filter((textLayer) => textLayer.value || textLayer.editable);
+}
+
+function buildFrameTemplatePayload(formInput = {}, frameImageResult = null, existingTemplate = null) {
+  const frameName = String(formInput?.name || "")
+    .trim()
+    .slice(0, 120);
+  if (!frameName) {
+    throw new Error("Template name is required.");
+  }
+
+  const imageSlots = normalizeSlotPayload(parseJsonArrayPayload(formInput?.slotsPayload));
+  const texts = normalizeTextPayload(parseJsonArrayPayload(formInput?.textsPayload));
+  const frameImageDoc = frameImageResult || existingTemplate?.frameImage || null;
+  if (!frameImageDoc) {
+    throw new Error("Frame image is required.");
+  }
+
+  const canvasWidth = toBoundedNumber(
+    formInput?.canvasWidth,
+    frameImageDoc?.width || existingTemplate?.canvas?.width || 1080,
+    100,
+    5000
+  );
+  const canvasHeight = toBoundedNumber(
+    formInput?.canvasHeight,
+    frameImageDoc?.height || existingTemplate?.canvas?.height || 1080,
+    100,
+    5000
+  );
+
+  return {
+    name: frameName,
+    slug: slugifyTemplateName(formInput?.slug || frameName),
+    description: String(formInput?.description || "")
+      .trim()
+      .slice(0, 500),
+    frameImage: {
+      url: String(frameImageDoc?.secure_url || frameImageDoc?.url || "").trim(),
+      publicId: String(frameImageDoc?.public_id || frameImageDoc?.publicId || "").trim(),
+      width: Number(frameImageDoc?.width || canvasWidth),
+      height: Number(frameImageDoc?.height || canvasHeight),
+      format: String(frameImageDoc?.format || "").trim(),
+    },
+    canvas: {
+      width: canvasWidth,
+      height: canvasHeight,
+    },
+    imageSlots,
+    texts,
+    isActive: parseBooleanValue(formInput?.isActive, true),
+  };
+}
+
+function uploadFrameImageToPermanentCloudinary(file) {
+  if (!permanentCloudinaryOptions) {
+    throw new Error("Permanent cloud storage is not configured.");
+  }
+
+  if (!file?.buffer) {
+    throw new Error("Frame image is required.");
+  }
+
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        ...permanentCloudinaryOptions,
+        folder: "frames",
+        resource_type: "image",
+        use_filename: true,
+        unique_filename: true,
+        overwrite: false,
+      },
+      (err, result) => {
+        if (err) return reject(err);
+        return resolve(result);
+      }
+    );
+
+    stream.end(file.buffer);
+  });
+}
+
+async function destroyPermanentCloudinaryImage(publicId) {
+  const normalizedPublicId = String(publicId || "").trim();
+  if (!normalizedPublicId || !permanentCloudinaryOptions) return;
+  await cloudinary.uploader.destroy(normalizedPublicId, permanentCloudinaryOptions);
+}
 
 function getRequestScope(req) {
   const rawScope = String(req.query.scope || REQUEST_SCOPE.DEFAULT).toLowerCase();
@@ -193,6 +514,10 @@ function parseBannerSlidesPayload(rawPayload) {
 }
 
 function parseBooleanValue(rawValue, fallback = true) {
+  if (Array.isArray(rawValue)) {
+    if (!rawValue.length) return fallback;
+    return parseBooleanValue(rawValue[rawValue.length - 1], fallback);
+  }
   if (typeof rawValue === "boolean") return rawValue;
   const normalized = String(rawValue || "").trim().toLowerCase();
   if (!normalized) return fallback;
@@ -416,6 +741,233 @@ async function fetchAdminUsersPage(req, searchTerm, page) {
     };
   }, 30 * 1000);
 }
+
+router.get(
+  "/frame-templates",
+  isLoggedIn,
+  isAdmin,
+  wrapAsync(async (req, res) => {
+    const FrameTemplate = getFrameTemplateModel(req);
+    const templates = FrameTemplate
+      ? await FrameTemplate.find({})
+        .select("name slug description frameImage canvas imageSlots texts isActive updatedAt")
+        .sort({ createdAt: -1 })
+        .lean()
+      : [];
+
+    return res.render("frameTemplateManager", {
+      templates,
+      permanentStorageReady: Boolean(FrameTemplate && permanentCloudinaryOptions),
+      editorMode: "create",
+      editableTemplate: null,
+      title: "Frame Template Manager - VishLink Admin",
+      description: "Create and manage reusable photo frame templates.",
+      robots: "noindex, nofollow",
+    });
+  })
+);
+
+router.post(
+  "/frame-templates",
+  isLoggedIn,
+  isAdmin,
+  runSingleFrameUpload,
+  wrapAsync(async (req, res) => {
+    const FrameTemplate = getFrameTemplateModel(req);
+    if (!FrameTemplate) {
+      req.flash("error", "Permanent template database is not configured.");
+      return res.redirect("/requests/frame-templates");
+    }
+
+    if (!permanentCloudinaryOptions) {
+      req.flash("error", "Permanent cloud storage is not configured.");
+      return res.redirect("/requests/frame-templates");
+    }
+
+    if (!req.file) {
+      req.flash("error", "Please upload a frame PNG/JPG image.");
+      return res.redirect("/requests/frame-templates");
+    }
+
+    let uploadedFrame = null;
+
+    try {
+      uploadedFrame = await uploadFrameImageToPermanentCloudinary(req.file);
+      const payload = buildFrameTemplatePayload(req.body, uploadedFrame);
+      payload.slug = await buildUniqueTemplateSlug(FrameTemplate, payload.slug);
+      payload.createdBy = req.user?._id || null;
+      payload.updatedBy = req.user?._id || null;
+
+      await FrameTemplate.create(payload);
+      req.flash("success", "Frame template saved successfully.");
+      return res.redirect("/requests/frame-templates");
+    } catch (err) {
+      if (uploadedFrame?.public_id) {
+        await destroyPermanentCloudinaryImage(uploadedFrame.public_id);
+      }
+
+      req.flash("error", String(err?.message || "Frame template save failed."));
+      return res.redirect("/requests/frame-templates");
+    }
+  })
+);
+
+router.get(
+  "/frame-templates/:id/edit",
+  isLoggedIn,
+  isAdmin,
+  wrapAsync(async (req, res) => {
+    const FrameTemplate = getFrameTemplateModel(req);
+    if (!FrameTemplate) {
+      req.flash("error", "Permanent template database is not configured.");
+      return res.redirect("/requests/frame-templates");
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      req.flash("error", "Invalid template id.");
+      return res.redirect("/requests/frame-templates");
+    }
+
+    const [templates, selectedTemplate] = await Promise.all([
+      FrameTemplate.find({})
+        .select("name slug description frameImage canvas imageSlots texts isActive updatedAt")
+        .sort({ createdAt: -1 })
+        .lean(),
+      FrameTemplate.findById(req.params.id)
+        .select("name slug description frameImage canvas imageSlots texts isActive")
+        .lean(),
+    ]);
+
+    if (!selectedTemplate) {
+      req.flash("error", "Template not found.");
+      return res.redirect("/requests/frame-templates");
+    }
+
+    return res.render("frameTemplateManager", {
+      templates,
+      permanentStorageReady: Boolean(FrameTemplate && permanentCloudinaryOptions),
+      editorMode: "edit",
+      editableTemplate: toFrameTemplateEditorDoc(selectedTemplate),
+      title: "Edit Frame Template - VishLink Admin",
+      description: "Edit reusable photo frame template layout.",
+      robots: "noindex, nofollow",
+    });
+  })
+);
+
+router.put(
+  "/frame-templates/:id",
+  isLoggedIn,
+  isAdmin,
+  runOptionalFrameUploadForEdit,
+  wrapAsync(async (req, res) => {
+    const FrameTemplate = getFrameTemplateModel(req);
+    if (!FrameTemplate) {
+      req.flash("error", "Permanent template database is not configured.");
+      return res.redirect("/requests/frame-templates");
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      req.flash("error", "Invalid template id.");
+      return res.redirect("/requests/frame-templates");
+    }
+
+    const existingTemplate = await FrameTemplate.findById(req.params.id).lean();
+    if (!existingTemplate) {
+      req.flash("error", "Template not found.");
+      return res.redirect("/requests/frame-templates");
+    }
+
+    let uploadedFrame = null;
+    try {
+      if (req.file) {
+        uploadedFrame = await uploadFrameImageToPermanentCloudinary(req.file);
+      }
+
+      const payload = buildFrameTemplatePayload(req.body, uploadedFrame, existingTemplate);
+      payload.slug = await buildUniqueTemplateSlug(FrameTemplate, payload.slug, req.params.id);
+      payload.updatedBy = req.user?._id || null;
+
+      await FrameTemplate.findByIdAndUpdate(req.params.id, payload, { new: true });
+
+      const previousPublicId = String(existingTemplate?.frameImage?.publicId || "").trim();
+      if (uploadedFrame?.public_id && previousPublicId && previousPublicId !== uploadedFrame.public_id) {
+        await destroyPermanentCloudinaryImage(previousPublicId);
+      }
+
+      req.flash("success", "Frame template updated successfully.");
+      return res.redirect(`/requests/frame-templates/${req.params.id}/edit`);
+    } catch (err) {
+      if (uploadedFrame?.public_id) {
+        await destroyPermanentCloudinaryImage(uploadedFrame.public_id);
+      }
+      req.flash("error", String(err?.message || "Template update failed."));
+      return res.redirect(`/requests/frame-templates/${req.params.id}/edit`);
+    }
+  })
+);
+
+router.post(
+  "/frame-templates/:id/toggle",
+  isLoggedIn,
+  isAdmin,
+  wrapAsync(async (req, res) => {
+    const FrameTemplate = getFrameTemplateModel(req);
+    if (!FrameTemplate) {
+      req.flash("error", "Permanent template database is not configured.");
+      return res.redirect("/requests/frame-templates");
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      req.flash("error", "Invalid template id.");
+      return res.redirect("/requests/frame-templates");
+    }
+
+    const template = await FrameTemplate.findById(req.params.id).select("isActive");
+    if (!template) {
+      req.flash("error", "Template not found.");
+      return res.redirect("/requests/frame-templates");
+    }
+
+    template.isActive = !template.isActive;
+    template.updatedBy = req.user?._id || null;
+    await template.save();
+
+    req.flash("success", template.isActive ? "Template activated." : "Template hidden.");
+    return res.redirect("/requests/frame-templates");
+  })
+);
+
+router.post(
+  "/frame-templates/:id/delete",
+  isLoggedIn,
+  isAdmin,
+  wrapAsync(async (req, res) => {
+    const FrameTemplate = getFrameTemplateModel(req);
+    if (!FrameTemplate) {
+      req.flash("error", "Permanent template database is not configured.");
+      return res.redirect("/requests/frame-templates");
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      req.flash("error", "Invalid template id.");
+      return res.redirect("/requests/frame-templates");
+    }
+
+    const deletedTemplate = await FrameTemplate.findByIdAndDelete(req.params.id)
+      .select("frameImage.publicId")
+      .lean();
+
+    if (!deletedTemplate) {
+      req.flash("error", "Template not found.");
+      return res.redirect("/requests/frame-templates");
+    }
+
+    await destroyPermanentCloudinaryImage(deletedTemplate?.frameImage?.publicId);
+    req.flash("success", "Template deleted.");
+    return res.redirect("/requests/frame-templates");
+  })
+);
 
 // get default requests page
 router.get(

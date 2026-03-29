@@ -1,0 +1,34 @@
+<% layout("/layouts/boilerplate") %>
+
+<section class="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-8">
+  <h1 class="text-2xl md:text-3xl font-bold text-white">Photo Frame Templates</h1>
+
+  <% if (!permanentTemplatesReady) { %>
+    <p class="mt-2 text-sm text-amber-300">
+      Template storage abhi configure nahi hai, isliye list empty dikh sakti hai.
+    </p>
+  <% } %>
+
+  <% if (!frameTemplates || !frameTemplates.length) { %>
+    <div class="py-14 text-center">
+      <h2 class="text-xl font-semibold text-white">Abhi koi photo frame template available nahi hai</h2>
+      <p class="text-slate-400 mt-2">Jab admin templates add karega tab yahin par cards show ho jayenge.</p>
+    </div>
+  <% } else { %>
+    <div class="mt-5 grid grid-cols-2 gap-3">
+      <% frameTemplates.forEach((template) => { %>
+        <a href="/photo-frames/<%= encodeURIComponent(template.slug) %>"
+          class="group block rounded-lg p-2 transition hover:bg-slate-900/50">
+          <div class="aspect-[4/3] rounded-md overflow-hidden bg-slate-900">
+            <img src="<%= template.frameImage.previewUrl %>" alt="<%= template.name %> preview"
+              class="h-full w-full object-contain transition duration-300 group-hover:scale-[1.03]" loading="lazy" decoding="async">
+          </div>
+          <h3 class="mt-2 text-sm md:text-base font-semibold text-white line-clamp-2"><%= template.name %></h3>
+          <p class="mt-1 text-xs md:text-sm text-slate-400 line-clamp-2"><%= template.description || "No description" %></p>
+          
+          
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
+</section>

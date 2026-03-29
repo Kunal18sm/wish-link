@@ -24,6 +24,55 @@ const PROFILE_PURCHASE_SELECT = "webName webUrl receiver price isLive isTemporar
 const HERO_PRIMARY_IMAGE =
   "https://res.cloudinary.com/drzq6kjgp/image/upload/v1770794063/Gemini_Generated_Image_4qzfxy4qzfxy4qzf_l5tidy.png";
 
+function getFrameTemplateModel(req) {
+  return req.app.locals.permanentFrameTemplate || null;
+}
+
+function isCloudinaryUrl(url) {
+  const rawUrl = String(url || "").trim();
+  if (!rawUrl) return false;
+  try {
+    const parsedUrl = new URL(rawUrl);
+    return parsedUrl.protocol === "https:" && parsedUrl.hostname === "res.cloudinary.com";
+  } catch (_err) {
+    return false;
+  }
+}
+
+function toFrameProxyUrl(rawUrl) {
+  const normalized = String(rawUrl || "").trim();
+  if (!normalized) return "";
+  if (!isCloudinaryUrl(normalized)) return normalized;
+  return `/cdn/image?u=${encodeURIComponent(normalized)}`;
+}
+
+function toClientFrameTemplate(rawTemplate, res) {
+  const frameImageUrl = String(rawTemplate?.frameImage?.url || "").trim();
+  const previewWidth = Number(rawTemplate?.canvas?.width || 1000);
+  const optimizedFrameUrl =
+    typeof res?.locals?.getOptimizedCloudinaryUrl === "function"
+      ? res.locals.getOptimizedCloudinaryUrl(frameImageUrl, "default", Math.min(previewWidth, 1400))
+      : frameImageUrl;
+
+  return {
+    id: String(rawTemplate?._id || ""),
+    name: String(rawTemplate?.name || "").trim(),
+    slug: String(rawTemplate?.slug || "").trim(),
+    description: String(rawTemplate?.description || "").trim(),
+    canvas: {
+      width: Number(rawTemplate?.canvas?.width || 1080),
+      height: Number(rawTemplate?.canvas?.height || 1080),
+    },
+    frameImage: {
+      url: frameImageUrl,
+      previewUrl: toFrameProxyUrl(optimizedFrameUrl),
+      exportUrl: toFrameProxyUrl(frameImageUrl),
+    },
+    imageSlots: Array.isArray(rawTemplate?.imageSlots) ? rawTemplate.imageSlots : [],
+    texts: Array.isArray(rawTemplate?.texts) ? rawTemplate.texts : [],
+  };
+}
+
 function buildLcpImageMeta(res, cloudinaryUrl) {
   const resolvedUrl = String(cloudinaryUrl || "").trim();
   if (!resolvedUrl) {
@@ -153,6 +202,61 @@ router.get("/category/:tag", wrapAsync(async (req, res) => {
       url: `${SITE_URL}/category/${encodedTag}`,
       description: `Explore ${normalizedTag} wishing website templates on VishLink.`
     }
+  });
+}));
+
+router.get("/photo-frames", wrapAsync(async (req, res) => {
+  const FrameTemplate = getFrameTemplateModel(req);
+  const templates = FrameTemplate
+    ? await FrameTemplate.find({ isActive: true })
+      .select("name slug description frameImage canvas imageSlots texts")
+      .sort({ createdAt: -1 })
+      .lean()
+    : [];
+
+  const clientTemplates = templates.map((template) => toClientFrameTemplate(template, res));
+
+  return res.render("photoFrameTemplates", {
+    frameTemplates: clientTemplates,
+    permanentTemplatesReady: Boolean(FrameTemplate),
+    title: "Photo Frame Templates - VishLink",
+    description: "Browse beautiful photo frame templates and open one to create your final frame image.",
+    canonical: `${SITE_URL}/photo-frames`,
+    structuredData: {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      name: "VishLink Photo Frame Templates",
+      url: `${SITE_URL}/photo-frames`,
+      description:
+        "Choose from ready-made birthday and celebration photo frame templates.",
+    },
+  });
+}));
+
+router.get("/photo-frames/:slug", wrapAsync(async (req, res) => {
+  const FrameTemplate = getFrameTemplateModel(req);
+  const selectedTemplateSlug = String(req.params.slug || "").trim().toLowerCase();
+  const templateDoc = FrameTemplate
+    ? await FrameTemplate.findOne({ isActive: true, slug: selectedTemplateSlug })
+      .select("name slug description frameImage canvas imageSlots texts")
+      .lean()
+    : null;
+
+  if (!templateDoc) {
+    req.flash("error", "Selected photo frame template not found.");
+    return res.redirect("/photo-frames");
+  }
+
+  const selectedTemplate = toClientFrameTemplate(templateDoc, res);
+
+  return res.render("photoFrameEditor", {
+    frameTemplates: [selectedTemplate],
+    selectedTemplateSlug,
+    permanentTemplatesReady: Boolean(FrameTemplate),
+    title: `${selectedTemplate.name} - Photo Frame Studio | VishLink`,
+    description: `Customize ${selectedTemplate.name} with your photos and text, then download instantly.`,
+    canonical: `${SITE_URL}/photo-frames/${encodeURIComponent(selectedTemplateSlug)}`,
+    robots: "index, follow",
   });
 }));
 
