@@ -59,6 +59,7 @@ function toClientFrameTemplate(rawTemplate, res) {
     name: String(rawTemplate?.name || "").trim(),
     slug: String(rawTemplate?.slug || "").trim(),
     description: String(rawTemplate?.description || "").trim(),
+    isActive: Boolean(rawTemplate?.isActive),
     canvas: {
       width: Number(rawTemplate?.canvas?.width || 1080),
       height: Number(rawTemplate?.canvas?.height || 1080),
@@ -207,9 +208,11 @@ router.get("/category/:tag", wrapAsync(async (req, res) => {
 
 router.get("/photo-frames", wrapAsync(async (req, res) => {
   const FrameTemplate = getFrameTemplateModel(req);
+  const isAdminViewer = Boolean(req.user?.isAdmin);
+  const frameTemplateQuery = isAdminViewer ? {} : { isActive: true };
   const templates = FrameTemplate
-    ? await FrameTemplate.find({ isActive: true })
-      .select("name slug description frameImage canvas imageSlots texts")
+    ? await FrameTemplate.find(frameTemplateQuery)
+      .select("name slug description frameImage canvas imageSlots texts isActive")
       .sort({ createdAt: -1 })
       .lean()
     : [];
@@ -219,6 +222,7 @@ router.get("/photo-frames", wrapAsync(async (req, res) => {
   return res.render("photoFrameTemplates", {
     frameTemplates: clientTemplates,
     permanentTemplatesReady: Boolean(FrameTemplate),
+    isAdminViewer,
     title: "Photo Frame Templates - VishLink",
     description: "Browse beautiful photo frame templates and open one to create your final frame image.",
     canonical: `${SITE_URL}/photo-frames`,
@@ -236,8 +240,12 @@ router.get("/photo-frames", wrapAsync(async (req, res) => {
 router.get("/photo-frames/:slug", wrapAsync(async (req, res) => {
   const FrameTemplate = getFrameTemplateModel(req);
   const selectedTemplateSlug = String(req.params.slug || "").trim().toLowerCase();
+  const isAdminViewer = Boolean(req.user?.isAdmin);
+  const templateQuery = isAdminViewer
+    ? { slug: selectedTemplateSlug }
+    : { isActive: true, slug: selectedTemplateSlug };
   const templateDoc = FrameTemplate
-    ? await FrameTemplate.findOne({ isActive: true, slug: selectedTemplateSlug })
+    ? await FrameTemplate.findOne(templateQuery)
       .select("name slug description frameImage canvas imageSlots texts")
       .lean()
     : null;

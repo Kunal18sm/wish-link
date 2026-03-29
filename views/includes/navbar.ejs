@@ -80,45 +80,9 @@
             </a>
           <% } %>
           <% if(navUser && navUser.isAdmin) {%>
-            <a href="/web/new"
+            <a href="/requests/dashboard"
               class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
-              <span>Add new</span>
-            </a>
-            <a href="/requests/"
-              class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
-              <span>Requests</span>
-            </a>
-            <a href="/requests/permanent"
-              class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
-              <span>Permanent Requests</span>
-            </a>
-            <a href="/requests/allLive?scope=permanent"
-              class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
-              <span>Permanent Live</span>
-            </a>
-            <a href="/requests/users"
-              class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
-              <span>Users</span>
-            </a>
-            <a href="/requests/banner"
-              class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
-              <span>Banners</span>
-            </a>
-            <a href="/requests/frame-templates"
-              class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
-              <span>Frame Templates</span>
-            </a>
-            <a href="/feedback/feedbackpage"
-              class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
-              <span>Feedbacks</span>
-            </a>
-            <a href="/game/leaderboard"
-              class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
-              <span>LeaderBoard</span>
-            </a>
-            <a href="/chat/admin"
-              class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
-              <span>Chat Inbox</span>
+              <span>Admin Dashboard</span>
             </a>
           <% } %>
           <% if(navUser && !navUser.isAdmin) {%>

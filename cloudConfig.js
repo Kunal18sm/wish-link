@@ -64,6 +64,48 @@ const PERMANENT_CLOUDINARY_FOLDER = getFirstEnv(
   "PERMANENT_CLOUD_FOLDER"
 ) || "wishLink_permanent";
 
+function resolveFrameTemplateCloudinaryOptions() {
+  const cloudName = getFirstEnv(
+    "PHOTOFRAME_CLOUD_NAME",
+    "PHOTOFRAME_CLOUDINARY_NAME",
+    "PHOTOFRAME_CLOUDINARY_CLOUD_NAME",
+    "PHOTO_FRAME_CLOUD_NAME",
+    "FRAME_TEMPLATE_CLOUD_NAME",
+    "FRAME_TEMPLATE_CLOUDINARY_CLOUD_NAME"
+  );
+  const apiKey = getFirstEnv(
+    "PHOTOFRAME_CLOUD_API_KEY",
+    "PHOTOFRAME_CLOUDINARY_API_KEY",
+    "PHOTO_FRAME_CLOUD_API_KEY",
+    "FRAME_TEMPLATE_CLOUD_API_KEY",
+    "FRAME_TEMPLATE_CLOUDINARY_API_KEY"
+  );
+  const apiSecret = getFirstEnv(
+    "PHOTOFRAME_CLOUD_API_SECRET",
+    "PHOTOFRAME_CLOUDINARY_API_SECRET",
+    "PHOTO_FRAME_CLOUD_API_SECRET",
+    "FRAME_TEMPLATE_CLOUD_API_SECRET",
+    "FRAME_TEMPLATE_CLOUDINARY_API_SECRET"
+  );
+
+  if (cloudName && apiKey && apiSecret) {
+    return {
+      cloud_name: cloudName,
+      api_key: apiKey,
+      api_secret: apiSecret,
+    };
+  }
+
+  return null;
+}
+
+const frameTemplateCloudinaryOptions = resolveFrameTemplateCloudinaryOptions();
+const FRAME_TEMPLATE_CLOUDINARY_FOLDER = getFirstEnv(
+  "PHOTOFRAME_CLOUDINARY_FOLDER",
+  "PHOTO_FRAME_CLOUDINARY_FOLDER",
+  "FRAME_TEMPLATE_CLOUDINARY_FOLDER"
+) || "wishLink_photo_frames";
+
 const storage = new CloudinaryStorage({
   cloudinary,
   params: {
@@ -112,4 +154,6 @@ module.exports = {
   storage,
   permanentStorage,
   permanentCloudinaryOptions,
+  frameTemplateCloudinaryOptions,
+  FRAME_TEMPLATE_CLOUDINARY_FOLDER,
 };

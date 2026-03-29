@@ -1,4 +1,4 @@
-const express = require("express");
+﻿const express = require("express");
 const mongoose = require("mongoose");
 const multer = require("multer");
 
@@ -8,7 +8,13 @@ const BannerConfig = require("../models/bannerConfig.js");
 const user = require("../models/user.js");
 const wrapAsync = require("../utils/wrapAsync.js");
 const { isLoggedIn, isAdmin } = require("../middleware.js");
-const { cloudinary, storage, permanentCloudinaryOptions } = require("../cloudConfig.js");
+const {
+  cloudinary,
+  storage,
+  permanentCloudinaryOptions,
+  frameTemplateCloudinaryOptions,
+  FRAME_TEMPLATE_CLOUDINARY_FOLDER,
+} = require("../cloudConfig.js");
 const {
   getEditableBannerConfig,
   invalidateBannerConfigCache,
@@ -34,6 +40,92 @@ const MAX_FRAME_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024;
 const FRAME_SLOT_MAX_Z_INDEX = 999;
 const FRAME_TEXT_MIN_Z_INDEX = 1000;
 const FRAME_TEXT_MAX_Z_INDEX = 2000;
+const ADMIN_DASHBOARD_CARDS = [
+  {
+    title: "Add Template",
+    description: "Add a new website template.",
+    href: "/web/new",
+    icon: "\u2728",
+    toneClass: "from-fuchsia-500/20 to-indigo-500/20 border-fuchsia-500/30",
+  },
+  {
+    title: "Requests",
+    description: "Manage pending temporary requests.",
+    href: "/requests",
+    icon: "\uD83D\uDCE5",
+    toneClass: "from-indigo-500/20 to-sky-500/20 border-indigo-500/30",
+  },
+  {
+    title: "Permanent Requests",
+    description: "Review permanent link requests.",
+    href: "/requests/permanent",
+    icon: "\uD83E\uDDFE",
+    toneClass: "from-violet-500/20 to-blue-500/20 border-violet-500/30",
+  },
+  {
+    title: "Expired Requests",
+    description: "View expired temporary links.",
+    href: "/requests/expired",
+    icon: "\u23F3",
+    toneClass: "from-amber-500/20 to-orange-500/20 border-amber-500/30",
+  },
+  {
+    title: "All Live",
+    description: "Check live temporary link status.",
+    href: "/requests/allLive",
+    icon: "\uD83D\uDFE2",
+    toneClass: "from-emerald-500/20 to-teal-500/20 border-emerald-500/30",
+  },
+  {
+    title: "Permanent Live",
+    description: "View all live permanent links.",
+    href: "/requests/allLive?scope=permanent",
+    icon: "\uD83D\uDC8E",
+    toneClass: "from-cyan-500/20 to-indigo-500/20 border-cyan-500/30",
+  },
+  {
+    title: "Users",
+    description: "Manage users, credits, and profiles.",
+    href: "/requests/users",
+    icon: "\uD83D\uDC65",
+    toneClass: "from-blue-500/20 to-slate-500/20 border-blue-500/30",
+  },
+  {
+    title: "Banners",
+    description: "Edit Home and Collection banners.",
+    href: "/requests/banner",
+    icon: "\uD83D\uDDBC\uFE0F",
+    toneClass: "from-rose-500/20 to-pink-500/20 border-rose-500/30",
+  },
+  {
+    title: "Frame Templates",
+    description: "Create and update photo frame templates.",
+    href: "/requests/frame-templates",
+    icon: "\uD83E\uDDE9",
+    toneClass: "from-indigo-500/20 to-purple-500/20 border-indigo-500/30",
+  },
+  {
+    title: "Feedbacks",
+    description: "Read user feedback and suggestions.",
+    href: "/feedback/feedbackpage",
+    icon: "\uD83D\uDCAC",
+    toneClass: "from-sky-500/20 to-cyan-500/20 border-sky-500/30",
+  },
+  {
+    title: "LeaderBoard",
+    description: "View leaderboard and winners.",
+    href: "/game/leaderboard",
+    icon: "\uD83C\uDFC6",
+    toneClass: "from-yellow-500/20 to-amber-500/20 border-yellow-500/30",
+  },
+  {
+    title: "Chat Inbox",
+    description: "Handle user support chats.",
+    href: "/chat/admin",
+    icon: "\uD83D\uDCE8",
+    toneClass: "from-emerald-500/20 to-cyan-500/20 border-emerald-500/30",
+  },
+];
 const ALLOWED_BANNER_UPLOAD_MIME_TYPES = new Set([
   "image/png",
   "image/jpeg",
@@ -392,9 +484,9 @@ function buildFrameTemplatePayload(formInput = {}, frameImageResult = null, exis
   };
 }
 
-function uploadFrameImageToPermanentCloudinary(file) {
-  if (!permanentCloudinaryOptions) {
-    throw new Error("Permanent cloud storage is not configured.");
+function uploadFrameImageToFrameTemplateCloudinary(file) {
+  if (!frameTemplateCloudinaryOptions) {
+    throw new Error("Photo frame template cloud storage is not configured.");
   }
 
   if (!file?.buffer) {
@@ -404,8 +496,8 @@ function uploadFrameImageToPermanentCloudinary(file) {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
-        ...permanentCloudinaryOptions,
-        folder: "frames",
+        ...frameTemplateCloudinaryOptions,
+        folder: FRAME_TEMPLATE_CLOUDINARY_FOLDER,
         resource_type: "image",
         use_filename: true,
         unique_filename: true,
@@ -421,10 +513,46 @@ function uploadFrameImageToPermanentCloudinary(file) {
   });
 }
 
-async function destroyPermanentCloudinaryImage(publicId) {
+function extractCloudinaryCloudName(rawUrl) {
+  const normalizedUrl = String(rawUrl || "").trim();
+  if (!normalizedUrl) return "";
+
+  try {
+    const parsedUrl = new URL(normalizedUrl);
+    if (parsedUrl.protocol !== "https:" || parsedUrl.hostname !== "res.cloudinary.com") {
+      return "";
+    }
+
+    const pathSegments = parsedUrl.pathname.split("/").filter(Boolean);
+    return String(pathSegments[0] || "").trim();
+  } catch (_err) {
+    return "";
+  }
+}
+
+function getDestroyCloudinaryOptionsByImageUrl(imageUrl) {
+  const sourceCloudName = extractCloudinaryCloudName(imageUrl);
+  if (!sourceCloudName) return frameTemplateCloudinaryOptions || null;
+  if (sourceCloudName === String(frameTemplateCloudinaryOptions?.cloud_name || "").trim()) {
+    return frameTemplateCloudinaryOptions;
+  }
+  if (sourceCloudName === String(permanentCloudinaryOptions?.cloud_name || "").trim()) {
+    return permanentCloudinaryOptions;
+  }
+  return frameTemplateCloudinaryOptions || null;
+}
+
+async function destroyFrameTemplateCloudinaryImage(publicId, imageUrl = "") {
   const normalizedPublicId = String(publicId || "").trim();
-  if (!normalizedPublicId || !permanentCloudinaryOptions) return;
-  await cloudinary.uploader.destroy(normalizedPublicId, permanentCloudinaryOptions);
+  if (!normalizedPublicId) return;
+  const destroyOptions = getDestroyCloudinaryOptionsByImageUrl(imageUrl);
+
+  if (destroyOptions) {
+    await cloudinary.uploader.destroy(normalizedPublicId, destroyOptions);
+    return;
+  }
+
+  await cloudinary.uploader.destroy(normalizedPublicId);
 }
 
 function getRequestScope(req) {
@@ -743,6 +871,20 @@ async function fetchAdminUsersPage(req, searchTerm, page) {
 }
 
 router.get(
+  "/dashboard",
+  isLoggedIn,
+  isAdmin,
+  wrapAsync(async (_req, res) => {
+    return res.render("adminDashboard", {
+      adminCards: ADMIN_DASHBOARD_CARDS,
+      title: "Admin Dashboard - VishLink",
+      description: "Quick access dashboard for all admin tools and routes.",
+      robots: "noindex, nofollow",
+    });
+  })
+);
+
+router.get(
   "/frame-templates",
   isLoggedIn,
   isAdmin,
@@ -757,7 +899,7 @@ router.get(
 
     return res.render("frameTemplateManager", {
       templates,
-      permanentStorageReady: Boolean(FrameTemplate && permanentCloudinaryOptions),
+      frameTemplateStorageReady: Boolean(FrameTemplate && frameTemplateCloudinaryOptions),
       editorMode: "create",
       editableTemplate: null,
       title: "Frame Template Manager - VishLink Admin",
@@ -779,8 +921,8 @@ router.post(
       return res.redirect("/requests/frame-templates");
     }
 
-    if (!permanentCloudinaryOptions) {
-      req.flash("error", "Permanent cloud storage is not configured.");
+    if (!frameTemplateCloudinaryOptions) {
+      req.flash("error", "Photo frame template cloud storage is not configured.");
       return res.redirect("/requests/frame-templates");
     }
 
@@ -792,7 +934,7 @@ router.post(
     let uploadedFrame = null;
 
     try {
-      uploadedFrame = await uploadFrameImageToPermanentCloudinary(req.file);
+      uploadedFrame = await uploadFrameImageToFrameTemplateCloudinary(req.file);
       const payload = buildFrameTemplatePayload(req.body, uploadedFrame);
       payload.slug = await buildUniqueTemplateSlug(FrameTemplate, payload.slug);
       payload.createdBy = req.user?._id || null;
@@ -803,7 +945,7 @@ router.post(
       return res.redirect("/requests/frame-templates");
     } catch (err) {
       if (uploadedFrame?.public_id) {
-        await destroyPermanentCloudinaryImage(uploadedFrame.public_id);
+        await destroyFrameTemplateCloudinaryImage(uploadedFrame.public_id, uploadedFrame?.secure_url);
       }
 
       req.flash("error", String(err?.message || "Frame template save failed."));
@@ -845,7 +987,7 @@ router.get(
 
     return res.render("frameTemplateManager", {
       templates,
-      permanentStorageReady: Boolean(FrameTemplate && permanentCloudinaryOptions),
+      frameTemplateStorageReady: Boolean(FrameTemplate && frameTemplateCloudinaryOptions),
       editorMode: "edit",
       editableTemplate: toFrameTemplateEditorDoc(selectedTemplate),
       title: "Edit Frame Template - VishLink Admin",
@@ -881,7 +1023,7 @@ router.put(
     let uploadedFrame = null;
     try {
       if (req.file) {
-        uploadedFrame = await uploadFrameImageToPermanentCloudinary(req.file);
+        uploadedFrame = await uploadFrameImageToFrameTemplateCloudinary(req.file);
       }
 
       const payload = buildFrameTemplatePayload(req.body, uploadedFrame, existingTemplate);
@@ -892,14 +1034,14 @@ router.put(
 
       const previousPublicId = String(existingTemplate?.frameImage?.publicId || "").trim();
       if (uploadedFrame?.public_id && previousPublicId && previousPublicId !== uploadedFrame.public_id) {
-        await destroyPermanentCloudinaryImage(previousPublicId);
+        await destroyFrameTemplateCloudinaryImage(previousPublicId, existingTemplate?.frameImage?.url);
       }
 
       req.flash("success", "Frame template updated successfully.");
       return res.redirect(`/requests/frame-templates/${req.params.id}/edit`);
     } catch (err) {
       if (uploadedFrame?.public_id) {
-        await destroyPermanentCloudinaryImage(uploadedFrame.public_id);
+        await destroyFrameTemplateCloudinaryImage(uploadedFrame.public_id, uploadedFrame?.secure_url);
       }
       req.flash("error", String(err?.message || "Template update failed."));
       return res.redirect(`/requests/frame-templates/${req.params.id}/edit`);
@@ -955,7 +1097,7 @@ router.post(
     }
 
     const deletedTemplate = await FrameTemplate.findByIdAndDelete(req.params.id)
-      .select("frameImage.publicId")
+      .select("frameImage.publicId frameImage.url")
       .lean();
 
     if (!deletedTemplate) {
@@ -963,7 +1105,10 @@ router.post(
       return res.redirect("/requests/frame-templates");
     }
 
-    await destroyPermanentCloudinaryImage(deletedTemplate?.frameImage?.publicId);
+    await destroyFrameTemplateCloudinaryImage(
+      deletedTemplate?.frameImage?.publicId,
+      deletedTemplate?.frameImage?.url
+    );
     req.flash("success", "Template deleted.");
     return res.redirect("/requests/frame-templates");
   })
@@ -1782,3 +1927,4 @@ router.get(
 );
 
 module.exports = router;
+

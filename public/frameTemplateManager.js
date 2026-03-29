@@ -25,7 +25,6 @@
   const canvasWidthInput = document.getElementById("canvasWidthInput");
   const canvasHeightInput = document.getElementById("canvasHeightInput");
   const nameInput = document.getElementById("templateNameInput");
-  const slugInput = document.getElementById("templateSlugInput");
   const descriptionInput = document.getElementById("templateDescriptionInput");
   const activeInput = document.getElementById("templateActiveInput");
 
@@ -35,7 +34,6 @@
   const deleteLayerBtn = document.getElementById("deleteLayerBtn");
   const layerList = document.getElementById("layerList");
   const layerSettings = document.getElementById("layerSettings");
-  const hintNode = document.getElementById("frameEditorHint");
   const slotsPayloadInput = document.getElementById("slotsPayloadInput");
   const textsPayloadInput = document.getElementById("textsPayloadInput");
 
@@ -47,6 +45,20 @@
   const SLOT_MAX_Z = 999;
   const TEXT_MIN_Z = 1000;
   const TEXT_MAX_Z = 2000;
+  const FONT_FAMILY_OPTIONS = [
+    "Poppins",
+    "Montserrat",
+    "Raleway",
+    "Oswald",
+    "Lora",
+    "Merriweather",
+    "Playfair Display",
+    "Pacifico",
+    "Dancing Script",
+    "Caveat",
+    "Lobster",
+    "Bangers",
+  ];
 
   function ensureFramePreviewVisible() {
     if (!framePreviewImage) return;
@@ -84,6 +96,22 @@
       x: clamp(x, -2000, canvas.width + 2000, 0),
       y: clamp(y, -2000, canvas.height + 2000, 0),
     };
+  }
+
+  function getNormalizedFontName(fontFamily) {
+    return String(fontFamily || "")
+      .split(",")[0]
+      .replace(/['"]/g, "")
+      .trim()
+      .toLowerCase();
+  }
+
+  function resolveFontFamilyValue(rawFontFamily) {
+    const normalized = getNormalizedFontName(rawFontFamily);
+    const matchedOption = FONT_FAMILY_OPTIONS.find(
+      (fontName) => getNormalizedFontName(fontName) === normalized
+    );
+    return matchedOption || "Poppins";
   }
 
   function ensureUniqueKey(type, rawKey) {
@@ -161,11 +189,6 @@
     renderAll();
   }
 
-  function updateHint(message) {
-    if (!hintNode) return;
-    hintNode.textContent = message || "";
-  }
-
   function renderLayerList() {
     if (!layerList) return;
     layerList.innerHTML = "";
@@ -203,42 +226,12 @@
     }
   }
 
-  function createRangeControl(label, value, min, max, step, onInput) {
-    const wrapper = document.createElement("label");
-    wrapper.className = "block space-y-1";
-    wrapper.innerHTML = `<span class="text-xs text-slate-300">${label}</span>`;
-    const range = document.createElement("input");
-    range.type = "range";
-    range.min = String(min);
-    range.max = String(max);
-    range.step = String(step);
-    range.value = String(value);
-    range.className = "w-full accent-indigo-500";
-
-    const valueNode = document.createElement("div");
-    valueNode.className = "text-[11px] text-slate-500";
-    valueNode.textContent = String(value);
-
-    range.addEventListener("input", () => {
-      valueNode.textContent = range.value;
-      onInput(range.value);
-    });
-
-    wrapper.appendChild(range);
-    wrapper.appendChild(valueNode);
-    return wrapper;
-  }
-
   function renderLayerSettings() {
     if (!layerSettings) return;
     layerSettings.innerHTML = "";
 
     const selectedLayerInfo = getSelectedLayer();
     if (!selectedLayerInfo) {
-      const empty = document.createElement("p");
-      empty.className = "text-xs text-slate-500";
-      empty.textContent = "Layer select karein to settings yahan ayengi.";
-      layerSettings.appendChild(empty);
       return;
     }
 
@@ -249,50 +242,7 @@
     keyRow.textContent = `Selected: ${type} / ${layer.key}`;
     layerSettings.appendChild(keyRow);
 
-    layerSettings.appendChild(
-      createRangeControl("Rotation", layer.rotation || 0, -180, 180, 1, (val) => {
-        layer.rotation = clamp(val, -360, 360, layer.rotation);
-        renderCanvasLayers();
-        syncPayloads();
-      })
-    );
-
-    const zRangeMin = type === "text" ? TEXT_MIN_Z : 0;
-    const zRangeMax = type === "text" ? TEXT_MAX_Z : SLOT_MAX_Z;
-    layerSettings.appendChild(
-      createRangeControl("zIndex", layer.zIndex || zRangeMin, zRangeMin, zRangeMax, 1, (val) => {
-        layer.zIndex = clamp(val, zRangeMin, zRangeMax, layer.zIndex);
-        renderCanvasLayers();
-        renderLayerList();
-        syncPayloads();
-      })
-    );
-
     if (type === "slot") {
-      const labelWrap = document.createElement("label");
-      labelWrap.className = "block space-y-1";
-      labelWrap.innerHTML = '<span class="text-xs text-slate-300">Slot Label</span>';
-      const labelInput = document.createElement("input");
-      labelInput.type = "text";
-      labelInput.maxLength = 80;
-      labelInput.value = layer.label || "";
-      labelInput.className = "w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500";
-      labelInput.addEventListener("input", () => {
-        layer.label = labelInput.value.slice(0, 80);
-        renderCanvasLayers();
-        renderLayerList();
-        syncPayloads();
-      });
-      labelWrap.appendChild(labelInput);
-      layerSettings.appendChild(labelWrap);
-
-      layerSettings.appendChild(
-        createRangeControl("Border Radius", layer.borderRadius || 0, 0, 280, 1, (val) => {
-          layer.borderRadius = clamp(val, 0, 1000, layer.borderRadius);
-          renderCanvasLayers();
-          syncPayloads();
-        })
-      );
       return;
     }
 
@@ -328,87 +278,31 @@
     colorWrap.appendChild(colorInput);
     layerSettings.appendChild(colorWrap);
 
-    const alignWrap = document.createElement("label");
-    alignWrap.className = "block space-y-1";
-    alignWrap.innerHTML = '<span class="text-xs text-slate-300">Align</span>';
-    const alignSelect = document.createElement("select");
-    alignSelect.className = "w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500";
-    ["left", "center", "right"].forEach((item) => {
+    const fontWrap = document.createElement("label");
+    fontWrap.className = "block space-y-1";
+    fontWrap.innerHTML = '<span class="text-xs text-slate-300">Font Family</span>';
+    const fontSelect = document.createElement("select");
+    fontSelect.className = "w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500";
+
+    const resolvedFontFamily = resolveFontFamilyValue(layer.fontFamily);
+    FONT_FAMILY_OPTIONS.forEach((fontName) => {
       const option = document.createElement("option");
-      option.value = item;
-      option.textContent = item;
-      if (layer.textAlign === item) option.selected = true;
-      alignSelect.appendChild(option);
+      option.value = fontName;
+      option.textContent = `Aa - ${fontName}`;
+      option.style.fontFamily = `'${fontName}', sans-serif`;
+      if (fontName === resolvedFontFamily) option.selected = true;
+      fontSelect.appendChild(option);
     });
-    alignSelect.addEventListener("change", () => {
-      layer.textAlign = alignSelect.value;
+
+    fontSelect.addEventListener("change", () => {
+      layer.fontFamily = fontSelect.value;
       renderCanvasLayers();
       syncPayloads();
     });
-    alignWrap.appendChild(alignSelect);
-    layerSettings.appendChild(alignWrap);
+    fontWrap.appendChild(fontSelect);
+    layerSettings.appendChild(fontWrap);
 
-    const weightWrap = document.createElement("label");
-    weightWrap.className = "block space-y-1";
-    weightWrap.innerHTML = '<span class="text-xs text-slate-300">Weight</span>';
-    const weightSelect = document.createElement("select");
-    weightSelect.className = "w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500";
-    ["400", "500", "600", "700", "800"].forEach((item) => {
-      const option = document.createElement("option");
-      option.value = item;
-      option.textContent = item;
-      if (String(layer.fontWeight) === item) option.selected = true;
-      weightSelect.appendChild(option);
-    });
-    weightSelect.addEventListener("change", () => {
-      layer.fontWeight = weightSelect.value;
-      renderCanvasLayers();
-      syncPayloads();
-    });
-    weightWrap.appendChild(weightSelect);
-    layerSettings.appendChild(weightWrap);
-
-    layerSettings.appendChild(
-      createRangeControl("Font Size", layer.fontSize || 32, 10, 180, 1, (val) => {
-        layer.fontSize = clamp(val, 8, 300, layer.fontSize);
-        renderCanvasLayers();
-        syncPayloads();
-      })
-    );
-
-    layerSettings.appendChild(
-      createRangeControl("Line Height", layer.lineHeight || 1.2, 0.8, 2.4, 0.1, (val) => {
-        layer.lineHeight = clamp(val, 0.6, 3, layer.lineHeight);
-        renderCanvasLayers();
-        syncPayloads();
-      })
-    );
-
-    layerSettings.appendChild(
-      createRangeControl("Letter Spacing", layer.letterSpacing || 0, -5, 20, 0.2, (val) => {
-        layer.letterSpacing = clamp(val, -10, 30, layer.letterSpacing);
-        renderCanvasLayers();
-        syncPayloads();
-      })
-    );
-
-    const editableWrap = document.createElement("label");
-    editableWrap.className = "inline-flex items-center gap-2 text-xs text-slate-300";
-    const editableInput = document.createElement("input");
-    editableInput.type = "checkbox";
-    editableInput.checked = Boolean(layer.editable);
-    editableInput.className = "accent-indigo-500";
-    editableInput.addEventListener("change", () => {
-      layer.editable = Boolean(editableInput.checked);
-      syncPayloads();
-    });
-    editableWrap.appendChild(editableInput);
-    const editableText = document.createElement("span");
-    editableText.textContent = "User editable";
-    editableWrap.appendChild(editableText);
-    layerSettings.appendChild(editableWrap);
   }
-
   function createLayerElement(item, type) {
     const scale = getScale();
     const element = document.createElement("div");
@@ -519,13 +413,6 @@
       pointerId: event.pointerId,
     };
 
-    updateHint(
-      action === "drag"
-        ? "Layer moving..."
-        : action === "resize"
-          ? "Layer resizing..."
-          : "Layer rotating..."
-    );
   }
 
   function handlePointerDown(event) {
@@ -598,7 +485,6 @@
   function handlePointerUp(event) {
     if (!dragState || dragState.pointerId !== event.pointerId) return;
     dragState = null;
-    updateHint("Drag/resize/rotate complete.");
   }
 
   function deleteSelectedLayer() {
@@ -635,7 +521,6 @@
   function initializeEditorData() {
     if (editableTemplate && typeof editableTemplate === "object") {
       nameInput.value = editableTemplate.name || "";
-      slugInput.value = editableTemplate.slug || "";
       descriptionInput.value = editableTemplate.description || "";
       activeInput.checked = Boolean(editableTemplate.isActive);
 
@@ -695,16 +580,12 @@
 
     const file = frameImageInput.files?.[0];
     if (!file) {
-      if (!framePreviewImage?.src) {
-        updateHint("Frame image select karo to preview canvas me dikh jayega.");
-      }
       return;
     }
 
     frameObjectUrl = URL.createObjectURL(file);
     framePreviewImage.src = frameObjectUrl;
     ensureFramePreviewVisible();
-    updateHint("Frame image preview loaded.");
 
     const image = new Image();
     image.onload = () => {
@@ -744,20 +625,16 @@
 
   if (framePreviewImage) {
     framePreviewImage.addEventListener("load", ensureFramePreviewVisible);
-    framePreviewImage.addEventListener("error", () => {
-      updateHint("Frame preview load issue. Image dobara upload karein.");
-    });
   }
 
   try {
     initializeEditorData();
     renderAll();
-    updateHint("Layer select karo, then mouse/touch se move-resize-rotate karo.");
   } catch (_err) {
     slots = [createSlot()];
     texts = [createText()];
     selected = { type: "slot", key: slots[0].key };
     renderAll();
-    updateHint("Editor reset mode me open hua. Ab aap layers add/edit kar sakte ho.");
   }
 })();
+
