@@ -5,11 +5,21 @@
     <script>
         (function () {
             try {
+                var serverPalette = <%- JSON.stringify(userLightPalette || "blue") %>;
+                if (serverPalette !== "blue" && serverPalette !== "pink") serverPalette = "blue";
                 var t = localStorage.getItem("vishlink-theme");
-                if (t !== "light" && t !== "dark") t = "light";
+                if (t !== "light" && t !== "dark") t = "dark";
+                var lp = localStorage.getItem("vishlink-light-palette");
+                if (lp !== "blue" && lp !== "pink") lp = serverPalette;
                 document.documentElement.setAttribute("data-theme", t);
+                document.documentElement.setAttribute("data-light-palette", lp);
+                document.documentElement.setAttribute("data-default-light-palette", serverPalette);
+                window.__VISHLINK_DEFAULT_LIGHT_PALETTE = serverPalette;
             } catch (_err) {
-                document.documentElement.setAttribute("data-theme", "light");
+                document.documentElement.setAttribute("data-theme", "dark");
+                document.documentElement.setAttribute("data-light-palette", "blue");
+                document.documentElement.setAttribute("data-default-light-palette", "blue");
+                window.__VISHLINK_DEFAULT_LIGHT_PALETTE = "blue";
             }
         })();
     </script>

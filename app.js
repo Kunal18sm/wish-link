@@ -270,6 +270,12 @@ app.use(
   })
 );
 
+// Lightweight health endpoint for uptime checks.
+app.get("/ping", (_req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  return res.status(200).type("text/plain").send("OK");
+});
+
 app.get("/cdn/image", async (req, res) => {
   if (!ENABLE_CLOUDINARY_IMAGE_PROXY) {
     return res.status(404).send("Image proxy is disabled.");
