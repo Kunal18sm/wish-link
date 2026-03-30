@@ -162,13 +162,27 @@ async function loadMergedPurchases(req, authorId) {
 // home route
 router.get("/", wrapAsync(async (req, res) => {
   res.locals.message = req.flash("success");
-  const [allSamples, bannerSlides] = await Promise.all([
+  const FrameTemplate = getFrameTemplateModel(req);
+  const [allSamples, bannerSlides, rawTopPhotoFrameTemplates] = await Promise.all([
     getHomeSamples(),
     getBannerSlides(BANNER_PAGES.HOME),
+    FrameTemplate
+      ? FrameTemplate.find({ isActive: true })
+        .select("name slug description frameImage canvas imageSlots texts isActive")
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .lean()
+      : Promise.resolve([]),
   ]);
+  const topTemplates = allSamples.slice(0, 10);
+  const topPhotoFrameTemplates = rawTopPhotoFrameTemplates.map((template) =>
+    toClientFrameTemplate(template, res)
+  );
 
   res.render("home", {
     allSamples,
+    topTemplates,
+    topPhotoFrameTemplates,
     bannerSlides,
     designCssVariant: "lite",
     ...buildLcpImageMeta(res, getPrimaryBannerImageUrl(bannerSlides)),

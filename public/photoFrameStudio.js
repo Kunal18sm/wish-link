@@ -77,9 +77,25 @@
     "Lobster",
     "Bangers",
   ];
+  const FONT_LOAD_TIMEOUT_MS = 1400;
+  const GENERIC_FONT_FAMILIES = new Set([
+    "serif",
+    "sans-serif",
+    "monospace",
+    "cursive",
+    "fantasy",
+    "system-ui",
+    "emoji",
+    "math",
+    "fangsong",
+    "ui-sans-serif",
+    "ui-serif",
+    "ui-monospace",
+  ]);
   const TEXT_EDIT_MAX_LENGTH = 240;
   const textMeasureCanvas = document.createElement("canvas");
   const textMeasureCtx = textMeasureCanvas.getContext("2d");
+  const fontLoadPromises = new Map();
   let renderRetryCount = 0;
   let renderRafId = null;
   let stageResizeObserver = null;
@@ -450,12 +466,52 @@
       .toLowerCase();
   }
 
+  function toCssFontFamily(rawFontFamily) {
+    const rawValue = String(rawFontFamily || "").trim();
+    if (!rawValue) return "'Poppins', sans-serif";
+
+    const parts = rawValue
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean);
+    if (!parts.length) return "'Poppins', sans-serif";
+
+    const normalizedParts = parts
+      .map((part) => {
+        const noQuotes = String(part || "").replace(/['"]/g, "").trim();
+        if (!noQuotes) return "";
+        if (GENERIC_FONT_FAMILIES.has(noQuotes.toLowerCase())) {
+          return noQuotes;
+        }
+        return `'${noQuotes}'`;
+      })
+      .filter(Boolean);
+
+    if (!normalizedParts.length) return "'Poppins', sans-serif";
+    const hasGenericFallback = normalizedParts.some((part) =>
+      GENERIC_FONT_FAMILIES.has(String(part || "").toLowerCase())
+    );
+    if (!hasGenericFallback) normalizedParts.push("sans-serif");
+
+    return normalizedParts.join(", ");
+  }
+
   function resolveFontFamilyValue(rawFontFamily) {
+    const normalizedInput = String(rawFontFamily || "").trim();
+    if (!normalizedInput) return "Poppins";
+
     const normalized = getNormalizedFontName(rawFontFamily);
     const matchedOption = FONT_FAMILY_OPTIONS.find(
       (fontName) => getNormalizedFontName(fontName) === normalized
     );
-    return matchedOption || "Poppins";
+    if (matchedOption) return matchedOption;
+
+    const fallbackFont = normalizedInput
+      .split(",")[0]
+      .replace(/['"]/g, "")
+      .trim()
+      .slice(0, 80);
+    return fallbackFont || "Poppins";
   }
 
   function getActiveTextFontFamily(textLayer) {
@@ -464,6 +520,59 @@
       ? textFontFamilyValues.get(key)
       : textLayer?.fontFamily;
     return resolveFontFamilyValue(currentFont);
+  }
+
+  function loadFontFamilyIfNeeded(fontFamily, fontWeight) {
+    if (typeof document === "undefined" || !document.fonts || typeof document.fonts.load !== "function") {
+      return Promise.resolve();
+    }
+
+    const resolvedFontFamily = resolveFontFamilyValue(fontFamily);
+    const normalizedFont = getNormalizedFontName(resolvedFontFamily);
+    if (!normalizedFont) return Promise.resolve();
+
+    const matchedOption = FONT_FAMILY_OPTIONS.find(
+      (fontName) => getNormalizedFontName(fontName) === normalizedFont
+    );
+    const finalFontFamily = matchedOption || resolvedFontFamily;
+    const finalFontWeight = String(fontWeight || "600").trim() || "600";
+    const cacheKey = `${normalizedFont}:${finalFontWeight}`;
+
+    if (fontLoadPromises.has(cacheKey)) {
+      return fontLoadPromises.get(cacheKey);
+    }
+
+    const cssFontFamily = toCssFontFamily(finalFontFamily);
+    const loadPromise = Promise.race([
+      document.fonts.load(`${finalFontWeight} 32px ${cssFontFamily}`),
+      new Promise((resolve) => {
+        window.setTimeout(resolve, FONT_LOAD_TIMEOUT_MS);
+      }),
+    ])
+      .then(() => undefined)
+      .catch(() => undefined);
+
+    fontLoadPromises.set(cacheKey, loadPromise);
+    return loadPromise;
+  }
+
+  async function preloadActiveTemplateFonts() {
+    if (!activeTemplate || !Array.isArray(activeTemplate.texts) || !activeTemplate.texts.length) return;
+
+    const uniqueFonts = new Map();
+    activeTemplate.texts.forEach((textLayer) => {
+      const fontFamily = getActiveTextFontFamily(textLayer);
+      const fontWeight = String(textLayer?.fontWeight || "600");
+      const fontKey = `${getNormalizedFontName(fontFamily)}:${fontWeight}`;
+      if (!fontKey || uniqueFonts.has(fontKey)) return;
+      uniqueFonts.set(fontKey, { fontFamily, fontWeight });
+    });
+
+    await Promise.all(
+      Array.from(uniqueFonts.values()).map((entry) =>
+        loadFontFamilyIfNeeded(entry.fontFamily, entry.fontWeight)
+      )
+    );
   }
 
   function getSlotFitState(slotKey) {
@@ -613,7 +722,7 @@
     if (!value.trim()) return;
 
     const fontSize = Number(textLayer.fontSize || 32);
-    const fontFamily = getActiveTextFontFamily(textLayer);
+    const fontFamily = toCssFontFamily(getActiveTextFontFamily(textLayer));
     const fontWeight = String(textLayer.fontWeight || "600");
     const textAlign = ["left", "center", "right"].includes(String(textLayer.textAlign || "center"))
       ? String(textLayer.textAlign)
@@ -696,7 +805,7 @@
 
     const value = String(textValue || "");
     const fontSize = Number(textLayer?.fontSize || 32);
-    const fontFamily = getActiveTextFontFamily(textLayer);
+    const fontFamily = toCssFontFamily(getActiveTextFontFamily(textLayer));
     const fontWeight = String(textLayer?.fontWeight || "600");
     const lineHeight = Number(textLayer?.lineHeight || 1.2);
     const letterSpacing = Number(textLayer?.letterSpacing || 0);
@@ -1277,6 +1386,7 @@
       const rawValue = getActiveTextValue(textLayer);
       const value = rawValue || (textLayer.editable ? "Tap to edit" : "");
       if (!value) return;
+      const resolvedFontFamily = getActiveTextFontFamily(textLayer);
 
       const textNode = document.createElement("div");
       textNode.className = "absolute whitespace-pre-line";
@@ -1287,7 +1397,7 @@
       textNode.style.height = `${Number(textLayer.height || 120) * scale}px`;
       textNode.style.overflow = "hidden";
       textNode.style.color = String(textLayer.color || "#ffffff");
-      textNode.style.fontFamily = getActiveTextFontFamily(textLayer);
+      textNode.style.fontFamily = toCssFontFamily(resolvedFontFamily);
       textNode.style.fontWeight = String(textLayer.fontWeight || "600");
       textNode.style.fontSize = `${Number(textLayer.fontSize || 32) * scale}px`;
       textNode.style.textAlign = ["left", "center", "right"].includes(String(textLayer.textAlign))
@@ -1375,18 +1485,32 @@
         fontSelect.className =
           "w-full rounded-md border border-slate-700 bg-slate-900 px-2.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500";
         const resolvedFontFamily = getActiveTextFontFamily(textLayer);
-        FONT_FAMILY_OPTIONS.forEach((fontName) => {
+        const fontOptions = [...FONT_FAMILY_OPTIONS];
+        const hasResolvedFontInOptions = fontOptions.some(
+          (fontName) => getNormalizedFontName(fontName) === getNormalizedFontName(resolvedFontFamily)
+        );
+        if (!hasResolvedFontInOptions && resolvedFontFamily) {
+          fontOptions.unshift(resolvedFontFamily);
+        }
+
+        fontOptions.forEach((fontName) => {
           const option = document.createElement("option");
           option.value = fontName;
           option.textContent = `Aa - ${fontName}`;
-          option.style.fontFamily = `'${fontName}', sans-serif`;
-          if (fontName === resolvedFontFamily) option.selected = true;
+          option.style.fontFamily = toCssFontFamily(fontName);
+          if (getNormalizedFontName(fontName) === getNormalizedFontName(resolvedFontFamily)) {
+            option.selected = true;
+          }
           fontSelect.appendChild(option);
         });
 
         fontSelect.addEventListener("change", () => {
-          textFontFamilyValues.set(key, fontSelect.value);
+          const selectedFontFamily = resolveFontFamilyValue(fontSelect.value);
+          textFontFamilyValues.set(key, selectedFontFamily);
           scheduleRenderEditorLayers();
+          void loadFontFamilyIfNeeded(selectedFontFamily, textLayer.fontWeight).then(() => {
+            scheduleRenderBurst();
+          });
         });
 
         fontWrap.appendChild(fontSelect);
@@ -1435,6 +1559,9 @@
       selectedTemplateMeta.textContent = `${activeTemplate.canvas.width} x ${activeTemplate.canvas.height}px | ${activeTemplate.imageSlots.length} slots`;
     }
 
+    void preloadActiveTemplateFonts().then(() => {
+      scheduleRenderBurst();
+    });
     buildTextControls();
     buildSlotUploadControls();
     scheduleRenderBurst();
@@ -1458,6 +1585,7 @@
       canvas.height = Number((activeTemplate.canvas && activeTemplate.canvas.height) || 1080);
       const ctx = canvas.getContext("2d");
       if (!ctx) throw new Error("Canvas not available.");
+      await preloadActiveTemplateFonts();
 
       const sortedSlots = [...(activeTemplate.imageSlots || [])].sort((a, b) => Number(a.zIndex || 0) - Number(b.zIndex || 0));
       sortedSlots.forEach((slot) => {
@@ -1556,6 +1684,9 @@
     });
     buildTextControls();
     buildSlotUploadControls();
+    void preloadActiveTemplateFonts().then(() => {
+      scheduleRenderBurst();
+    });
     scheduleRenderBurst();
     setStatus("Current template reset ho gaya.", "default");
   }

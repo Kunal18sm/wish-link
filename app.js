@@ -793,6 +793,14 @@ io.on("connection", (socket) => {
   });
 });
 
+process.on("unhandledRejection", (reason) => {
+  console.log("Unhandled Promise Rejection:", reason);
+});
+
+process.on("uncaughtException", (error) => {
+  console.log("Uncaught Exception:", error);
+});
+
 server.listen(PORT, async () => {
   console.log(`Listening on port ${PORT}`);
   connectDb();

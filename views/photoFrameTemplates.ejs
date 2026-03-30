@@ -1,6 +1,10 @@
 <% layout("/layouts/boilerplate") %>
 
 <style>
+  .photo-frame-card {
+    min-height: 300px;
+  }
+
   html[data-theme="light"][data-light-palette="blue"] .photo-templates-page {
     background: #ffffff !important;
     color: #1e3a5f !important;
@@ -80,11 +84,11 @@
       <p class="text-slate-400 mt-2">Jab admin templates add karega tab yahin par cards show ho jayenge.</p>
     </div>
   <% } else { %>
-    <div class="mt-5 grid grid-cols-2 gap-3">
+    <div class="mt-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
       <% frameTemplates.forEach((template, templateIndex) => { %>
         <article class="photo-frame-card group rounded-lg p-2 transition hover:bg-slate-900/50 border border-transparent hover:border-slate-800">
           <a href="/photo-frames/<%= encodeURIComponent(template.slug) %>" class="block">
-            <div class="photo-frame-card__preview aspect-[4/3] rounded-md overflow-hidden bg-slate-900">
+            <div class="photo-frame-card__preview aspect-[5/4] rounded-md overflow-hidden bg-slate-900">
               <img src="<%= template.frameImage.previewUrl %>" alt="<%= template.name %> preview"
                 class="h-full w-full object-contain transition duration-300 group-hover:scale-[1.03]"
                 loading="lazy"
@@ -95,7 +99,7 @@
             </div>
           </a>
           <a href="/photo-frames/<%= encodeURIComponent(template.slug) %>" class="block">
-            <h3 class="mt-2 text-sm md:text-base font-semibold text-white line-clamp-2"><%= template.name %></h3>
+            <h3 class="mt-2 text-xs md:text-sm font-semibold text-white line-clamp-2"><%= template.name %></h3>
           </a>
           <!-- <p class="mt-1 text-xs md:text-sm text-slate-400 line-clamp-2"><%= template.description || "No description" %></p> -->
 

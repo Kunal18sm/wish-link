@@ -1,10 +1,59 @@
 <% layout("/layouts/boilerplate") %>
 <%
     const displayUser = (typeof profileUser !== "undefined" && profileUser) ? profileUser : currUser;
-    const createdLinksCount = typeof totalLinksCreated === "number" ? totalLinksCreated : (Array.isArray(purchasedLinks) ? purchasedLinks.length : 0);
+    const safePurchasedLinks = Array.isArray(purchasedLinks) ? purchasedLinks : [];
+    const createdLinksCount = typeof totalLinksCreated === "number" ? totalLinksCreated : safePurchasedLinks.length;
     const coinIconPath = `/assets/icons/coin.svg?v=${assetVersion}`;
     const selectedLightPalette = (displayUser && displayUser.lightPalette === "pink") ? "pink" : "blue";
 %>
+
+<style>
+    .profile-hero-shell {
+        height: 13.5rem;
+    }
+
+    @media (min-width: 768px) {
+        .profile-hero-shell {
+            height: 16rem;
+        }
+    }
+
+    .profile-hero-surface {
+        background-color: #010105;
+    }
+
+    .profile-garden-scene {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+    }
+
+    .alien-garden-root {
+        position: absolute;
+        inset: 0;
+    }
+
+    .alien-canvas-container {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 50% 50%, #0a041a 0%, #010105 100%);
+    }
+
+    .alien-garden-canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
+    .alien-cinematic-overlay {
+        position: absolute;
+        inset: 0;
+        background: url("https://grainy-gradients.vercel.app/noise.svg");
+        opacity: 0.03;
+        pointer-events: none;
+    }
+</style>
 
 <div class="bg-[#0B1120] text-slate-200 min-h-screen font-sans pb-20 relative overflow-x-hidden">
     <!-- Simple Background -->
@@ -13,43 +62,70 @@
     <main class="max-w-5xl mx-auto px-4 md:px-6 py-8">
         
         <!-- Profile Header Section -->
-        <div class="relative mb-32 md:mb-24">
-            <div class="h-44 md:h-60 w-full rounded-3xl bg-slate-800 overflow-hidden shadow-2xl ring-1 ring-white/10">
-                <img src="https://images.unsplash.com/photo-1614850523060-8da1d56ae167?auto=format&fit=crop&w=1200&q=60"
-                    width="1200" height="640" loading="eager" decoding="async" class="w-full h-full object-cover opacity-60">
-                <div class="absolute inset-0 bg-gradient-to-t from-[#0B1120] to-transparent opacity-80"></div>
+        <section class="mb-8 space-y-4">
+            <div class="profile-hero-shell relative overflow-hidden rounded-3xl border border-slate-700/60 profile-hero-surface shadow-2xl">
+                <div class="profile-garden-scene" aria-hidden="true">
+                    <div class="alien-garden-root">
+                        <div id="canvas-container" class="alien-canvas-container">
+                            <canvas id="gardenCanvas" class="alien-garden-canvas"></canvas>
+                        </div>
+                        <div class="alien-cinematic-overlay"></div>
+                    </div>
+                </div>
+                <div class="absolute inset-0 bg-gradient-to-t from-[#0B1120]/35 via-transparent to-transparent"></div>
+                <div class="absolute inset-0 px-4 md:px-6 py-4 flex items-end justify-between">
+                    <p class="text-[11px] md:text-xs uppercase tracking-[0.22em] text-slate-300/90 font-semibold">VishLink Profile</p>
+                    <span class="text-[10px] md:text-xs text-indigo-200 bg-indigo-500/20 border border-indigo-400/30 px-2.5 py-1 rounded-full">
+                        Account Dashboard
+                    </span>
+                </div>
             </div>
-            
-            <div class="absolute -bottom-24 left-4 right-4 md:-bottom-14 md:left-8 md:right-8 flex flex-col md:flex-row md:items-end gap-4">
-                <img src="https://api.dicebear.com/7.x/notionists/svg?seed=<%= displayUser.username %>" 
-                     alt="<%= displayUser.username %> profile avatar" loading="lazy" decoding="async" width="144" height="144"
-                     class="w-24 h-24 md:w-32 md:h-32 rounded-2xl border-4 border-[#0B1120] bg-slate-800 shadow-xl z-10">
-                <div class="z-10 w-full md:w-auto">
-                    <div class="bg-slate-900/85 border border-slate-700/70 rounded-2xl p-4 md:p-5 backdrop-blur-md shadow-xl">
-                        <h1 class="text-2xl md:text-3xl font-bold text-white mb-1"><%= displayUser.username %></h1>
-                        <p class="inline-flex text-indigo-300 text-xs md:text-sm bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20 break-all"><%= displayUser.email %></p>
 
-                        <div class="mt-3">
-                            <p class="text-[11px] uppercase tracking-wide text-slate-400 mb-2">Light Theme Palette</p>
-                            <div id="lightPaletteSelector" class="flex flex-wrap gap-2" data-selected="<%= selectedLightPalette %>">
-                                <button
-                                    type="button"
-                                    class="palette-option-btn px-3 py-1.5 rounded-lg border text-xs font-semibold transition"
-                                    data-light-palette-option="blue">
-                                    Sky Blue
-                                </button>
-                                <button
-                                    type="button"
-                                    class="palette-option-btn px-3 py-1.5 rounded-lg border text-xs font-semibold transition"
-                                    data-light-palette-option="pink">
-                                    Soft Pink
-                                </button>
-                            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="rounded-3xl border border-slate-700/60 bg-slate-900/70 p-4 md:p-5 backdrop-blur-md shadow-xl">
+                    <div class="flex items-center gap-4">
+                        <img
+                            src="https://api.dicebear.com/7.x/notionists/svg?seed=<%= displayUser.username %>"
+                            alt="<%= displayUser.username %> profile avatar"
+                            loading="lazy"
+                            decoding="async"
+                            width="160"
+                            height="160"
+                            class="w-20 h-20 md:w-24 md:h-24 rounded-2xl border-4 border-[#0B1120] bg-slate-800 shadow-xl shrink-0"
+                        >
+                        <div class="min-w-0">
+                            <p class="text-[11px] uppercase tracking-wider text-slate-400">User</p>
+                            <h1 class="text-xl md:text-2xl font-bold text-white truncate"><%= displayUser.username %></h1>
+                            <p class="mt-1 text-xs text-slate-300 break-all"><%= displayUser.email %></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rounded-3xl border border-slate-700/60 bg-slate-900/70 p-4 md:p-5 backdrop-blur-md shadow-xl">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <p class="text-[11px] uppercase tracking-[0.18em] text-slate-400 font-semibold">Theme Personalization</p>
+                        <p class="text-xs text-slate-400">Choose your preferred light-mode palette.</p>
+                    </div>
+
+                    <div class="mt-4">
+                        <div id="lightPaletteSelector" class="flex flex-wrap gap-2" data-selected="<%= selectedLightPalette %>">
+                            <button
+                                type="button"
+                                class="palette-option-btn px-3 py-2 rounded-lg border text-xs font-semibold transition"
+                                data-light-palette-option="blue">
+                                Sky Blue
+                            </button>
+                            <button
+                                type="button"
+                                class="palette-option-btn px-3 py-2 rounded-lg border text-xs font-semibold transition"
+                                data-light-palette-option="pink">
+                                Soft Pink
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
 
         <!-- Links Grid Section -->
         <div class="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-2xl">
@@ -86,13 +162,13 @@
                 </p>
             </div>
             
-            <% if(!purchasedLinks.length) { %>
+            <% if(!safePurchasedLinks.length) { %>
                 <div class="text-center py-12 text-slate-500 border border-dashed border-slate-700/50 rounded-2xl">
                     No active links found. <a href="/" class="text-indigo-400 hover:text-indigo-300 hover:underline">Create one now?</a>
                 </div>
             <% } else { %>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    <% for(let order of purchasedLinks){ %>
+                    <% for(let order of safePurchasedLinks){ %>
                         <div class="bg-slate-800/40 border border-slate-700/60 rounded-2xl p-5 hover:border-indigo-500/40 hover:bg-slate-800/80 transition group h-full flex flex-col">
                             
                             <div class="flex justify-between items-start mb-3">
@@ -133,8 +209,13 @@
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                                         </button>
                                     </div>
-                                    <% if(order.isTemporary) { %> <br>
-                                    <button  type="button" onclick="openDeleteModal('<%= order._id %>', '<%= order.requestScope || "default" %>')"
+                                    <% if (order.isTemporary) { %>
+                                    <br>
+                                    <button
+                                        type="button"
+                                        data-request-id="<%= order._id %>"
+                                        data-request-scope="<%= order.requestScope || "default" %>"
+                                        onclick="openDeleteModal(this.dataset.requestId, this.dataset.requestScope)"
                                         class="w-full py-3 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-600 hover:text-white transition font-semibold text-sm">
                                         Delete
                                     </button>
@@ -142,7 +223,7 @@
                                 <% } else { %>
                                     <% if( !viewHistory ){ %>
                                     <div class="w-full bg-slate-800/50 h-10 rounded-xl flex items-center justify-center gap-2 text-xs text-slate-500 animate-pulse border border-dashed border-slate-700">
-                                        Verifying your payment details…
+                                        Verifying your payment details...
                                     </div>
                                     <% } %>
                                 <% } %>
@@ -157,21 +238,21 @@
                 <h3 class="text-xl font-bold text-white mb-2">Confirm Delete</h3>
                 <p class="text-slate-400 mb-6">Do you really want to delete this link?</p>
 
-            <div class="flex gap-3">
-                <button onclick="closeDeleteModal()"
-                    class="flex-1 py-2 rounded-xl bg-slate-700 text-white hover:bg-slate-600 transition">
-                    Cancel
-                </button>
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeDeleteModal()"
+                        class="flex-1 py-2 rounded-xl bg-slate-700 text-white hover:bg-slate-600 transition">
+                        Cancel
+                    </button>
 
-            <form id="deleteForm" method="POST" class="flex-1">
-                <button type="submit" id="submitBtn"
-                    class="w-full py-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700 transition">
-                    Yes, Delete
-                </button>
-            </form>
+                    <form id="deleteForm" method="POST" class="flex-1">
+                        <button type="submit" id="submitBtn"
+                            class="w-full py-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700 transition">
+                            Yes, Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
-    </div>
-</div>
 
     </main>
 </div>
@@ -181,6 +262,7 @@
     const deleteForm = document.getElementById("deleteForm");
 
     function openDeleteModal(id, scope) {
+        if (!modal || !deleteForm || !id) return;
         const deleteQuery = scope === "permanent" ? "?scope=permanent&_method=DELETE" : "?_method=DELETE";
         deleteForm.action = `/requests/delete/${id}${deleteQuery}`;
         modal.classList.remove("hidden");
@@ -189,12 +271,15 @@
 
     // on click confirm delete btn
     const btn = document.getElementById("submitBtn");
+    if (deleteForm && btn) {
         deleteForm.addEventListener("submit", function () {
-        btn.disabled = true;
-        btn.innerText = "Please wait...";
-    });
+            btn.disabled = true;
+            btn.innerText = "Please wait...";
+        });
+    }
 
     function closeDeleteModal() {
+        if (!modal) return;
         modal.classList.add("hidden");
         modal.classList.remove("flex");
     }
@@ -331,4 +416,537 @@
 
     const initialPalette = getActivePalette();
     paintPaletteSelection(initialPalette);
+
+    (function initAlienGarden() {
+        const canvas = document.getElementById("gardenCanvas");
+        const container = document.getElementById("canvas-container");
+        if (!canvas || !container) return;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        let width, height, grassBlades, stars, auroraWaves, spores, celestialDragons;
+        let sceneScale = 1;
+
+        function clamp(value, min, max) {
+            return Math.min(max, Math.max(min, value));
+        }
+
+        function getGroundHeight() {
+            return clamp(height * 0.34, 48, 94);
+        }
+
+        const palette = [
+            { main: "#d45b12", base: "#2a1105", accent: "#f5d6ba", glow: "rgba(244, 115, 32, 0.34)" },
+            { main: "#c4a000", base: "#2a2205", accent: "#fff3bd", glow: "rgba(245, 208, 54, 0.3)" },
+            { main: "#6a1b9a", base: "#1a0624", accent: "#e1bee7", glow: "rgba(168, 85, 247, 0.34)" },
+            { main: "#ad1457", base: "#2b0516", accent: "#f8bbd0", glow: "rgba(244, 63, 94, 0.32)" }
+        ];
+
+        const rand = (min = 0, max = 1) => min + Math.random() * (max - min);
+        const getPal = () => palette[Math.floor(rand(0, palette.length))];
+
+        function resize() {
+            const rect = container.getBoundingClientRect();
+            width = Math.max(1, Math.floor(rect.width));
+            height = Math.max(1, Math.floor(rect.height));
+            sceneScale = clamp(height / 260, 0.55, 1);
+            canvas.width = width;
+            canvas.height = height;
+            initScene();
+        }
+
+        class CelestialDragon {
+            constructor() { this.reset(); }
+            reset() {
+                this.x = rand(-1100, -300);
+                this.y = rand(height * 0.04, height * 0.44);
+                this.size = rand(5, 8) * sceneScale;
+                this.speed = rand(0.55, 1.25) * (0.9 + sceneScale * 0.2);
+                this.config = getPal();
+                this.segments = [];
+                this.segmentCount = Math.floor(rand(38, 56));
+                this.waveOffset = rand(0, 1000);
+                this.segmentDist = this.size * 0.5;
+                this.particles = [];
+            }
+            update() {
+                this.x += this.speed;
+                const targetY = this.y + Math.sin(this.x * 0.008 + this.waveOffset) * (35 * sceneScale);
+
+                if (!this.segments.length) {
+                    for (let i = 0; i < this.segmentCount; i++) {
+                        this.segments.push({ x: this.x - i * this.segmentDist, y: targetY, angle: 0 });
+                    }
+                }
+
+                const head = this.segments[0];
+                head.angle = Math.atan2(targetY - head.y, this.x - head.x);
+                head.x = this.x;
+                head.y = targetY;
+
+                for (let i = 1; i < this.segments.length; i++) {
+                    const prev = this.segments[i - 1];
+                    const curr = this.segments[i];
+                    curr.angle = Math.atan2(prev.y - curr.y, prev.x - curr.x);
+                    curr.x = prev.x - Math.cos(curr.angle) * this.segmentDist;
+                    curr.y = prev.y - Math.sin(curr.angle) * this.segmentDist;
+                }
+
+                if (rand() > 0.4) {
+                    const rp = this.segments[Math.floor(rand(0, this.segments.length))];
+                    this.particles.push({ x: rp.x, y: rp.y, life: 1, vx: rand(-0.25, 0.25), vy: rand(-0.45, -0.2) });
+                }
+
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    const p = this.particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life -= 0.02;
+                    if (p.life <= 0) this.particles.splice(i, 1);
+                }
+
+                if (this.x > width + 1000) this.reset();
+            }
+
+            buildPath(scale) {
+                ctx.beginPath();
+                const l = this.segments.length;
+                for (let i = 0; i < l; i++) {
+                    const s = this.segments[i];
+                    const r = this.size * Math.pow(1 - i / l, 0.6) * scale;
+                    const a = s.angle - 1.57;
+                    ctx.lineTo(s.x + Math.cos(a) * r, s.y + Math.sin(a) * r);
+                }
+                for (let i = l - 1; i >= 0; i--) {
+                    const s = this.segments[i];
+                    const r = this.size * Math.pow(1 - i / l, 0.6) * scale;
+                    const a = s.angle + 1.57;
+                    ctx.lineTo(s.x + Math.cos(a) * r, s.y + Math.sin(a) * r);
+                }
+                ctx.closePath();
+            }
+
+            draw() {
+                if (this.segments.length < 2) return;
+                ctx.lineJoin = "round";
+                ctx.lineCap = "round";
+
+                this.particles.forEach((p) => {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, this.size * 0.4 * p.life, 0, Math.PI * 2);
+                    ctx.fillStyle = this.config.accent;
+                    ctx.globalAlpha = p.life * 0.7;
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = this.config.glow;
+                    ctx.fill();
+                });
+                ctx.shadowBlur = 0;
+                ctx.globalAlpha = 1;
+
+                this.buildPath(2);
+                ctx.fillStyle = this.config.glow;
+                ctx.globalAlpha = 0.15;
+                ctx.fill();
+                ctx.globalAlpha = 1;
+
+                this.drawLeg(Math.floor(this.segmentCount * 0.25), -1);
+                this.drawLeg(Math.floor(this.segmentCount * 0.75), -1);
+
+                for (let i = 0; i < this.segments.length - 1; i++) {
+                    const seg = this.segments[i];
+                    const r = this.size * Math.pow(1 - i / this.segments.length, 0.6);
+                    ctx.save();
+                    ctx.translate(seg.x, seg.y);
+                    ctx.rotate(seg.angle);
+                    if (i > 2 && i < 20 && i % 2 === 0) {
+                        ctx.beginPath();
+                        for (let j = 0; j < 3; j++) {
+                            const fL = r * rand(3, 4.5);
+                            const fA = -1.77 + rand(-0.5, 0.5);
+                            ctx.moveTo(0, -r * 0.5);
+                            ctx.quadraticCurveTo(Math.cos(fA) * fL * 0.5, Math.sin(fA) * fL * 0.5 - r, Math.cos(fA) * fL, Math.sin(fA) * fL);
+                        }
+                        ctx.strokeStyle = this.config.main;
+                        ctx.lineWidth = 1;
+                        ctx.globalAlpha = 0.6;
+                        ctx.stroke();
+                    } else if (i % 3 === 0 && i > 5) {
+                        ctx.beginPath();
+                        ctx.moveTo(-r * 0.6, -r * 0.8);
+                        ctx.lineTo(0, -r * 2.5);
+                        ctx.lineTo(r * 0.6, -r * 0.8);
+                        ctx.fillStyle = this.config.accent;
+                        ctx.globalAlpha = 0.5;
+                        ctx.fill();
+                    }
+                    ctx.restore();
+                }
+
+                this.buildPath(1);
+                ctx.fillStyle = "#020108";
+                ctx.fill();
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = this.config.main;
+                ctx.stroke();
+
+                ctx.beginPath();
+                for (let i = 0; i < this.segments.length - 1; i += 2) {
+                    const seg = this.segments[i];
+                    const r = this.size * Math.pow(1 - i / this.segments.length, 0.6);
+                    ctx.moveTo(seg.x + Math.cos(seg.angle + 1.57) * r, seg.y + Math.sin(seg.angle + 1.57) * r);
+                    ctx.lineTo(seg.x + Math.cos(seg.angle) * r * 0.2, seg.y + Math.sin(seg.angle) * r * 0.2);
+                }
+                ctx.strokeStyle = "rgba(255,255,255,0.15)";
+                ctx.lineWidth = 0.8;
+                ctx.stroke();
+
+                this.drawLeg(Math.floor(this.segmentCount * 0.25), 1);
+                this.drawLeg(Math.floor(this.segmentCount * 0.75), 1);
+
+                const tail = this.segments[this.segments.length - 1];
+                ctx.save();
+                ctx.translate(tail.x, tail.y);
+                ctx.rotate(tail.angle);
+                ctx.beginPath();
+                for (let j = 0; j < 10; j++) {
+                    const fL = this.size * 3.5;
+                    const fA = Math.PI + rand(-0.75, 0.75);
+                    ctx.moveTo(0, 0);
+                    ctx.quadraticCurveTo(Math.cos(fA) * fL * 0.5, Math.sin(fA) * fL * 0.5, Math.cos(fA) * fL, Math.sin(fA) * fL);
+                }
+                ctx.strokeStyle = this.config.main;
+                ctx.globalAlpha = 0.8;
+                ctx.stroke();
+                ctx.restore();
+                ctx.globalAlpha = 1;
+
+                this.drawHead();
+            }
+
+            drawLeg(idx, side) {
+                if (idx >= this.segments.length) return;
+                const seg = this.segments[idx];
+                const r = this.size * Math.pow(1 - idx / this.segments.length, 0.6);
+                ctx.save();
+                ctx.translate(seg.x, seg.y);
+                ctx.rotate(seg.angle + (1.57 * side) + Math.sin(seg.x * 0.02 + (side === 1 ? 0 : Math.PI)) * 0.6);
+
+                const t = r * 0.8;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(r * 2, r * 1.5);
+                ctx.lineTo(r, r * 4);
+                ctx.strokeStyle = "#020108";
+                ctx.lineWidth = t;
+                ctx.stroke();
+                ctx.strokeStyle = side === 1 ? this.config.main : this.config.base;
+                ctx.lineWidth = t * 0.4;
+                ctx.stroke();
+
+                ctx.translate(r, r * 4);
+                ctx.beginPath();
+                ctx.arc(0, 0, t * 0.5, 0, Math.PI * 2);
+                ctx.fillStyle = "#020108";
+                ctx.fill();
+
+                for (let c = -1; c <= 1; c++) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.quadraticCurveTo(c * r * 1.8, r * 2, c * r * 0.6, r * 3.5);
+                    ctx.strokeStyle = "#020108";
+                    ctx.lineWidth = t * 0.5;
+                    ctx.stroke();
+                    ctx.strokeStyle = this.config.accent;
+                    ctx.lineWidth = t * 0.2;
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+            drawHead() {
+                const h = this.segments[0];
+                const r = this.size;
+                ctx.save();
+                ctx.translate(h.x, h.y);
+                ctx.rotate(h.angle);
+
+                ctx.beginPath();
+                ctx.moveTo(0, -r * 0.6);
+                ctx.lineTo(r * 2.5, -r * 0.4);
+                ctx.lineTo(r * 2.5, r * 0.4);
+                ctx.lineTo(0, r * 0.6);
+                ctx.fillStyle = "#020108";
+                ctx.fill();
+                ctx.strokeStyle = this.config.main;
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                ctx.beginPath();
+                for (let i = 0; i < 5; i++) {
+                    ctx.moveTo(r * 2, r * 0.3);
+                    ctx.quadraticCurveTo(r * 1.5 - i * r * 0.5, r * 1.5, r - i * r * 0.5, r * 2.5);
+                }
+                ctx.strokeStyle = this.config.main;
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(0, -r * 0.5);
+                ctx.quadraticCurveTo(-r * 1.2, -r * 2, -r * 2, -r * 3.5);
+                ctx.moveTo(-r * 0.4, -r * 0.5);
+                ctx.quadraticCurveTo(-r * 1.8, -r * 1.5, -r * 2.8, -r * 2.5);
+                ctx.strokeStyle = this.config.accent;
+                ctx.lineWidth = r * 0.25;
+                ctx.stroke();
+
+                const wSway = Math.sin(Date.now() * 0.003) * r * 1.8;
+                ctx.beginPath();
+                ctx.moveTo(r * 2.3, 0);
+                ctx.bezierCurveTo(r * 3.5, -r * 2 + wSway, r * 1.5, -r * 3.5, r * 5, -r * 2 + wSway);
+                ctx.moveTo(r * 2.3, 0);
+                ctx.bezierCurveTo(r * 3.5, r * 2 - wSway, r * 1.5, r * 3.5, r * 5, r * 2 - wSway);
+                ctx.strokeStyle = this.config.accent;
+                ctx.lineWidth = r * 0.2;
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(r * 1.2, -r * 0.25, r * 0.3, 0, Math.PI * 2);
+                ctx.fillStyle = "#fff";
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = this.config.accent;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                ctx.beginPath();
+                ctx.arc(r * 1.25, -r * 0.25, r * 0.15, 0, Math.PI * 2);
+                ctx.fillStyle = "#000";
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        class Aurora {
+            constructor() {
+                this.y = rand(0, height * 0.32);
+                this.height = rand(height * 0.42, height * 0.9);
+                this.speed = rand(0.0002, 0.0005);
+                this.offset = rand(0, Math.PI * 2);
+                this.color = rand() > 0.5 ? "rgba(212, 91, 18, 0.04)" : "rgba(106, 27, 154, 0.03)";
+            }
+            draw() {
+                this.offset += this.speed;
+                const grad = ctx.createLinearGradient(0, this.y, 0, this.y + this.height);
+                grad.addColorStop(0, "transparent");
+                grad.addColorStop(0.5, this.color);
+                grad.addColorStop(1, "transparent");
+
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.moveTo(0, this.y);
+                for (let x = 0; x <= width; x += 60) {
+                    ctx.lineTo(x, this.y + Math.sin(x * 0.0008 + this.offset) * (24 + 20 * sceneScale));
+                }
+                ctx.lineTo(width, this.y + this.height);
+                ctx.lineTo(0, this.y + this.height);
+                ctx.fill();
+            }
+        }
+
+        class AlienGrass {
+            constructor(x, y, z) {
+                this.x = x;
+                this.y = y;
+                this.z = z;
+                this.hVal = rand(height * 0.24, height * 0.62) * z;
+                this.thick = rand(3.2, 6) * z;
+                this.config = getPal();
+                this.seed = rand(0, 1000);
+                this.fibers = Math.floor(rand(3, 6));
+            }
+            draw() {
+                const sway = Math.sin(Date.now() * 0.00045 + this.seed) * 35 * this.z;
+                const tX = this.x + sway;
+                const tY = this.y - this.hVal;
+                const cp1y = this.y - this.hVal * 0.45;
+                const cp2y = tY + this.hVal * 0.35;
+
+                ctx.beginPath();
+                ctx.ellipse(this.x, this.y, this.thick * 1.5, this.thick * 0.4, 0, 0, Math.PI * 2);
+                ctx.fillStyle = "rgba(0,0,0,0.4)";
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.moveTo(this.x - this.thick / 2, this.y);
+                ctx.bezierCurveTo(this.x, cp1y, tX, cp2y, tX, tY);
+                ctx.bezierCurveTo(tX, cp2y, this.x + this.thick, cp1y, this.x + this.thick / 2, this.y);
+
+                const grad = ctx.createLinearGradient(this.x, this.y, tX, tY);
+                grad.addColorStop(0, this.config.base);
+                grad.addColorStop(0.5, this.config.main);
+                grad.addColorStop(1, this.config.accent);
+                ctx.fillStyle = grad;
+                ctx.fill();
+
+                ctx.strokeStyle = this.config.main;
+                ctx.globalAlpha = 0.5;
+                ctx.lineWidth = 0.6 * this.z;
+                for (let i = 0; i < this.fibers; i++) {
+                    const t = 0.25 + (i / this.fibers) * 0.55;
+                    const u = 1 - t;
+                    const fx = u * u * u * this.x + 3 * u * u * t * this.x + 3 * u * t * t * tX + t * t * t * tX;
+                    const fy = u * u * u * this.y + 3 * u * u * t * cp1y + 3 * u * t * t * cp2y + t * t * t * tY;
+                    ctx.beginPath();
+                    ctx.moveTo(fx, fy);
+                    ctx.lineTo(fx + (i % 2 === 0 ? 12 : -12) * this.z, fy - 6);
+                    ctx.stroke();
+                }
+                ctx.globalAlpha = 1.0;
+
+                ctx.save();
+                ctx.translate(tX, tY);
+                ctx.rotate(sway * 0.004);
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.quadraticCurveTo(this.thick * 1.2, -this.thick, 0, -this.thick * 3.5);
+                ctx.quadraticCurveTo(-this.thick * 1.2, -this.thick, 0, 0);
+                ctx.fillStyle = this.config.main;
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(0, -this.thick * 1.8, this.thick * 0.35, 0, Math.PI * 2);
+                ctx.fillStyle = this.config.accent;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function drawCelestial() {
+            const px = width * 0.75;
+            const py = height * 0.24;
+            const r = clamp(height * 0.2, 20, 44);
+            const drawRings = (front) => {
+                ctx.lineWidth = 1.6 + sceneScale;
+                for (let i = 0; i < 3; i++) {
+                    ctx.strokeStyle = `rgba(255, ${front ? 230 : 180}, ${front ? 160 : 100}, ${(front ? 0.06 : 0.025) + i * (front ? 0.02 : 0.015)})`;
+                    ctx.beginPath();
+                    ctx.ellipse(px, py, r * (2.2 + i * 0.28), r * (0.54 + i * 0.12), Math.PI / 12, front ? 0 : Math.PI, front ? Math.PI : Math.PI * 2);
+                    ctx.stroke();
+                }
+            };
+
+            drawRings(false);
+            const pGrad = ctx.createRadialGradient(px - 14, py - 14, 6, px, py, r);
+            pGrad.addColorStop(0, "#ffe040");
+            pGrad.addColorStop(0.25, "#ff5010");
+            pGrad.addColorStop(0.85, "#500505");
+            pGrad.addColorStop(1, "#05010a");
+            ctx.fillStyle = pGrad;
+            ctx.beginPath();
+            ctx.arc(px, py, r, 0, Math.PI * 2);
+            ctx.fill();
+
+            const atmo = ctx.createRadialGradient(px, py, r, px, py, r + 35);
+            atmo.addColorStop(0, "rgba(255, 85, 10, 0.22)");
+            atmo.addColorStop(1, "transparent");
+            ctx.fillStyle = atmo;
+            ctx.beginPath();
+            ctx.arc(px, py, r + 35, 0, Math.PI * 2);
+            ctx.fill();
+
+            drawRings(true);
+        }
+
+        function drawGround() {
+            const gH = getGroundHeight();
+            const gY = height - gH;
+            const grad = ctx.createLinearGradient(0, gY, 0, height);
+            grad.addColorStop(0, "#42281a");
+            grad.addColorStop(0.4, "#1f120c");
+            grad.addColorStop(1, "#080302");
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, gY, width, gH);
+
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
+            ctx.lineWidth = 1;
+            const spacing = clamp(width / 14, 42, 86);
+            for (let i = 0; i < width; i += spacing) {
+                ctx.beginPath();
+                ctx.moveTo(i, gY + gH * 0.1);
+                ctx.lineTo(i + gH * 0.2, gY + gH * 0.2);
+                ctx.stroke();
+            }
+        }
+
+        function initScene() {
+            const starCount = Math.floor(clamp((width * height) / 260, 220, 950));
+            stars = Array.from({ length: starCount }, () => ({ x: rand(0, width), y: rand(0, height), s: rand(0, 1.15), o: rand(0.1, 0.65) }));
+            auroraWaves = Array.from({ length: 3 }, () => new Aurora());
+            const sporeCount = Math.floor(clamp(width / 12, 26, 72));
+            spores = Array.from({ length: sporeCount }, () => ({ x: rand(0, width), y: rand(0, height), s: rand(0.45, 1.05), vx: rand(-0.18, 0.06), vy: rand(-0.18, -0.06) }));
+            celestialDragons = Array.from({ length: 2 }, () => new CelestialDragon());
+
+            const gH = getGroundHeight();
+            const sY = height - gH + gH * 0.16;
+            const grassCount = Math.floor(clamp(width / 8, 48, 160));
+            grassBlades = Array.from({ length: grassCount }, () => {
+                const ry = sY + rand(0, gH - 45);
+                return new AlienGrass(rand(0, width), ry, 0.45 + ((ry - sY) / (gH - 45)) * 0.55);
+            }).sort((a, b) => a.y - b.y);
+        }
+
+        function animate() {
+            ctx.fillStyle = "#010105";
+            ctx.fillRect(0, 0, width, height);
+
+            auroraWaves.forEach((a) => a.draw());
+
+            ctx.fillStyle = "white";
+            stars.forEach((s) => {
+                ctx.globalAlpha = s.o;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.s, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+
+            drawCelestial();
+            celestialDragons.forEach((d) => {
+                d.update();
+                d.draw();
+            });
+            drawGround();
+
+            ctx.fillStyle = "rgba(255, 255, 255, 0.11)";
+            spores.forEach((s) => {
+                s.x = (s.x + s.vx + width) % width;
+                s.y += s.vy;
+                if (s.y < -15) s.y = height + 15;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.s, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            const gH = getGroundHeight();
+            const fogTop = height - gH * 1.55;
+            const fogBottom = height - gH;
+            const fog = ctx.createLinearGradient(0, fogTop, 0, fogBottom);
+            fog.addColorStop(0, "transparent");
+            fog.addColorStop(1, "rgba(15, 8, 32, 0.35)");
+            ctx.fillStyle = fog;
+            ctx.fillRect(0, fogTop, width, Math.max(28, gH * 0.8));
+
+            grassBlades.forEach((p) => p.draw());
+            requestAnimationFrame(animate);
+        }
+
+        if (typeof ResizeObserver !== "undefined") {
+            const ro = new ResizeObserver(() => resize());
+            ro.observe(container);
+        }
+        window.addEventListener("resize", resize);
+
+        resize();
+        animate();
+    })();
 </script>
