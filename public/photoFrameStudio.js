@@ -1290,8 +1290,9 @@
     const canvasHeight = Number((activeTemplate.canvas && activeTemplate.canvas.height) || 1080);
     frameEditorStage.style.aspectRatio = `${canvasWidth} / ${canvasHeight}`;
 
-    const stageRect = frameEditorStage.getBoundingClientRect();
-    if (!stageRect.width || !stageRect.height) {
+    const stageWidth = Number(frameEditorStage.clientWidth || 0);
+    const stageHeight = Number(frameEditorStage.clientHeight || 0);
+    if (!stageWidth || !stageHeight) {
       if (renderRetryCount < MAX_RENDER_RETRIES) {
         renderRetryCount += 1;
         scheduleRenderEditorLayers();
@@ -1299,15 +1300,15 @@
       return;
     }
 
-    const expectedHeight = (stageRect.width * canvasHeight) / Math.max(1, canvasWidth);
-    if (Math.abs(stageRect.height - expectedHeight) > 4 && renderRetryCount < MAX_RENDER_RETRIES) {
+    const expectedHeight = (stageWidth * canvasHeight) / Math.max(1, canvasWidth);
+    if (Math.abs(stageHeight - expectedHeight) > 4 && renderRetryCount < MAX_RENDER_RETRIES) {
       renderRetryCount += 1;
       scheduleRenderEditorLayers();
       return;
     }
 
     renderRetryCount = 0;
-    const scale = stageRect.width ? stageRect.width / canvasWidth : 1;
+    const scale = stageWidth ? stageWidth / canvasWidth : 1;
 
     frameImageSlotsLayer.innerHTML = "";
     frameTextLayer.innerHTML = "";

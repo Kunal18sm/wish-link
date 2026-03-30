@@ -48,12 +48,12 @@ const WebSampleSchema = new Schema({
   },
   previewCredits: {
     type: Number,
-    default: 1,
+    default: 0,
     min: 0,
   },
   purchaseCredits: {
     type: Number,
-    default: 1,
+    default: 0,
     min: 0,
   },
   priority: {

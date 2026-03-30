@@ -561,12 +561,19 @@ app.use((req, res, next) => {
   }
 
   const requestPath = String(req.path || "");
+  const seoLandingPaths = new Set([
+    "/birthday-gift-website",
+    "/anniversary-gift-website",
+    "/online-wishing-website-maker",
+    "/digital-gift-ideas",
+  ]);
   const isPublicCacheablePath =
     requestPath === "/" ||
     requestPath === "/about" ||
     requestPath === "/contact" ||
     requestPath === "/terms" ||
     requestPath === "/privacy-policy" ||
+    seoLandingPaths.has(requestPath) ||
     requestPath.startsWith("/category/");
 
   if (isPublicCacheablePath) {

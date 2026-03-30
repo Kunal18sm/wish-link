@@ -79,22 +79,40 @@
     };
   }
 
-  function getScale() {
+  function getStageMetrics() {
     const canvas = getCanvasSize();
-    const stageRect = previewStage.getBoundingClientRect();
-    if (!stageRect.width || !canvas.width) return 1;
-    return stageRect.width / canvas.width;
+    const rect = previewStage.getBoundingClientRect();
+    const contentWidth = Number(previewStage.clientWidth || 0);
+    const contentHeight = Number(previewStage.clientHeight || 0);
+    const contentLeft = rect.left + Number(previewStage.clientLeft || 0);
+    const contentTop = rect.top + Number(previewStage.clientTop || 0);
+    const scaleX = canvas.width > 0 && contentWidth > 0 ? contentWidth / canvas.width : 1;
+    const scaleY = canvas.height > 0 && contentHeight > 0 ? contentHeight / canvas.height : 1;
+
+    return {
+      canvas,
+      contentWidth,
+      contentHeight,
+      contentLeft,
+      contentTop,
+      scaleX,
+      scaleY,
+    };
+  }
+
+  function getScale() {
+    const metrics = getStageMetrics();
+    if (!metrics.contentWidth || !metrics.canvas.width) return 1;
+    return metrics.scaleX;
   }
 
   function pointerToCanvas(event) {
-    const canvas = getCanvasSize();
-    const rect = previewStage.getBoundingClientRect();
-    const scale = getScale();
-    const x = (event.clientX - rect.left) / scale;
-    const y = (event.clientY - rect.top) / scale;
+    const metrics = getStageMetrics();
+    const x = (event.clientX - metrics.contentLeft) / metrics.scaleX;
+    const y = (event.clientY - metrics.contentTop) / metrics.scaleY;
     return {
-      x: clamp(x, -2000, canvas.width + 2000, 0),
-      y: clamp(y, -2000, canvas.height + 2000, 0),
+      x: clamp(x, -2000, metrics.canvas.width + 2000, 0),
+      y: clamp(y, -2000, metrics.canvas.height + 2000, 0),
     };
   }
 

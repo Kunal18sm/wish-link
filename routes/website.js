@@ -37,6 +37,22 @@ const uploadPermanent = multer({
   fileFilter: imageFileFilter,
   limits: { fileSize: MAX_UPLOAD_SIZE_BYTES, files: 6 },
 });
+const getFirstEnvValue = (...keys) => {
+  for (const key of keys) {
+    const value = String(process.env[key] || "").trim();
+    if (value) return value;
+  }
+  return "";
+};
+
+const DEFAULT_PAYMENT_QR_IMAGE_URL =
+  "https://res.cloudinary.com/dcw90tnk1/image/upload/v1768291694/wishLink_dev/gedbuqpryaj7oqo8c3v1.png";
+const PAYMENT_UPI_ID = getFirstEnvValue("PAYMENT_UPI_ID", "UPI_ID", "UPI_PA", "UPI_VPA");
+const PAYMENT_UPI_NAME = getFirstEnvValue("PAYMENT_UPI_NAME", "UPI_NAME", "UPI_PN");
+const PAYMENT_UPI_NOTE = getFirstEnvValue("PAYMENT_UPI_NOTE", "UPI_NOTE") || "VishLink Purchase";
+const PAYMENT_QR_IMAGE_URL =
+  getFirstEnvValue("PAYMENT_QR_IMAGE_URL", "UPI_QR_IMAGE_URL") || DEFAULT_PAYMENT_QR_IMAGE_URL;
+const PAYMENT_CURRENCY = "INR";
 
 const purchaseUploadFields = [
   { name: "images", maxCount: 5 },
@@ -66,12 +82,12 @@ const TEMPLATE_CATEGORIES = [
   "eid",
   "holi",
 ];
-const PURCHASE_TEMPLATE_SELECT = "webName webUrl priceForTemporary priceForPermanent purchaseCredits";
-const PREVIEW_TEMPLATE_SELECT = "webUrl previewCredits";
+const PURCHASE_TEMPLATE_SELECT = "webName webUrl priceForTemporary priceForPermanent";
+const PREVIEW_TEMPLATE_SELECT = "webUrl";
 const PURCHASE_FORM_TEMPLATE_SELECT =
-  "webName webUrl priceForTemporary priceForPermanent purchaseCredits previewCredits imageNeeded description";
+  "webName webUrl priceForTemporary priceForPermanent imageNeeded description";
 const EDIT_TEMPLATE_SELECT =
-  "webName priceForTemporary priceForPermanent previewCredits purchaseCredits imageUrl webUrl description imageNeeded tags articleTitle articleContent priority";
+  "webName priceForTemporary priceForPermanent imageUrl webUrl description imageNeeded tags articleTitle articleContent priority";
 
 const getRedirectBack = (req) => req.get("Referrer") || "/";
 
@@ -89,9 +105,6 @@ const getPurchaseFailureMessage = (err) => {
   if (message.includes("permanent cloudinary is not configured")) {
     return "Permanent image storage is not configured right now.";
   }
-  if (message.includes("insufficient credits")) {
-    return "You do not have enough credits for this action.";
-  }
   if (message.includes("payment screenshot is required")) {
     return "Please upload payment screenshot to continue.";
   }
@@ -108,9 +121,51 @@ const toFiniteNumberOrDefault = (value, fallback = 0) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
-const toCreditCost = (value, fallback = 0) => {
-  const parsed = Math.floor(toFiniteNumberOrDefault(value, fallback));
-  return Number.isFinite(parsed) ? Math.max(parsed, 0) : Math.max(fallback, 0);
+const toCurrencyAmount = (value) =>
+  Number(Math.max(0, toFiniteNumberOrDefault(value, 0)).toFixed(2));
+
+const buildUpiPaymentQuery = (amount, templateName = "", purchaseType = "") => {
+  if (!PAYMENT_UPI_ID || amount <= 0) return "";
+
+  const noteParts = [PAYMENT_UPI_NOTE];
+  if (templateName) noteParts.push(templateName);
+  if (purchaseType) noteParts.push(purchaseType);
+  const paymentNote = noteParts.filter(Boolean).join(" | ").slice(0, 120);
+  const payeeName = PAYMENT_UPI_NAME || "VishLink";
+
+  const params = new URLSearchParams({
+    pa: PAYMENT_UPI_ID,
+    pn: payeeName,
+    am: amount.toFixed(2),
+    cu: PAYMENT_CURRENCY,
+  });
+
+  if (paymentNote) {
+    params.set("tn", paymentNote);
+  }
+
+  return params.toString();
+};
+
+const buildUpiPaymentLinks = (amount, templateName = "", purchaseType = "") => {
+  const query = buildUpiPaymentQuery(amount, templateName, purchaseType);
+  if (!query) {
+    return {
+      upi: "",
+      intent: "",
+      gpay: "",
+      phonepe: "",
+      paytm: "",
+    };
+  }
+
+  return {
+    upi: `upi://pay?${query}`,
+    intent: `intent://pay?${query}#Intent;scheme=upi;end`,
+    gpay: `tez://upi/pay?${query}`,
+    phonepe: `phonepe://pay?${query}`,
+    paytm: `paytmmp://pay?${query}`,
+  };
 };
 
 const normalizeTemplateCategories = (rawCategories) => {
@@ -130,8 +185,6 @@ const buildTemplatePayload = (formData = {}) => ({
   webName: String(formData.webName || "").trim(),
   priceForTemporary: toFiniteNumberOrDefault(formData.priceForTemporary, 0),
   priceForPermanent: toFiniteNumberOrDefault(formData.priceForPermanent, 0),
-  previewCredits: toCreditCost(formData.previewCredits, 1),
-  purchaseCredits: toCreditCost(formData.purchaseCredits, 1),
   webUrl: String(formData.webUrl || "").trim(),
   description: String(formData.description || "").trim(),
   imageNeeded: toFiniteNumberOrDefault(formData.imageNeeded, 5),
@@ -166,7 +219,6 @@ const createPurchaseHandler = (expectedIsTemporary) =>
     const isPermanentPurchase = !isTemporary;
     const destroyOptions = isPermanentPurchase ? permanentCloudinaryOptions : null;
     const userId = req.user?._id;
-    let creditsUsed = 0;
 
     const uploadedPublicIds = [
       ...(req.files?.images || []).map((file) => file.filename),
@@ -213,34 +265,9 @@ const createPurchaseHandler = (expectedIsTemporary) =>
 
       const temporaryPrice = Math.max(0, toFiniteNumberOrDefault(selectedWeb.priceForTemporary, 0));
       const permanentPrice = Math.max(0, toFiniteNumberOrDefault(selectedWeb.priceForPermanent, 0));
-      const purchaseCreditsRequired = toCreditCost(selectedWeb.purchaseCredits, 1);
-
-      if (isTemporary && temporaryPrice > 0 && purchaseCreditsRequired > 0) {
-        const updatedCreditUser = await user.findOneAndUpdate(
-          {
-            _id: userId,
-            winnerCount: { $gte: purchaseCreditsRequired },
-          },
-          {
-            $inc: { winnerCount: -purchaseCreditsRequired },
-          },
-          {
-            new: true,
-            projection: { winnerCount: 1 },
-          }
-        );
-
-        if (updatedCreditUser) {
-          creditsUsed = purchaseCreditsRequired;
-          req.user.winnerCount = Number(updatedCreditUser.winnerCount || 0);
-        }
-      }
-
-      const requiresPaymentProof = !isTemporary || (temporaryPrice > 0 && creditsUsed === 0);
+      const paymentAmount = isTemporary ? temporaryPrice : permanentPrice;
+      const requiresPaymentProof = paymentAmount > 0;
       if (requiresPaymentProof && !paymentImg) {
-        if (isTemporary && temporaryPrice > 0 && purchaseCreditsRequired > 0 && creditsUsed === 0) {
-          throw new Error("Insufficient credits for free unlock.");
-        }
         throw new Error("Payment screenshot is required.");
       }
 
@@ -248,7 +275,7 @@ const createPurchaseHandler = (expectedIsTemporary) =>
         paymentImg = null;
       }
 
-      const price = isTemporary ? (creditsUsed > 0 ? 0 : temporaryPrice) : permanentPrice;
+      const price = paymentAmount;
       const sender =
         typeof buyinfo.sender === "string" && buyinfo.sender.trim()
           ? buyinfo.sender.trim()
@@ -302,11 +329,6 @@ const createPurchaseHandler = (expectedIsTemporary) =>
       req.flash("success", "Purchase Success");
       return res.redirect("/profile");
     } catch (err) {
-      if (creditsUsed > 0 && userId) {
-        await user
-          .findByIdAndUpdate(userId, { $inc: { winnerCount: creditsUsed } })
-          .catch(() => {});
-      }
       await cleanupUploads();
       console.log("Purchase failed:", err.message);
       req.flash("error", getPurchaseFailureMessage(err));
@@ -316,7 +338,6 @@ const createPurchaseHandler = (expectedIsTemporary) =>
 
 router.post(
   "/template/:id/preview/unlock",
-  isLoggedIn,
   wrapAsync(async (req, res) => {
     const { id } = req.params;
     const selectedWeb = await getTemplateByIdCached(id, PREVIEW_TEMPLATE_SELECT, 30 * 1000);
@@ -328,47 +349,10 @@ router.post(
       });
     }
 
-    const previewCreditsRequired = toCreditCost(selectedWeb.previewCredits, 1);
-
-    if (previewCreditsRequired <= 0) {
-      return res.json({
-        ok: true,
-        redirectUrl: selectedWeb.webUrl,
-        chargedCredits: 0,
-        remainingCredits: Number(req.user?.winnerCount || 0),
-      });
-    }
-
-    const updatedUser = await user.findOneAndUpdate(
-      {
-        _id: req.user._id,
-        winnerCount: { $gte: previewCreditsRequired },
-      },
-      {
-        $inc: { winnerCount: -previewCreditsRequired },
-      },
-      {
-        new: true,
-        projection: { winnerCount: 1 },
-      }
-    );
-
-    if (!updatedUser) {
-      return res.status(400).json({
-        ok: false,
-        message: `Insufficient credits. You need ${previewCreditsRequired} credits to preview this template.`,
-        requiredCredits: previewCreditsRequired,
-        currentCredits: Number(req.user?.winnerCount || 0),
-      });
-    }
-
-    req.user.winnerCount = Number(updatedUser.winnerCount || 0);
-
     return res.json({
       ok: true,
       redirectUrl: selectedWeb.webUrl,
-      chargedCredits: previewCreditsRequired,
-      remainingCredits: Number(updatedUser.winnerCount || 0),
+      chargedCredits: 0,
     });
   })
 );
@@ -404,8 +388,8 @@ router.post(
       webName: payload.webName,
       priceForTemporary: payload.priceForTemporary,
       priceForPermanent: payload.priceForPermanent,
-      previewCredits: payload.previewCredits,
-      purchaseCredits: payload.purchaseCredits,
+      previewCredits: 0,
+      purchaseCredits: 0,
       imageUrl: { url, filename },
       webUrl: payload.webUrl,
       description: payload.description,
@@ -462,8 +446,8 @@ router.put(
       webName: payload.webName,
       priceForTemporary: payload.priceForTemporary,
       priceForPermanent: payload.priceForPermanent,
-      previewCredits: payload.previewCredits,
-      purchaseCredits: payload.purchaseCredits,
+      previewCredits: 0,
+      purchaseCredits: 0,
       webUrl: payload.webUrl,
       description: payload.description,
       imageNeeded: payload.imageNeeded,
@@ -504,12 +488,12 @@ router.get(
       return res.redirect("/");
     }
     const isTemporary = true;
-    const winnerCount = req.user.winnerCount || 0;
-    const purchaseCreditsRequired = toCreditCost(selectedWeb.purchaseCredits, 1);
-    const canUseCredits =
-      Number(selectedWeb.priceForTemporary || 0) > 0 &&
-      purchaseCreditsRequired > 0 &&
-      winnerCount >= purchaseCreditsRequired;
+    const paymentAmount = toCurrencyAmount(selectedWeb.priceForTemporary);
+    const upiLinks = buildUpiPaymentLinks(
+      paymentAmount,
+      selectedWeb.webName,
+      "Temporary Link"
+    );
     res.render("purchaseForm", {
       selectedWeb,
       id,
@@ -518,9 +502,11 @@ router.get(
       canonical: `https://wishlink-7j0a.onrender.com/web/purchase/${id}`,
       robots: "noindex, nofollow",
       isTemporary,
-      winnerCount,
-      purchaseCreditsRequired,
-      canUseCredits,
+      paymentAmount,
+      autoPaymentLink: upiLinks.upi,
+      upiLinks,
+      paymentQrImageUrl: PAYMENT_QR_IMAGE_URL,
+      paymentUpiId: PAYMENT_UPI_ID,
     });
   })
 );
@@ -537,7 +523,12 @@ router.get(
       return res.redirect("/");
     }
     const isTemporary = false;
-    const winnerCount = 0;
+    const paymentAmount = toCurrencyAmount(selectedWeb.priceForPermanent);
+    const upiLinks = buildUpiPaymentLinks(
+      paymentAmount,
+      selectedWeb.webName,
+      "Permanent Link"
+    );
     res.render("purchaseForm", {
       selectedWeb,
       id,
@@ -546,9 +537,11 @@ router.get(
       canonical: `https://wishlink-7j0a.onrender.com/web/purchase/${id}`,
       robots: "noindex, nofollow",
       isTemporary,
-      winnerCount,
-      purchaseCreditsRequired: 0,
-      canUseCredits: false,
+      paymentAmount,
+      autoPaymentLink: upiLinks.upi,
+      upiLinks,
+      paymentQrImageUrl: PAYMENT_QR_IMAGE_URL,
+      paymentUpiId: PAYMENT_UPI_ID,
     });
   })
 );

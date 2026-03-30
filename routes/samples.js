@@ -28,6 +28,132 @@ const NEW_SIGNUP_CREDITS = 15;
 const PROFILE_PURCHASE_SELECT = "webName webUrl receiver price isLive isTemporary date author";
 const HERO_PRIMARY_IMAGE =
   "https://res.cloudinary.com/drzq6kjgp/image/upload/v1770794063/Gemini_Generated_Image_4qzfxy4qzfxy4qzf_l5tidy.png";
+const SEO_LANDING_PAGES = {
+  "birthday-gift-website": {
+    heading: "Birthday Gift Website Creator",
+    title: "Birthday Gift Website Creator | VishLink",
+    description:
+      "Create a personalized birthday gift website with photos, messages and shareable link in minutes on VishLink.",
+    keywords:
+      "birthday gift website, birthday website maker, online birthday surprise, birthday wish website, VishLink",
+    intro: [
+      "VishLink helps you create a digital birthday surprise website with your own photos, message, and custom greeting flow.",
+      "Instead of sending a simple text, you can share one beautiful link that feels premium and personal.",
+    ],
+    categoryLinks: [
+      { label: "Birthday Templates", href: "/category/birthday" },
+      { label: "Top Website Templates", href: "/" },
+      { label: "Photo Frame Templates", href: "/photo-frames" },
+    ],
+    faqs: [
+      {
+        question: "Can I create a birthday website without coding?",
+        answer: "Yes. VishLink templates are ready to use and require no coding.",
+      },
+      {
+        question: "Can I add personal photos and message?",
+        answer: "Yes. You can upload images and add your own special message while creating the link.",
+      },
+      {
+        question: "Can I share it instantly?",
+        answer: "Yes. Once the link is created, you can share it on WhatsApp or any social app.",
+      },
+    ],
+  },
+  "anniversary-gift-website": {
+    heading: "Anniversary Website Maker",
+    title: "Anniversary Website Maker | VishLink",
+    description:
+      "Create romantic anniversary surprise websites online with personalized photos and heartfelt wishes using VishLink.",
+    keywords:
+      "anniversary website maker, anniversary gift website, romantic surprise website, couple website, VishLink",
+    intro: [
+      "Design a romantic anniversary website that captures your memories in one shareable link.",
+      "Choose a template, upload moments, and deliver a thoughtful digital gift that feels memorable.",
+    ],
+    categoryLinks: [
+      { label: "Anniversary Templates", href: "/category/anniversary" },
+      { label: "Couple Templates", href: "/category/couple" },
+      { label: "Valentine's Templates", href: "/category/valentine%27s" },
+    ],
+    faqs: [
+      {
+        question: "Is VishLink good for anniversary surprises?",
+        answer: "Yes. It is designed for personalized celebrations including anniversaries and couple moments.",
+      },
+      {
+        question: "Can I use it for wedding anniversaries?",
+        answer: "Yes. You can use anniversary and wedding style templates as per your need.",
+      },
+      {
+        question: "Do I need design skills?",
+        answer: "No. The templates are pre-designed and easy to customize.",
+      },
+    ],
+  },
+  "online-wishing-website-maker": {
+    heading: "Online Wishing Website Maker",
+    title: "Online Wishing Website Maker | VishLink",
+    description:
+      "Build personalized wishing websites online for birthdays, anniversaries, festivals and special occasions with VishLink.",
+    keywords:
+      "wishing website maker, online greeting website, personalized wish website, digital wishes link, VishLink",
+    intro: [
+      "VishLink is an easy platform for creating personalized wishing websites for every celebration.",
+      "From birthday and anniversary to festive greetings, you can create and share in a few minutes.",
+    ],
+    categoryLinks: [
+      { label: "All Templates", href: "/category/all" },
+      { label: "Festival Templates", href: "/category/festival" },
+      { label: "New Year Templates", href: "/category/new year" },
+    ],
+    faqs: [
+      {
+        question: "Which events can I use this for?",
+        answer: "You can use VishLink for birthdays, anniversaries, festivals, friends and family wishes.",
+      },
+      {
+        question: "Can I create and share from mobile?",
+        answer: "Yes. VishLink works on mobile and desktop browsers.",
+      },
+      {
+        question: "How fast can I publish?",
+        answer: "You can create and share your wishing link in just a few steps.",
+      },
+    ],
+  },
+  "digital-gift-ideas": {
+    heading: "Digital Gift Ideas with Personalized Links",
+    title: "Digital Gift Ideas - Personalized Website Gifts | VishLink",
+    description:
+      "Explore digital gift ideas like personalized birthday and anniversary website links that feel unique and memorable.",
+    keywords:
+      "digital gift ideas, online gift ideas, personalized link gift, birthday surprise ideas, anniversary surprise ideas, VishLink",
+    intro: [
+      "If you are searching for meaningful digital gift ideas, personalized website links are a creative and modern option.",
+      "With VishLink, each gift link can include photos, custom message and celebration theme in one place.",
+    ],
+    categoryLinks: [
+      { label: "Birthday Gift Ideas", href: "/birthday-gift-website" },
+      { label: "Anniversary Gift Ideas", href: "/anniversary-gift-website" },
+      { label: "Wishing Website Maker", href: "/online-wishing-website-maker" },
+    ],
+    faqs: [
+      {
+        question: "Are digital gifts better than normal text wishes?",
+        answer: "Digital gift links feel more personal because they include visual memories and custom storytelling.",
+      },
+      {
+        question: "Is this useful for long-distance celebrations?",
+        answer: "Yes. A shareable personalized link works perfectly for long-distance gifting.",
+      },
+      {
+        question: "Can I reuse templates for different events?",
+        answer: "Yes. You can choose different templates based on the event and audience.",
+      },
+    ],
+  },
+};
 
 function getFrameTemplateModel(req) {
   return req.app.locals.permanentFrameTemplate || null;
@@ -117,6 +243,15 @@ function normalizeLightPalette(value) {
   return LIGHT_PALETTE_OPTIONS.has(normalized) ? normalized : null;
 }
 
+function toTitleCase(rawValue) {
+  return String(rawValue || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
 async function buildUniqueUsername(seedText) {
   const base = makeUsernameSlug(seedText);
   let candidate = base;
@@ -186,16 +321,33 @@ router.get("/", wrapAsync(async (req, res) => {
     bannerSlides,
     designCssVariant: "lite",
     ...buildLcpImageMeta(res, getPrimaryBannerImageUrl(bannerSlides)),
-    title: "Create Personalized Wishing Websites | VishLink",
-    description: "Create beautiful personalized birthday, anniversary and love wishing websites. Share a unique link instantly.",
+    title: "VishLink - Birthday, Anniversary & Personalized Wishing Website Creator",
+    description:
+      "Create personalized birthday, anniversary, and celebration wishing websites. Share a unique gift link instantly with VishLink.",
+    keywords:
+      "VishLink, birthday website creator, anniversary website maker, personalized wishing website, digital gift link",
     canonical: `${SITE_URL}/`,
-    structuredData: {
-      "@context": "https://schema.org",
-      "@type": "CollectionPage",
-      name: "Personalized Wishing Website Templates",
-      url: `${SITE_URL}/`,
-      description: "Browse personalized wishing website templates for birthdays, anniversaries, and special moments."
-    }
+    structuredData: [
+      {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        name: "Personalized Wishing Website Templates",
+        url: `${SITE_URL}/`,
+        description:
+          "Browse personalized wishing website templates for birthdays, anniversaries, and special moments.",
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        name: "Top Wishing Website Templates",
+        itemListElement: topTemplates.slice(0, 10).map((template, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          name: String(template?.webName || "").trim(),
+          url: String(template?.webUrl || "").trim() || `${SITE_URL}/`,
+        })),
+      },
+    ],
   });
 }));
 
@@ -203,6 +355,7 @@ router.get("/", wrapAsync(async (req, res) => {
 router.get("/category/:tag", wrapAsync(async (req, res) => {
   const { tag } = req.params;
   const normalizedTag = String(tag || "").trim();
+  const normalizedTagTitle = toTitleCase(normalizedTag);
   const encodedTag = encodeURIComponent(normalizedTag);
 
   res.locals.message = req.flash("success");
@@ -217,18 +370,90 @@ router.get("/category/:tag", wrapAsync(async (req, res) => {
     activeTag: normalizedTag,
     designCssVariant: "lite",
     ...buildLcpImageMeta(res, getPrimaryBannerImageUrl(bannerSlides)),
-    title: `${normalizedTag} Wishing Websites | VishLink`,
-    description: `Create personalized ${normalizedTag} wishing websites and share memorable moments.`,
+    title: `${normalizedTagTitle} Wishing Website Templates | VishLink`,
+    description: `Explore personalized ${normalizedTag} wishing website templates for gifts and celebrations on VishLink.`,
+    keywords: `${normalizedTag} wishing websites, ${normalizedTag} gift ideas, ${normalizedTag} templates, VishLink`,
     canonical: `${SITE_URL}/category/${encodedTag}`,
     structuredData: {
       "@context": "https://schema.org",
       "@type": "CollectionPage",
-      name: `${normalizedTag} Wishing Website Templates`,
+      name: `${normalizedTagTitle} Wishing Website Templates`,
       url: `${SITE_URL}/category/${encodedTag}`,
       description: `Explore ${normalizedTag} wishing website templates on VishLink.`
     }
   });
 }));
+
+function buildFaqStructuredData(faqs = []) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.answer,
+      },
+    })),
+  };
+}
+
+function buildBreadcrumbStructuredData(urlPath, heading) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: `${SITE_URL}/`,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: heading,
+        item: `${SITE_URL}${urlPath}`,
+      },
+    ],
+  };
+}
+
+const SEO_LANDING_PATHS = Object.keys(SEO_LANDING_PAGES).map((slug) => `/${slug}`);
+
+router.get(SEO_LANDING_PATHS,
+  wrapAsync(async (req, res) => {
+    const seoSlug = String(req.path || "").replace(/^\/+/, "").trim().toLowerCase();
+    const pageData = SEO_LANDING_PAGES[seoSlug];
+    if (!pageData) {
+      return res.redirect("/");
+    }
+
+    const canonicalPath = `/${seoSlug}`;
+    const pageUrl = `${SITE_URL}${canonicalPath}`;
+
+    return res.render("pages/seoLanding", {
+      pageData,
+      keywords: pageData.keywords,
+      title: pageData.title,
+      description: pageData.description,
+      canonical: pageUrl,
+      structuredData: [
+        {
+          "@context": "https://schema.org",
+          "@type": "WebPage",
+          name: pageData.title,
+          description: pageData.description,
+          url: pageUrl,
+          inLanguage: "en-IN",
+        },
+        buildFaqStructuredData(pageData.faqs),
+        buildBreadcrumbStructuredData(canonicalPath, pageData.heading),
+      ],
+    });
+  })
+);
 
 router.get("/photo-frames", wrapAsync(async (req, res) => {
   const FrameTemplate = getFrameTemplateModel(req);

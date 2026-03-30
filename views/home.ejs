@@ -106,6 +106,7 @@
         <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
         <p class="text-emerald-500">Tap on the image to see the template preview.</p>
       </div>
+
       <!-- HORIZONTAL SCROLL CONTAINER -->
       <div class="relative scroll-container">
         <!-- Gradient Fades (Desktop only) -->
@@ -130,9 +131,7 @@
                     class="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent  opacity-60">
                   </div>
                   <a href="<%= sample.webUrl %>"
-                    class="templatePreviewTrigger block w-full h-full"
-                    data-template-id="<%= sample.id %>"
-                    data-preview-credits="<%= Number.isFinite(sample.previewCredits) ? sample.previewCredits : 1 %>">
+                    class="block w-full h-full">
                     <img src="<%= getOptimizedCloudinaryUrl(sample.imageUrl.url, "card") %>"
                       srcset="<%= getResponsiveCloudinarySrcSet(sample.imageUrl.url, 'card') %>"
                       sizes="(max-width: 640px) 85vw, (max-width: 1024px) 45vw, 30vw"
@@ -355,33 +354,34 @@
 
     </article>
 
-    <div id="templatePreviewCreditBackdrop" class="fixed inset-0 hidden" style="z-index:240;background:rgba(2,6,23,0.45);"></div>
-    <div id="templatePreviewCreditModal" class="fixed hidden rounded-2xl border border-indigo-500/40 bg-slate-900 text-slate-200 p-5 shadow-2xl"
-      style="z-index:250;top:50%;left:50%;transform:translate(-50%,-50%);width:min(92%,460px);"
-      data-is-logged-in="<%= currUser ? 'true' : 'false' %>"
-      data-current-credits="<%= currUser ? currUser.winnerCount : 0 %>">
-      <p class="text-white text-lg font-semibold">Template Preview</p>
-      <p id="templatePreviewCreditMessage" class="mt-2 text-slate-300 text-sm leading-relaxed">
-        To preview this template, you need 1 credit.
-      </p>
-      <p id="templatePreviewCreditBalance" class="mt-2 mb-4 text-xs text-indigo-300"></p>
-      <p id="templatePreviewCreditError" class="mt-2 mb-4 text-xs text-rose-300 hidden"></p>
+    <section class="mx-4 sm:mx-6 lg:mx-auto max-w-5xl mt-2 mb-10">
+      <div class="rounded-3xl border border-slate-800/80 bg-gradient-to-br from-slate-900/80 via-slate-900/65 to-indigo-950/35 p-5 md:p-7">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 md:gap-6">
+          <div class="text-center lg:text-left lg:max-w-2xl">
+            <p class="text-[11px] uppercase tracking-[0.16em] text-indigo-300 font-semibold">Quick Explore</p>
+            <h2 class="mt-2 text-xl md:text-2xl font-bold text-white leading-tight">Create Personalized Wishing Websites Online</h2>
+            <p class="mt-2 text-sm md:text-base text-slate-300">
+              Explore birthday, anniversary, and digital gift website ideas with ready templates on VishLink.
+            </p>
+          </div>
 
-      <div class="mt-5 flex flex-wrap justify-end gap-2">
-        <button id="templatePreviewCancelBtn" type="button"
-          class="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-300 hover:text-white hover:border-slate-400 transition">
-          Cancel
-        </button>
-        <a id="templatePreviewLoginBtn" href="/logInForm"
-          class="hidden rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-600 transition">
-          Login to Continue
-        </a>
-        <button id="templatePreviewUseBtn" type="button"
-          class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 transition">
-          Use and Show
-        </button>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full lg:w-auto lg:min-w-[420px]">
+            <a href="/birthday-gift-website" class="inline-flex items-center justify-center rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3.5 py-2.5 text-sm font-semibold text-indigo-100 hover:bg-indigo-500/20 hover:border-indigo-400/40 transition">
+              Birthday Gift Website
+            </a>
+            <a href="/anniversary-gift-website" class="inline-flex items-center justify-center rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3.5 py-2.5 text-sm font-semibold text-indigo-100 hover:bg-indigo-500/20 hover:border-indigo-400/40 transition">
+              Anniversary Website
+            </a>
+            <a href="/online-wishing-website-maker" class="inline-flex items-center justify-center rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3.5 py-2.5 text-sm font-semibold text-indigo-100 hover:bg-indigo-500/20 hover:border-indigo-400/40 transition">
+              Wishing Website Maker
+            </a>
+            <a href="/digital-gift-ideas" class="inline-flex items-center justify-center rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3.5 py-2.5 text-sm font-semibold text-indigo-100 hover:bg-indigo-500/20 hover:border-indigo-400/40 transition">
+              Digital Gift Ideas
+            </a>
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
 
     <script defer src="/homeCollection.js?v=<%= assetVersion %>"></script>
 

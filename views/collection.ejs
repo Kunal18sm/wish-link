@@ -114,9 +114,7 @@
               <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent  opacity-60">
               </div>
               <a href="<%= sample.webUrl %>"
-                class="templatePreviewTrigger block w-full h-full"
-                data-template-id="<%= sample.id %>"
-                data-preview-credits="<%= Number.isFinite(sample.previewCredits) ? sample.previewCredits : 1 %>">
+                class="block w-full h-full">
                 <img src="<%= getOptimizedCloudinaryUrl(sample.imageUrl.url, "card") %>"
                   srcset="<%= getResponsiveCloudinarySrcSet(sample.imageUrl.url, 'card') %>"
                   sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
@@ -178,34 +176,6 @@
           <% } %>
       </div>
     </main>
-
-    <div id="templatePreviewCreditBackdrop" class="fixed inset-0 hidden" style="z-index:240;background:rgba(2,6,23,0.45);"></div>
-    <div id="templatePreviewCreditModal" class="fixed hidden rounded-2xl border border-indigo-500/40 bg-slate-900 text-slate-200 p-5 shadow-2xl"
-      style="z-index:250;top:50%;left:50%;transform:translate(-50%,-50%);width:min(92%,460px);"
-      data-is-logged-in="<%= currUser ? 'true' : 'false' %>"
-      data-current-credits="<%= currUser ? currUser.winnerCount : 0 %>">
-      <p class="text-white text-lg font-semibold">Template Preview</p>
-      <p id="templatePreviewCreditMessage" class="mt-2 text-slate-300 text-sm leading-relaxed">
-        To preview this template, you need 1 credit.
-      </p>
-      <p id="templatePreviewCreditBalance" class="mt-2 mb-4 text-xs text-indigo-300 "></p>
-      <p id="templatePreviewCreditError" class="mt-2 mb-4 text-xs text-rose-300 hidden "></p>
-
-      <div class="mt-5 flex flex-wrap justify-end gap-2">
-        <button id="templatePreviewCancelBtn" type="button"
-          class="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-300 hover:text-white hover:border-slate-400 transition">
-          Cancel
-        </button>
-        <a id="templatePreviewLoginBtn" href="/logInForm"
-          class="hidden rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-600 transition">
-          Login to Continue
-        </a>
-        <button id="templatePreviewUseBtn" type="button"
-          class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 transition">
-          Use and Show
-        </button>
-      </div>
-    </div>
 
     <script defer src="/homeCollection.js?v=<%= assetVersion %>"></script>
 

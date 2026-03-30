@@ -1,15 +1,25 @@
 <% layout("/layouts/boilerplate") %>
 <%
   const temporaryPrice = Number(selectedWeb?.priceForTemporary || 0);
-  const creditsRequiredForPurchase = Number(purchaseCreditsRequired || 0);
-  const currentCredits = Number(winnerCount || 0);
-  const canUnlockWithCredits = Boolean(canUseCredits);
-  const requiresPayment = !isTemporary || (temporaryPrice > 0 && !canUnlockWithCredits);
+  const permanentPrice = Number(selectedWeb?.priceForPermanent || 0);
+  const fallbackAmount = isTemporary ? temporaryPrice : permanentPrice;
+  const payableAmount = Number.isFinite(Number(paymentAmount)) ? Number(paymentAmount) : fallbackAmount;
+  const requiresPayment = payableAmount > 0;
+  const resolvedUpiLinks = upiLinks || {};
+  const universalUpiLink = autoPaymentLink || resolvedUpiLinks.upi || "";
+  const intentUpiLink = resolvedUpiLinks.intent || "";
+  const hasAutoPayment = Boolean(universalUpiLink);
+  const hasManualQr = Boolean(paymentQrImageUrl);
+  const displayPaymentAmount = Number.isFinite(payableAmount) ? payableAmount.toFixed(2) : "0.00";
 %>
 
 <style>
   .purchase-accordion summary::-webkit-details-marker {
     display: none;
+  }
+
+  .payment-upi-id {
+    word-break: break-all;
   }
 </style>
 
@@ -23,25 +33,6 @@
       
       <div class="max-w-5xl w-full flex flex-col gap-4 items-center">
 
-          <!-- description  -->
-          <% if(requiresPayment){ %>
-          <details class="purchase-accordion bg-slate-900/50 backdrop-blur-sm border border-slate-800 p-4 rounded-2xl w-full">
-            <summary class="cursor-pointer flex items-center justify-between text-indigo-300 font-semibold text-sm md:text-base" style="list-style:none;">
-              <span>Payment Instructions</span>
-              <span class="text-xs text-slate-400">&#9662;</span>
-            </summary>
-            <div class="mt-3 text-slate-400 text-sm leading-relaxed">
-              Our payment gateway is currently unavailable. Please complete your payment manually by scanning the QR code shown in the form.
-              <br><br>
-              <span class="text-slate-300">Next Steps:</span> Upload the payment screenshot below. Once verified, you will receive the website link within 24 hours.
-              <p class="mt-3 text-xs text-slate-500">
-                If the link does not appear in your profile after 24 hours, please contact our support team.
-              </p>
-            </div>
-          </details>
-          <% } %>
-        
-
         <details class="purchase-accordion bg-slate-900/20 border border-slate-800/30 p-4 rounded-2xl w-full">
           <summary class="cursor-pointer flex items-center justify-between text-slate-300 font-semibold text-sm md:text-base" style="list-style:none;">
             <span>Privacy & Security</span>
@@ -51,7 +42,7 @@
             All VishLink websites are fully secure. When a link is deleted or expires, all associated images, messages, and data are permanently removed from our systems. We do not share, transfer, or sell user data to any third party. All submitted details remain securely stored with us and are protected at all times.
           </p>
         </details>
-                <% if(isTemporary) { %>
+        <% if(isTemporary) { %>
           <details class="purchase-accordion bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl w-full">
             <summary class="cursor-pointer flex items-center justify-between text-amber-300 font-semibold text-sm md:text-base" style="list-style:none;">
               <span>This link will expire in 10 days</span>
@@ -62,21 +53,10 @@
             </p>
           </details>
         <% } %>
-                <% if(isTemporary && temporaryPrice > 0 && creditsRequiredForPurchase > 0) { %>
-          <p class="w-full text-center rounded-2xl border border-indigo-500/30 bg-indigo-500/10 px-5 py-3 text-indigo-200 text-sm">
-            To get this website free, you need <span class="font-bold"><%= creditsRequiredForPurchase %> credits</span>.
-          </p>
-        <% } %>
+
         <!-- MAIN FORM -->
         
         <div class="glass-effect p-8 md:p-10 rounded-3xl shadow-2xl">
-          <!-- QR Code image  -->
-          <% if(requiresPayment){ %>
-            <div class="QRcodeBox">
-              <img src="<%= getOptimizedCloudinaryUrl('https://res.cloudinary.com/dcw90tnk1/image/upload/v1768291694/wishLink_dev/gedbuqpryaj7oqo8c3v1.png') %>" srcset="<%= getResponsiveCloudinarySrcSet('https://res.cloudinary.com/dcw90tnk1/image/upload/v1768291694/wishLink_dev/gedbuqpryaj7oqo8c3v1.png') %>" sizes="160px" alt="QR" loading="lazy" decoding="async">
-            </div>
-        
-          <% } %>
             <br>
             <p class="text-emerald-500 text-lg mb-2">All created links will be shown in your profile.</p>         
 
@@ -99,26 +79,6 @@
                     <input name="purchase[webName]" class="w-full px-4 py-3 rounded-xl form-input text-white"
                       value= "<%= JSON.stringify(selectedWeb.webName).slice(1, -1) %>" readonly >
                   </div>
-                  
-
-                  <!-- Price shown only for temporary paid links -->
-
-                  <% if( isTemporary && temporaryPrice !== 0 && !canUnlockWithCredits  ){ %>
-                  <div>
-                    <label class="block text-sm font-medium mb-2 text-slate-400">Price in &#8377;</label>
-                    <input name="purchase[price]" class="w-full px-4 py-3 rounded-xl form-input text-white"
-                      value="<%= temporaryPrice %>" readonly >
-                  </div>
-                  <% } %>
-                  
-                  <!-- Price shown for permanent links -->
-                  <% if( !isTemporary ){ %>
-                  <div>
-                    <label class="block text-sm font-medium mb-2 text-slate-400">Price in &#8377;</label>
-                    <input name="purchase[price]" class="w-full px-4 py-3 rounded-xl form-input text-white"
-                      value=<%=selectedWeb.priceForPermanent %> readonly >
-                  </div>
-                  <% } %>
 
                   <% if( !isTemporary ){ %>
                     <input type="hidden" name="purchase[isTemporary]" value="false">
@@ -152,20 +112,55 @@
                   </div>
                   <% } %>
 
-                  <% if(requiresPayment){ %>
                     <div class="col-span-1 md:col-span-2">
-                      <label class="block text-sm font-semibold mb-2 text-slate-300 ml-1">Payment Screenshot</label>
-                      <input name="paymentImage" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
-                          class="w-full px-4 py-3 rounded-xl form-input text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-500/10 file:text-emerald-400 hover:file:bg-emerald-500/20" required>
-                    </div>
-                  <% } %>
-
-                    <div>
                       <label class="block text-sm font-medium mb-2 text-slate-400">Special message</label>
                       <textarea name="purchase[specialMsg]" maxlength="350" rows="5"
                         placeholder="Wishing you endless happiness, good health, and success in everything you do..."
                         class="w-full px-4 py-3 rounded-xl form-input text-white" required></textarea>
                     </div>
+
+                  <% if(requiresPayment){ %>
+                    <div class="col-span-1 md:col-span-2">
+                      <details class="purchase-accordion rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
+                        <summary class="cursor-pointer flex items-center justify-between text-emerald-300 font-semibold text-sm" style="list-style:none;">
+                          <span>Payment - &#8377;<%= displayPaymentAmount %></span>
+                          <span class="text-xs text-emerald-200">&#9662;</span>
+                        </summary>
+
+                        <div class="mt-4 flex flex-col items-center space-y-4">
+                          <% if(hasAutoPayment) { %>
+                            <a
+                              href="<%= universalUpiLink %>"
+                              id="upiPayBtn"
+                              data-intent-link="<%= intentUpiLink %>"
+                              class="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-5 py-2.5 text-white font-semibold hover:bg-emerald-500 transition">
+                              Pay Now
+                            </a>
+                          <% } else { %>
+                            <p class="text-xs text-amber-300">UPI payment button not configured.</p>
+                          <% } %>
+                          
+                          <p>Or</p>
+
+                          <% if(hasManualQr) { %>
+                            <div class="flex flex-col items-center gap-3 rounded-xl border border-slate-700/60 bg-slate-900/35 p-3">
+                              <div class="QRcodeBox">
+                                <img src="<%= getOptimizedCloudinaryUrl(paymentQrImageUrl, 'payment') %>" srcset="<%= getResponsiveCloudinarySrcSet(paymentQrImageUrl, 'payment') %>" sizes="160px" alt="Payment QR Code" loading="lazy" decoding="async">
+                              </div>
+                            </div>
+                          <% } %>
+                        </div>
+                      </details>
+                    </div>
+                  <% } %>
+
+                  <% if(requiresPayment){ %>
+                    <div class="col-span-1 md:col-span-2">
+                      <label class="block text-sm font-semibold mb-2 text-slate-300">Payment Screenshot</label>
+                      <input name="paymentImage" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+                          class="w-full px-4 py-3 rounded-xl form-input text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-500/10 file:text-emerald-400 hover:file:bg-emerald-500/20" required>
+                    </div>
+                  <% } %>
 
                 </div>
 
@@ -173,9 +168,6 @@
                   class="w-full gradient-bg py-4 rounded-xl font-bold text-white shadow-lg shadow-indigo-500/30 hover:opacity-90 transition transform hover:-translate-y-1">
                   Create Link
                 </button>
-                <% if(isTemporary && canUnlockWithCredits && temporaryPrice > 0) {%> 
-                <p class="text-center">Using <%= creditsRequiredForPurchase %> Credits</p>
-                <% } %>
               </form>
         </div>
                 <details class="purchase-accordion w-full mt-2 bg-slate-900/20 border border-slate-800/30 p-4 rounded-2xl">
@@ -279,6 +271,38 @@
       
       const form = document.getElementById("BuyForm");
       const btn = document.getElementById("submitBtn");
+      const upiPayBtn = document.getElementById("upiPayBtn");
+
+      if (upiPayBtn) {
+        upiPayBtn.addEventListener("click", (event) => {
+          const upiLink = String(upiPayBtn.getAttribute("href") || "").trim();
+          const intentLink = String(upiPayBtn.dataset.intentLink || "").trim();
+          const userAgent = String(window.navigator.userAgent || "");
+          const isMobile = /Android|iPhone|iPad|iPod/i.test(userAgent);
+          const isAndroid = /Android/i.test(userAgent);
+
+          if (!upiLink) {
+            alert("UPI link is not configured yet.");
+            return;
+          }
+
+          if (!isMobile) {
+            alert("UPI apps open only on mobile. Please scan QR or open this page on your phone.");
+            event.preventDefault();
+            return;
+          }
+
+          event.preventDefault();
+          window.location.href = upiLink;
+
+          if (isAndroid && intentLink) {
+            window.setTimeout(() => {
+              window.location.href = intentLink;
+            }, 900);
+          }
+        });
+      }
+
       form.addEventListener("submit", async function (event) {
         if (form.dataset.optimizedSubmit === "true") return;
         event.preventDefault();
@@ -300,6 +324,3 @@
 
     </script>
 </body>
-
-
-
