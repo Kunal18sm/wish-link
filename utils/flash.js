@@ -15,16 +15,24 @@ function flashMiddleware(req, _res, next) {
     const key = String(type || "").trim();
     if (!key) return [];
 
-    const flashBucket = req.session.flash && typeof req.session.flash === "object"
-      ? req.session.flash
-      : {};
-    req.session.flash = flashBucket;
-
     if (!messages.length) {
+      const flashBucket =
+        req.session.flash && typeof req.session.flash === "object"
+          ? req.session.flash
+          : null;
+      if (!flashBucket) return [];
+
       const queued = normalizeFlashMessages(flashBucket[key]);
       delete flashBucket[key];
+      if (!Object.keys(flashBucket).length) {
+        delete req.session.flash;
+      }
       return queued;
     }
+
+    const flashBucket =
+      req.session.flash && typeof req.session.flash === "object" ? req.session.flash : {};
+    req.session.flash = flashBucket;
 
     const mergedMessage = messages.join(" ");
     const nextMessages = normalizeFlashMessages(flashBucket[key]);
