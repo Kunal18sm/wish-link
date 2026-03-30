@@ -7,7 +7,7 @@ const http = require("http");
 const mongoose = require("mongoose");
 const ejsMate = require("ejs-mate");
 const session = require("express-session");
-const flash = require("connect-flash");
+const MongoStore = require("connect-mongo");
 const cookieParser = require("cookie-parser");
 const { Server } = require("socket.io");
 const methodOverride = require("method-override");
@@ -27,6 +27,7 @@ const {
   clearAuthCookie,
   extractTokenFromCookieHeader,
 } = require("./utils/jwtAuth.js");
+const { flashMiddleware } = require("./utils/flash.js");
 
 const routes = require("./routes/samples.js");
 const webRoutes = require("./routes/website.js");
@@ -55,6 +56,7 @@ const MUTATING_REQUEST_WINDOW_MINUTES = Math.max(1, Math.round(MUTATING_REQUEST_
 const RATE_LIMIT_MESSAGE = `Rate limit exceeded: ${MUTATING_REQUEST_LIMIT} requests allowed every ${MUTATING_REQUEST_WINDOW_MINUTES} minutes.`;
 const AUTH_USER_SELECT = "_id username email isAdmin winnerCount dailyCreditClaim lightPalette";
 const SOCKET_USER_SELECT = "_id username email isAdmin";
+const SESSION_COOKIE_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 5;
 const MONGODB_CONNECT_OPTIONS = {
   maxPoolSize: Number(process.env.MONGO_MAX_POOL_SIZE || 20),
   minPoolSize: Number(process.env.MONGO_MIN_POOL_SIZE || 2),
@@ -83,6 +85,14 @@ function resolvePermanentMongoUrl() {
     "PERMANENT_DB_URL",
     "SECONDARY_MONGODB_URL",
     "SECONDARY_MONGO_URL",
+    "MongoDB_URL"
+  );
+}
+
+function resolveSessionMongoUrl() {
+  return getFirstEnv(
+    "SESSION_MONGODB_URL",
+    "SESSION_MONGO_URL",
     "MongoDB_URL"
   );
 }
@@ -410,21 +420,52 @@ mongoose.connection.on("error", (err) => {
 });
 
 const sessionOptions = {
-  secret: process.env.SESSION_SECRET,
+  secret: String(process.env.SESSION_SECRET || "").trim() || `wishlo-dev-session-${process.pid}`,
+  proxy: process.env.NODE_ENV === "production",
   resave: false,
   saveUninitialized: false,
   cookie: {
-    expires: Date.now() + 1000 * 60 * 60 * 5 * 24,
-    maxAge: 1000 * 60 * 60 * 5 * 24, // 5 days
+    maxAge: SESSION_COOKIE_MAX_AGE_MS,
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
   },
 };
 
+const sessionMongoUrl = resolveSessionMongoUrl();
+let sessionStore = null;
+
+if (sessionMongoUrl) {
+  try {
+    sessionStore = MongoStore.create({
+      mongoUrl: sessionMongoUrl,
+      collectionName: "sessions",
+      ttl: Math.floor(SESSION_COOKIE_MAX_AGE_MS / 1000),
+      autoRemove: "native",
+      stringify: false,
+    });
+
+    sessionStore.on("error", (err) => {
+      console.log("Session store runtime error:", err.message);
+    });
+  } catch (err) {
+    console.log("Session store setup failed. Falling back to MemoryStore:", err.message);
+  }
+} else {
+  console.log("SESSION_MONGODB_URL is not configured. Falling back to MemoryStore.");
+}
+
+if (sessionStore) {
+  sessionOptions.store = sessionStore;
+}
+
+if (!process.env.SESSION_SECRET) {
+  console.log("SESSION_SECRET is not configured. Using a temporary in-memory secret.");
+}
+
 const sessionMiddleware = session(sessionOptions);
 app.use(sessionMiddleware);
-app.use(flash());
+app.use(flashMiddleware);
 
 app.use(async (req, res, next) => {
   const token = extractTokenFromRequest(req);
