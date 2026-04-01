@@ -22,6 +22,7 @@ const {
   DAILY_REWARD_BY_DAY,
 } = require("./utils/creditUtils.js");
 const {
+  AUTH_COOKIE_NAME,
   extractTokenFromRequest,
   verifyAuthToken,
   clearAuthCookie,
@@ -153,6 +154,25 @@ function toErrorResponseMessage(err, statusCode) {
   }
 
   return String(err?.message || "Something went wrong.");
+}
+
+function appendVaryHeader(res, value) {
+  const normalizedValue = String(value || "").trim();
+  if (!normalizedValue) return;
+
+  const existingHeader = String(res.getHeader("Vary") || "");
+  const existingValues = existingHeader
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const alreadyExists = existingValues.some(
+    (item) => item.toLowerCase() === normalizedValue.toLowerCase()
+  );
+
+  if (alreadyExists) return;
+
+  const updatedValues = existingValues.concat(normalizedValue);
+  res.setHeader("Vary", updatedValues.join(", "));
 }
 
 app.locals.permanentPurchasedWeb = null;
@@ -602,12 +622,22 @@ app.use((req, res, next) => {
     return next();
   }
 
-  if (req.user) {
+  // Keep cache keys separate for guest vs authenticated requests.
+  appendVaryHeader(res, "Cookie");
+
+  const hasAuthCookie = Boolean(req.cookies?.[AUTH_COOKIE_NAME]);
+  const hasFlashMessages =
+    (Array.isArray(res.locals.success) && res.locals.success.length > 0) ||
+    (Array.isArray(res.locals.error) && res.locals.error.length > 0);
+  const requestPath = String(req.path || "");
+  const shouldDisablePublicCache =
+    requestPath === "/logInForm" || requestPath === "/signUpForm" || hasFlashMessages;
+
+  if (req.user || hasAuthCookie || shouldDisablePublicCache) {
     res.setHeader("Cache-Control", "private, no-cache, max-age=0, must-revalidate");
     return next();
   }
 
-  const requestPath = String(req.path || "");
   const seoLandingPaths = new Set([
     "/birthday-gift-website",
     "/anniversary-gift-website",

@@ -228,6 +228,8 @@
             try {
                 const loginResponse = await fetch("/auth/google", {
                     method: "POST",
+                    credentials: "same-origin",
+                    cache: "no-store",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ credential: response.credential }),
                 });
@@ -238,7 +240,9 @@
                     return;
                 }
 
-                window.location.href = payload.redirectTo || "/";
+                const redirectUrl = new URL(payload.redirectTo || "/", window.location.origin);
+                redirectUrl.searchParams.set("authRefresh", String(Date.now()));
+                window.location.replace(redirectUrl.toString());
             } catch (_err) {
                 alert("Google sign-in failed. Please try again.");
             }

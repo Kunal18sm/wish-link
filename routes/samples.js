@@ -155,6 +155,12 @@ const SEO_LANDING_PAGES = {
   },
 };
 
+function setNoStoreHeaders(res) {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+}
+
 function getFrameTemplateModel(req) {
   return req.app.locals.permanentFrameTemplate || null;
 }
@@ -582,8 +588,9 @@ router.post("/photo-frames/download/unlock", wrapAsync(async (req, res) => {
 
 // Get signUp form
 router.get("/signUpForm", wrapAsync(async (req, res) => {
+  setNoStoreHeaders(res);
   if (req.user) {
-    req.flash("error", "you are already logged in");
+    req.flash("success", "You are already logged in.");
     return res.redirect("/");
   }
 
@@ -597,6 +604,7 @@ router.get("/signUpForm", wrapAsync(async (req, res) => {
 
 // User signUp
 router.post("/signUp", wrapAsync(async (req, res) => {
+  setNoStoreHeaders(res);
   try {
     const { username, password, email } = req.body;
     const newUser = new user({
@@ -618,6 +626,12 @@ router.post("/signUp", wrapAsync(async (req, res) => {
 
 // get login form
 router.get("/logInForm", wrapAsync(async (req, res) => {
+  setNoStoreHeaders(res);
+  if (req.user) {
+    req.flash("success", "You are already logged in.");
+    return res.redirect("/");
+  }
+
   res.render("logIn", {
     title: "Login - VishLink",
     description: "Login to VishLink to manage and share your personalized wishing websites.",
@@ -627,6 +641,7 @@ router.get("/logInForm", wrapAsync(async (req, res) => {
 }));
 
 router.post("/auth/google", wrapAsync(async (req, res) => {
+  setNoStoreHeaders(res);
   if (!googleOAuthClient || !GOOGLE_CLIENT_ID) {
     return res.status(503).json({
       ok: false,
@@ -698,6 +713,7 @@ function authenticateUserByPassword(username, password) {
 
 // login
 router.post("/login", wrapAsync(async (req, res) => {
+  setNoStoreHeaders(res);
   const { username, password } = req.body;
   const authResult = await authenticateUserByPassword(username, password);
 
@@ -775,6 +791,7 @@ router.post("/credits/claim-daily", isLoggedIn, wrapAsync(async (req, res) => {
 
 // logOut
 router.get("/logout", isLoggedIn, (req, res) => {
+  setNoStoreHeaders(res);
   clearAuthCookie(res);
   req.flash("success", "you are logged out");
   return res.redirect("/");
