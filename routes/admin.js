@@ -1676,12 +1676,12 @@ router.get(
   isLoggedIn,
   isAdmin,
   wrapAsync(async (req, res) => {
-    const tenDaysAgo = new Date();
-    tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
     const userPurchased = toScopedDocs(
       await purchasedWeb
-        .find({ date: { $lte: tenDaysAgo }, isTemporary: true })
+        .find({ date: { $lte: oneMonthAgo }, isTemporary: true })
         .select(REQUEST_CARD_SELECT)
         .sort({ _id: -1 })
         .lean(),

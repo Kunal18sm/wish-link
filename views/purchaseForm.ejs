@@ -45,7 +45,7 @@
         <% if(isTemporary) { %>
           <details class="purchase-accordion bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl w-full">
             <summary class="cursor-pointer flex items-center justify-between text-amber-300 font-semibold text-sm md:text-base" style="list-style:none;">
-              <span>This link will expire in 10 days</span>
+              <span>This link will expire in 1 month</span>
               <span class="text-xs text-amber-300">&#9662;</span>
             </summary>
             <p class="mt-3 text-amber-100/90 text-sm leading-relaxed">
@@ -128,26 +128,28 @@
                         </summary>
 
                         <div class="mt-4 flex flex-col items-center space-y-4">
-                          <% if(hasAutoPayment) { %>
-                            <a
-                              href="<%= universalUpiLink %>"
-                              id="upiPayBtn"
-                              data-intent-link="<%= intentUpiLink %>"
-                              class="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-5 py-2.5 text-white font-semibold hover:bg-emerald-500 transition">
-                              Pay Now
-                            </a>
-                          <% } else { %>
-                            <p class="text-xs text-amber-300">UPI payment button not configured.</p>
-                          <% } %>
-                          
-                          <p>Or</p>
-
                           <% if(hasManualQr) { %>
                             <div class="flex flex-col items-center gap-3 rounded-xl border border-slate-700/60 bg-slate-900/35 p-3">
                               <div class="QRcodeBox">
                                 <img src="<%= getOptimizedCloudinaryUrl(paymentQrImageUrl, 'payment') %>" srcset="<%= getResponsiveCloudinarySrcSet(paymentQrImageUrl, 'payment') %>" sizes="160px" alt="Payment QR Code" loading="lazy" decoding="async">
                               </div>
                             </div>
+                          <% } %>
+
+                          <% if(hasManualQr && hasAutoPayment) { %>
+                            <p>Or</p>
+                          <% } %>
+
+                          <% if(hasAutoPayment) { %>
+                            <a
+                              href="<%= universalUpiLink %>"
+                              id="upiPayBtn"
+                              data-intent-link="<%= intentUpiLink %>"
+                              class="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-5 py-2.5 text-white font-semibold hover:bg-emerald-500 transition">
+                              Pay Using UPI
+                            </a>
+                          <% } else { %>
+                            <p class="text-xs text-amber-300">UPI payment button not configured.</p>
                           <% } %>
                         </div>
                       </details>
