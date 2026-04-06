@@ -9,7 +9,7 @@ const { isLoggedIn } = require("../middleware.js");
 const contactSchema = require("../models/contact.js");
 const { createAuthToken, setAuthCookie, clearAuthCookie } = require("../utils/jwtAuth.js");
 const { getCreditDateKey, getDailyRewardCredits } = require("../utils/creditUtils.js");
-const { getHomeSamples, getCategorySamples } = require("../utils/webSampleCache.js");
+const { getCategorySamples } = require("../utils/webSampleCache.js");
 const { getBannerSlides, BANNER_PAGES } = require("../utils/bannerConfigCache.js");
 
 const SITE_URL = (process.env.SITE_URL || "https://wishlink-7j0a.onrender.com").replace(/\/+$/, "");
@@ -302,59 +302,7 @@ async function loadMergedPurchases(req, authorId) {
 
 // home route
 router.get("/", wrapAsync(async (req, res) => {
-  res.locals.message = req.flash("success");
-  const FrameTemplate = getFrameTemplateModel(req);
-  const [allSamples, bannerSlides, rawTopPhotoFrameTemplates] = await Promise.all([
-    getHomeSamples(),
-    getBannerSlides(BANNER_PAGES.HOME),
-    FrameTemplate
-      ? FrameTemplate.find({ isActive: true })
-        .select("name slug description frameImage canvas imageSlots texts isActive")
-        .sort({ createdAt: -1 })
-        .limit(10)
-        .lean()
-      : Promise.resolve([]),
-  ]);
-  const topTemplates = allSamples.slice(0, 10);
-  const topPhotoFrameTemplates = rawTopPhotoFrameTemplates.map((template) =>
-    toClientFrameTemplate(template, res)
-  );
-
-  res.render("home", {
-    allSamples,
-    topTemplates,
-    topPhotoFrameTemplates,
-    bannerSlides,
-    designCssVariant: "lite",
-    ...buildLcpImageMeta(res, getPrimaryBannerImageUrl(bannerSlides)),
-    title: "VishLink - Birthday, Anniversary & Personalized Wishing Website Creator",
-    description:
-      "Create personalized birthday, anniversary, and celebration wishing websites. Share a unique gift link instantly with VishLink.",
-    keywords:
-      "VishLink, birthday website creator, anniversary website maker, personalized wishing website, digital gift link",
-    canonical: `${SITE_URL}/`,
-    structuredData: [
-      {
-        "@context": "https://schema.org",
-        "@type": "CollectionPage",
-        name: "Personalized Wishing Website Templates",
-        url: `${SITE_URL}/`,
-        description:
-          "Browse personalized wishing website templates for birthdays, anniversaries, and special moments.",
-      },
-      {
-        "@context": "https://schema.org",
-        "@type": "ItemList",
-        name: "Top Wishing Website Templates",
-        itemListElement: topTemplates.slice(0, 10).map((template, index) => ({
-          "@type": "ListItem",
-          position: index + 1,
-          name: String(template?.webName || "").trim(),
-          url: String(template?.webUrl || "").trim() || `${SITE_URL}/`,
-        })),
-      },
-    ],
-  });
+  return res.redirect("/category/all");
 }));
 
 // category route
