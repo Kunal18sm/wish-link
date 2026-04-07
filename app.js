@@ -55,7 +55,18 @@ const SITE_URL = (process.env.SITE_URL || "https://wishlink-7j0a.onrender.com").
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || "";
 const ASSET_VERSION = process.env.ASSET_VERSION || "20260329l";
 const ENABLE_CLOUDINARY_IMAGE_PROXY = process.env.CLOUDINARY_IMAGE_PROXY !== "false";
-const ENABLE_ANALYTICS = process.env.ENABLE_ANALYTICS === "true";
+const GA_MEASUREMENT_ID = String(
+  process.env.GA_MEASUREMENT_ID ||
+  process.env.GOOGLE_ANALYTICS_MEASUREMENT_ID ||
+  process.env.GOOGLE_ANALYTICS_ID ||
+  "G-L0F12E1ENT"
+).trim();
+const ENABLE_ANALYTICS = (() => {
+  const rawValue = String(process.env.ENABLE_ANALYTICS || "").trim().toLowerCase();
+  if (rawValue === "true") return true;
+  if (rawValue === "false") return false;
+  return process.env.NODE_ENV === "production";
+})();
 const MUTATING_REQUEST_WINDOW_MS = Number(process.env.MUTATING_REQUEST_WINDOW_MS || 10 * 60 * 1000);
 const MUTATING_REQUEST_LIMIT = Number(process.env.MUTATING_REQUEST_LIMIT || 5);
 const MUTATING_REQUEST_WINDOW_MINUTES = Math.max(1, Math.round(MUTATING_REQUEST_WINDOW_MS / (60 * 1000)));
@@ -587,7 +598,8 @@ app.use(async (req, res, next) => {
         }
       : null;
   res.locals.googleClientId = GOOGLE_CLIENT_ID;
-  res.locals.enableAnalytics = ENABLE_ANALYTICS;
+  res.locals.gaMeasurementId = GA_MEASUREMENT_ID;
+  res.locals.enableAnalytics = ENABLE_ANALYTICS && Boolean(GA_MEASUREMENT_ID);
   res.locals.designCssVariant = "full";
   res.locals.disableDesignCss = false;
   res.locals.assetVersion = ASSET_VERSION;

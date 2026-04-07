@@ -123,8 +123,19 @@
                     <div class="col-span-1 md:col-span-2">
                       <details class="purchase-accordion rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
                         <summary class="cursor-pointer flex items-center justify-between text-emerald-300 font-semibold text-sm" style="list-style:none;">
-                          <span>Payment - &#8377;<%= displayPaymentAmount %></span>
-                          <span class="text-xs text-emerald-200">&#9662;</span>
+                          <span>Price - &#8377;<%= displayPaymentAmount %></span>
+                          <span class="inline-flex items-center gap-2 ml-auto">
+                            <span class="text-xs text-emerald-200">&#9662;</span>
+                            <% if(hasAutoPayment) { %>
+                              <a
+                                href="<%= universalUpiLink %>"
+                                id="upiPayBtn"
+                                data-intent-link="<%= intentUpiLink %>"
+                                class="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-3 py-1.5 text-xs text-white font-semibold hover:bg-emerald-500 transition">
+                                Pay
+                              </a>
+                            <% } %>
+                          </span>
                         </summary>
 
                         <div class="mt-4 flex flex-col items-center space-y-4">
@@ -136,19 +147,7 @@
                             </div>
                           <% } %>
 
-                          <% if(hasManualQr && hasAutoPayment) { %>
-                            <p>Or</p>
-                          <% } %>
-
-                          <% if(hasAutoPayment) { %>
-                            <a
-                              href="<%= universalUpiLink %>"
-                              id="upiPayBtn"
-                              data-intent-link="<%= intentUpiLink %>"
-                              class="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-5 py-2.5 text-white font-semibold hover:bg-emerald-500 transition">
-                              Pay Using UPI
-                            </a>
-                          <% } else { %>
+                          <% if(!hasAutoPayment) { %>
                             <p class="text-xs text-amber-300">UPI payment button not configured.</p>
                           <% } %>
                         </div>
@@ -277,6 +276,7 @@
 
       if (upiPayBtn) {
         upiPayBtn.addEventListener("click", (event) => {
+          event.stopPropagation();
           const upiLink = String(upiPayBtn.getAttribute("href") || "").trim();
           const intentLink = String(upiPayBtn.dataset.intentLink || "").trim();
           const userAgent = String(window.navigator.userAgent || "");

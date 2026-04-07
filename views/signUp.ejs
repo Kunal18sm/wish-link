@@ -28,33 +28,18 @@
     <link rel="stylesheet" href="/design.css?v=<%= assetVersion %>" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="/design.css?v=<%= assetVersion %>"></noscript>
     <% if (enableAnalytics) { %>
-    <!-- Google Analytics (lazy loaded after page becomes idle) -->
+    <!-- Google Analytics -->
     <script>
         (function () {
-            var gaLoaded = false;
+            window.dataLayer = window.dataLayer || [];
+            window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+            window.gtag("js", new Date());
+            window.gtag("config", "<%= gaMeasurementId %>");
 
-            function loadGa() {
-                if (gaLoaded) return;
-                gaLoaded = true;
-
-                window.dataLayer = window.dataLayer || [];
-                window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
-                window.gtag("js", new Date());
-                window.gtag("config", "G-L0F12E1ENT");
-
-                var gaScript = document.createElement("script");
-                gaScript.async = true;
-                gaScript.src = "https://www.googletagmanager.com/gtag/js?id=G-L0F12E1ENT";
-                document.head.appendChild(gaScript);
-            }
-
-            window.addEventListener("load", function () {
-                if ("requestIdleCallback" in window) {
-                    window.requestIdleCallback(loadGa, { timeout: 2500 });
-                } else {
-                    setTimeout(loadGa, 1200);
-                }
-            }, { once: true });
+            var gaScript = document.createElement("script");
+            gaScript.async = true;
+            gaScript.src = "https://www.googletagmanager.com/gtag/js?id=<%= gaMeasurementId %>";
+            document.head.appendChild(gaScript);
         })();
     </script>
     <% } %>
