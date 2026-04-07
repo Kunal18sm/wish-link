@@ -35,6 +35,12 @@
           class="hidden px-3.5 py-2 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-200 text-xs font-semibold hover:bg-amber-500/20 transition">
           Disable Push
         </button>
+        <button
+          id="adminTestPushBtn"
+          type="button"
+          class="hidden px-3.5 py-2 rounded-xl border border-sky-500/30 bg-sky-500/10 text-sky-200 text-xs font-semibold hover:bg-sky-500/20 transition">
+          Test Notification
+        </button>
         <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border border-rose-500/30 bg-rose-500/15 text-rose-300">
           Unread: <span id="adminUnreadCount" class="ml-1.5"><%= unreadCount %></span>
         </span>
@@ -133,6 +139,7 @@
     const pushStatusChip = document.getElementById("adminPushStatus");
     const enablePushBtn = document.getElementById("adminEnablePushBtn");
     const disablePushBtn = document.getElementById("adminDisablePushBtn");
+    const testPushBtn = document.getElementById("adminTestPushBtn");
     const notificationById = new Map();
     let realtimeConnected = false;
     let pushServerEnabled = false;
@@ -167,6 +174,7 @@
       const config = options || {};
       const showEnable = Boolean(config.showEnable);
       const showDisable = Boolean(config.showDisable);
+      const showTest = Boolean(config.showTest);
 
       if (enablePushBtn) {
         if (showEnable) enablePushBtn.classList.remove("hidden");
@@ -176,6 +184,11 @@
       if (disablePushBtn) {
         if (showDisable) disablePushBtn.classList.remove("hidden");
         else disablePushBtn.classList.add("hidden");
+      }
+
+      if (testPushBtn) {
+        if (showTest) testPushBtn.classList.remove("hidden");
+        else testPushBtn.classList.add("hidden");
       }
     }
 
@@ -259,15 +272,16 @@
 
     async function ensurePushSubscribed(options) {
       const config = options || {};
-      if (!pushServerEnabled || !pushPublicKey) {
-        setPushStatus("Push service not configured on server.", "warn");
-        renderPushButtons({ showEnable: false, showDisable: false });
-        return false;
-      }
 
       if (!("Notification" in window) || !("PushManager" in window) || !("serviceWorker" in navigator)) {
         setPushStatus("Push is not supported in this browser.", "warn");
-        renderPushButtons({ showEnable: false, showDisable: false });
+        renderPushButtons({ showEnable: false, showDisable: false, showTest: false });
+        return false;
+      }
+
+      if (!window.isSecureContext) {
+        setPushStatus("Notification ke liye HTTPS required hai.", "warn");
+        renderPushButtons({ showEnable: false, showDisable: false, showTest: false });
         return false;
       }
 
@@ -279,12 +293,18 @@
       if (permission !== "granted") {
         if (permission === "denied") {
           setPushStatus("Push blocked. Browser settings me allow karein.", "error");
-          renderPushButtons({ showEnable: false, showDisable: false });
+          renderPushButtons({ showEnable: false, showDisable: false, showTest: false });
         } else {
           setPushStatus("Enable button dabake push permission allow karein.", "info");
-          renderPushButtons({ showEnable: true, showDisable: false });
+          renderPushButtons({ showEnable: true, showDisable: false, showTest: false });
         }
         return false;
+      }
+
+      if (!pushServerEnabled || !pushPublicKey) {
+        setPushStatus("Permission mil gayi, but VAPID keys missing hain.", "warn");
+        renderPushButtons({ showEnable: false, showDisable: false, showTest: true });
+        return true;
       }
 
       const registration = await getAdminServiceWorkerRegistration();
@@ -300,8 +320,43 @@
       const serializedSubscription = subscription.toJSON ? subscription.toJSON() : subscription;
       await saveSubscriptionOnServer(serializedSubscription);
       setPushStatus("Push enabled. Ab website band hone par bhi notification ayegi.", "success");
-      renderPushButtons({ showEnable: false, showDisable: true });
+      renderPushButtons({ showEnable: false, showDisable: true, showTest: true });
       return true;
+    }
+
+    async function showTestBrowserNotification() {
+      if (!("Notification" in window)) {
+        setPushStatus("Notification API browser me supported nahi hai.", "warn");
+        return;
+      }
+
+      if (Notification.permission !== "granted") {
+        setPushStatus("Pehle notification permission allow karo.", "warn");
+        return;
+      }
+
+      try {
+        if ("serviceWorker" in navigator) {
+          const registration = await getAdminServiceWorkerRegistration();
+          await registration.showNotification("VishLink Test", {
+            body: "Browser notification permission successful hai.",
+            icon: "/assets/icon-192.png",
+            badge: "/assets/icon-192.png",
+            tag: "vishlink-test-notification",
+            data: { url: "/requests/dashboard#adminNotifications" },
+          });
+        } else {
+          // Fallback for browsers where SW notification is unavailable.
+          // eslint-disable-next-line no-new
+          new Notification("VishLink Test", {
+            body: "Browser notification permission successful hai.",
+          });
+        }
+
+        setPushStatus("Test notification bhej di gayi.", "success");
+      } catch (_err) {
+        setPushStatus("Test notification bhejne me issue aa gaya.", "error");
+      }
     }
 
     async function disablePushSubscription() {
@@ -310,14 +365,14 @@
       const registration = await navigator.serviceWorker.getRegistration("/");
       if (!registration) {
         setPushStatus("Push disabled.", "warn");
-        renderPushButtons({ showEnable: true, showDisable: false });
+        renderPushButtons({ showEnable: true, showDisable: false, showTest: Notification.permission === "granted" });
         return;
       }
 
       const subscription = await registration.pushManager.getSubscription();
       if (!subscription) {
         setPushStatus("Push disabled.", "warn");
-        renderPushButtons({ showEnable: true, showDisable: false });
+        renderPushButtons({ showEnable: true, showDisable: false, showTest: Notification.permission === "granted" });
         return;
       }
 
@@ -328,7 +383,7 @@
       }
 
       setPushStatus("Push disabled on this device.", "warn");
-      renderPushButtons({ showEnable: true, showDisable: false });
+      renderPushButtons({ showEnable: true, showDisable: false, showTest: Notification.permission === "granted" });
     }
 
     async function initializePushControls() {
@@ -336,36 +391,45 @@
       pushServerEnabled = Boolean(pushConfig.enabled);
       pushPublicKey = String(pushConfig.publicKey || "").trim();
 
-      if (!pushServerEnabled || !pushPublicKey) {
-        setPushStatus("Server push not configured. VAPID keys missing.", "warn");
-        renderPushButtons({ showEnable: false, showDisable: false });
+      if (!("Notification" in window) || !("PushManager" in window) || !("serviceWorker" in navigator)) {
+        setPushStatus("Push is not supported in this browser.", "warn");
+        renderPushButtons({ showEnable: false, showDisable: false, showTest: false });
         return;
       }
 
-      if (!("Notification" in window) || !("PushManager" in window) || !("serviceWorker" in navigator)) {
-        setPushStatus("Push is not supported in this browser.", "warn");
-        renderPushButtons({ showEnable: false, showDisable: false });
+      if (!window.isSecureContext) {
+        setPushStatus("Notification ke liye HTTPS required hai.", "warn");
+        renderPushButtons({ showEnable: false, showDisable: false, showTest: false });
         return;
       }
 
       if (Notification.permission === "granted") {
-        try {
-          await ensurePushSubscribed({ requestPermission: false });
-        } catch (_err) {
-          setPushStatus("Push setup failed. Retry karo.", "error");
-          renderPushButtons({ showEnable: true, showDisable: false });
+        if (pushServerEnabled && pushPublicKey) {
+          try {
+            await ensurePushSubscribed({ requestPermission: false });
+          } catch (_err) {
+            setPushStatus("Push setup failed. Retry karo.", "error");
+            renderPushButtons({ showEnable: true, showDisable: false, showTest: true });
+          }
+        } else {
+          setPushStatus("Permission granted hai, but VAPID keys missing hain.", "warn");
+          renderPushButtons({ showEnable: false, showDisable: false, showTest: true });
         }
         return;
       }
 
       if (Notification.permission === "denied") {
         setPushStatus("Push blocked. Browser settings me notifications allow karo.", "error");
-        renderPushButtons({ showEnable: false, showDisable: false });
+        renderPushButtons({ showEnable: false, showDisable: false, showTest: false });
         return;
       }
 
-      setPushStatus("Enable button dabao to mobile push start ho jayega.", "info");
-      renderPushButtons({ showEnable: true, showDisable: false });
+      if (pushServerEnabled && pushPublicKey) {
+        setPushStatus("Enable button dabao to mobile push start ho jayega.", "info");
+      } else {
+        setPushStatus("Permission mang sakte ho, par VAPID keys abhi missing hain.", "warn");
+      }
+      renderPushButtons({ showEnable: true, showDisable: false, showTest: false });
     }
 
     function escapeHtml(value) {
@@ -635,7 +699,11 @@
           await ensurePushSubscribed({ requestPermission: true });
         } catch (_err) {
           setPushStatus("Push enable failed. Dobara try karo.", "error");
-          renderPushButtons({ showEnable: true, showDisable: false });
+          renderPushButtons({
+            showEnable: Notification.permission !== "denied",
+            showDisable: false,
+            showTest: Notification.permission === "granted",
+          });
         } finally {
           enablePushBtn.disabled = false;
         }
@@ -651,6 +719,17 @@
           setPushStatus("Push disable failed. Dobara try karo.", "error");
         } finally {
           disablePushBtn.disabled = false;
+        }
+      });
+    }
+
+    if (testPushBtn) {
+      testPushBtn.addEventListener("click", async function () {
+        testPushBtn.disabled = true;
+        try {
+          await showTestBrowserNotification();
+        } finally {
+          testPushBtn.disabled = false;
         }
       });
     }
