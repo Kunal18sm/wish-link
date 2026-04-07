@@ -4,6 +4,10 @@ const router = express.Router({ mergeParams: true });
 const wrapAsync = require("../utils/wrapAsync.js");
 const Chat = require("../models/chat.js");
 const user = require("../models/user.js");
+const {
+  createAdminNotification,
+  markAdminNotificationsAsRead,
+} = require("../utils/adminNotifications.js");
 const { isLoggedIn, isAdmin } = require("../middleware.js");
 const {
   cache,
@@ -131,6 +135,30 @@ router.post(
     invalidateChatInboxCache();
     const latestMessage = chat.messages[chat.messages.length - 1];
 
+    try {
+      await createAdminNotification(
+        req.app,
+        {
+          type: "chat_message",
+          title: "New Chat Message",
+          message: `${req.user?.username || "A user"} sent: ${message}`,
+          link: `/chat/admin/${chat._id}`,
+          entityType: "chat",
+          entityId: String(chat._id),
+          dedupeKey: `chat:${chat._id}`,
+          actor: req.user,
+          meta: {
+            chatId: String(chat._id),
+          },
+        },
+        {
+          upsertUnreadByDedupeKey: true,
+        }
+      );
+    } catch (notifyErr) {
+      console.log("Admin chat notification warning:", notifyErr?.message || notifyErr);
+    }
+
     const io = req.app.get("io");
     if (io) {
       const chatId = String(chat._id);
@@ -220,6 +248,12 @@ router.get(
       );
       invalidateChatInboxCache();
     }
+
+    await markAdminNotificationsAsRead(req.app, {
+      type: "chat_message",
+      entityType: "chat",
+      entityId: String(chatId),
+    });
 
     res.render("chat/adminChat", {
       chat,
@@ -331,6 +365,10 @@ router.delete(
     }
 
     invalidateChatInboxCache();
+    await markAdminNotificationsAsRead(req.app, {
+      entityType: "chat",
+      entityId: String(chatId),
+    });
 
     const io = req.app.get("io");
     if (io) {

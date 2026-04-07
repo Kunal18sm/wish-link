@@ -97,3 +97,87 @@ self.addEventListener("fetch", (event) => {
     })
   );
 });
+
+function toPushPayload(event) {
+  if (!event?.data) {
+    return {
+      title: "VishLink Admin",
+      body: "New update available.",
+      url: "/requests/dashboard#adminNotifications",
+      icon: "/assets/icon-192.png",
+      badge: "/assets/icon-192.png",
+      tag: "vishlink-admin",
+    };
+  }
+
+  try {
+    const data = event.data.json();
+    const title = String(data?.title || "VishLink Admin").trim().slice(0, 100) || "VishLink Admin";
+    const body = String(data?.body || "New update available.").trim().slice(0, 220) || "New update available.";
+    const url = String(data?.url || data?.link || "/requests/dashboard#adminNotifications").trim();
+    const icon = String(data?.icon || "/assets/icon-192.png").trim() || "/assets/icon-192.png";
+    const badge = String(data?.badge || "/assets/icon-192.png").trim() || "/assets/icon-192.png";
+    const tag = String(data?.tag || "vishlink-admin").trim().slice(0, 100);
+
+    return {
+      title,
+      body,
+      url: url.startsWith("/") ? url : "/requests/dashboard#adminNotifications",
+      icon,
+      badge,
+      tag,
+    };
+  } catch (_err) {
+    const text = String(event.data.text() || "").trim();
+    return {
+      title: "VishLink Admin",
+      body: text || "New update available.",
+      url: "/requests/dashboard#adminNotifications",
+      icon: "/assets/icon-192.png",
+      badge: "/assets/icon-192.png",
+      tag: "vishlink-admin",
+    };
+  }
+}
+
+self.addEventListener("push", (event) => {
+  const payload = toPushPayload(event);
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: payload.icon,
+      badge: payload.badge,
+      tag: payload.tag,
+      renotify: true,
+      data: {
+        url: payload.url,
+      },
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = String(event.notification?.data?.url || "/requests/dashboard#adminNotifications");
+
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (clientList) => {
+      for (const client of clientList) {
+        if (!client || !client.url) continue;
+        const clientUrl = new URL(client.url);
+        if (clientUrl.origin === self.location.origin) {
+          if (typeof client.navigate === "function") {
+            try {
+              await client.navigate(targetUrl);
+            } catch (_err) {
+              // Ignore navigation failure and try focus.
+            }
+          }
+          return client.focus();
+        }
+      }
+
+      return clients.openWindow(targetUrl);
+    })
+  );
+});

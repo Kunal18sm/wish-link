@@ -1,5 +1,7 @@
-﻿<% layout("/layouts/boilerplate") %>
+<% layout("/layouts/boilerplate") %>
 <% const cards = Array.isArray(adminCards) ? adminCards : []; %>
+<% const notifications = Array.isArray(adminNotifications) ? adminNotifications : []; %>
+<% const unreadCount = Number(unreadNotificationCount || 0); %>
 
 <section class="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-10 space-y-7">
   <div class="rounded-3xl mb-8 p-4 border border-slate-800 bg-slate-900/70 px-6 py-6 md:px-8 md:py-7 shadow-xl">
@@ -11,17 +13,100 @@
     </div>
   </div>
 
+  <section id="adminNotifications" class="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6 shadow-xl">
+    <div class="flex flex-wrap items-start justify-between gap-4 border-b border-slate-800 pb-4">
+      <div>
+        <h2 class="text-xl md:text-2xl font-bold text-white">Admin Notifications</h2>
+        <p class="text-slate-400 text-sm mt-1">Template, request, aur chat activity yahan live show hogi.</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="adminPushStatus" class="hidden inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border border-indigo-500/25 bg-indigo-500/10 text-indigo-200">
+          Push: Checking...
+        </span>
+        <button
+          id="adminEnablePushBtn"
+          type="button"
+          class="hidden px-3.5 py-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-200 text-xs font-semibold hover:bg-emerald-500/20 transition">
+          Enable Mobile Push
+        </button>
+        <button
+          id="adminDisablePushBtn"
+          type="button"
+          class="hidden px-3.5 py-2 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-200 text-xs font-semibold hover:bg-amber-500/20 transition">
+          Disable Push
+        </button>
+        <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border border-rose-500/30 bg-rose-500/15 text-rose-300">
+          Unread: <span id="adminUnreadCount" class="ml-1.5"><%= unreadCount %></span>
+        </span>
+        <button
+          id="markAllNotificationsReadBtn"
+          type="button"
+          class="px-3.5 py-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 text-indigo-200 text-xs font-semibold hover:bg-indigo-500/20 transition <%= unreadCount > 0 ? '' : 'hidden' %>">
+          Mark All Read
+        </button>
+      </div>
+    </div>
+
+    <div id="adminNotificationEmpty" class="<%= notifications.length ? 'hidden' : '' %> mt-5 rounded-2xl border border-dashed border-slate-700 bg-slate-950/40 p-6 text-center">
+      <p class="text-slate-400 text-sm">Abhi koi notification nahi hai.</p>
+    </div>
+
+    <ul id="adminNotificationList" class="mt-5 space-y-3 <%= notifications.length ? '' : 'hidden' %>">
+      <% notifications.forEach((notification) => { %>
+        <li
+          data-notification-id="<%= notification.id %>"
+          data-notification-read="<%= notification.isRead ? 'true' : 'false' %>"
+          data-notification-updated="<%= notification.updatedAt ? new Date(notification.updatedAt).toISOString() : '' %>"
+          class="rounded-2xl border p-4 md:p-4 transition <%= notification.isRead ? 'border-slate-800 bg-slate-950/40' : 'border-indigo-500/30 bg-indigo-500/10' %>">
+          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <h3 class="text-sm md:text-base font-semibold text-white break-words"><%= notification.title %></h3>
+                <% if (!notification.isRead) { %>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border border-rose-500/30 bg-rose-500/15 text-rose-300">NEW</span>
+                <% } %>
+              </div>
+              <p class="mt-1 text-sm text-slate-300 break-words"><%= notification.message %></p>
+              <p class="mt-2 text-xs text-slate-500" data-role="metaLine">
+                <%= notification.actorName ? notification.actorName : 'System' %>
+                <% if (notification.updatedAt) { %>
+                  <span class="mx-1">|</span>
+                  <span data-role="time"><%= new Date(notification.updatedAt).toLocaleString('en-IN') %></span>
+                <% } %>
+              </p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <a
+                href="<%= notification.link || '/requests/dashboard' %>"
+                data-action="open"
+                class="px-3 py-2 rounded-lg border border-slate-700 text-slate-200 text-xs font-semibold hover:border-indigo-500 hover:text-indigo-200 transition">
+                Open
+              </a>
+              <% if (!notification.isRead) { %>
+                <button
+                  type="button"
+                  data-action="mark-read"
+                  class="px-3 py-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-xs font-semibold hover:bg-emerald-500/20 transition">
+                  Mark Read
+                </button>
+              <% } %>
+            </div>
+          </div>
+        </li>
+      <% }) %>
+    </ul>
+  </section>
+
   <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
     <% cards.forEach((card) => { %>
       <a
         href="<%= card.href %>"
-        class="group relative overflow-hidden rounded-2xl border bg-slate-900/70 p-4 md:p-5 min-h-[184px] md:min-h-[198px] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(0,0,0,0.35)] <%= card.toneClass || 'border-slate-700' %>"
-      >
+        class="group relative overflow-hidden rounded-2xl border bg-slate-900/70 p-4 md:p-5 min-h-[184px] md:min-h-[198px] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(0,0,0,0.35)] <%= card.toneClass || 'border-slate-700' %>">
         <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-300 bg-gradient-to-br <%= card.toneClass || 'from-slate-700/20 to-slate-800/20' %> pointer-events-none"></div>
 
         <div class="relative h-full flex flex-col items-center text-center justify-center gap-3">
           <div class="w-14 h-14 rounded-2xl border border-white/10 bg-slate-950/80 flex items-center justify-center text-2xl md:text-3xl shadow-inner">
-            <span aria-hidden="true"><%= card.icon || "🔗" %></span>
+            <span aria-hidden="true"><%= card.icon || "Link" %></span>
           </div>
           <h2 class="text-sm md:text-base font-semibold text-white leading-tight">
             <%= card.title %>
@@ -34,3 +119,580 @@
     <% }); %>
   </div>
 </section>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  (function () {
+    const notificationRoot = document.getElementById("adminNotifications");
+    if (!notificationRoot) return;
+
+    const listElement = document.getElementById("adminNotificationList");
+    const emptyElement = document.getElementById("adminNotificationEmpty");
+    const unreadCountElement = document.getElementById("adminUnreadCount");
+    const markAllButton = document.getElementById("markAllNotificationsReadBtn");
+    const pushStatusChip = document.getElementById("adminPushStatus");
+    const enablePushBtn = document.getElementById("adminEnablePushBtn");
+    const disablePushBtn = document.getElementById("adminDisablePushBtn");
+    const notificationById = new Map();
+    let realtimeConnected = false;
+    let pushServerEnabled = false;
+    let pushPublicKey = "";
+
+    function setPushStatus(text, tone) {
+      if (!pushStatusChip) return;
+      const nextTone = String(tone || "info").trim();
+
+      pushStatusChip.classList.remove(
+        "hidden",
+        "border-indigo-500/25", "bg-indigo-500/10", "text-indigo-200",
+        "border-emerald-500/30", "bg-emerald-500/10", "text-emerald-200",
+        "border-amber-500/30", "bg-amber-500/10", "text-amber-200",
+        "border-rose-500/30", "bg-rose-500/10", "text-rose-200"
+      );
+
+      if (nextTone === "success") {
+        pushStatusChip.classList.add("border-emerald-500/30", "bg-emerald-500/10", "text-emerald-200");
+      } else if (nextTone === "warn") {
+        pushStatusChip.classList.add("border-amber-500/30", "bg-amber-500/10", "text-amber-200");
+      } else if (nextTone === "error") {
+        pushStatusChip.classList.add("border-rose-500/30", "bg-rose-500/10", "text-rose-200");
+      } else {
+        pushStatusChip.classList.add("border-indigo-500/25", "bg-indigo-500/10", "text-indigo-200");
+      }
+
+      pushStatusChip.textContent = String(text || "Push status");
+    }
+
+    function renderPushButtons(options) {
+      const config = options || {};
+      const showEnable = Boolean(config.showEnable);
+      const showDisable = Boolean(config.showDisable);
+
+      if (enablePushBtn) {
+        if (showEnable) enablePushBtn.classList.remove("hidden");
+        else enablePushBtn.classList.add("hidden");
+      }
+
+      if (disablePushBtn) {
+        if (showDisable) disablePushBtn.classList.remove("hidden");
+        else disablePushBtn.classList.add("hidden");
+      }
+    }
+
+    function urlBase64ToUint8Array(base64String) {
+      const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+      const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+      const rawData = window.atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+
+      for (let i = 0; i < rawData.length; i += 1) {
+        outputArray[i] = rawData.charCodeAt(i);
+      }
+
+      return outputArray;
+    }
+
+    async function fetchPushPublicKey() {
+      try {
+        const response = await fetch("/requests/api/push/public-key", {
+          headers: { Accept: "application/json" },
+        });
+        const data = await response.json();
+        if (!data || !data.ok) return { enabled: false, publicKey: "" };
+        return {
+          enabled: Boolean(data.enabled),
+          publicKey: String(data.publicKey || "").trim(),
+        };
+      } catch (_err) {
+        return { enabled: false, publicKey: "" };
+      }
+    }
+
+    async function getAdminServiceWorkerRegistration() {
+      if (!("serviceWorker" in navigator)) {
+        throw new Error("Service Worker not supported.");
+      }
+
+      let registration = await navigator.serviceWorker.getRegistration("/");
+      if (!registration) {
+        registration = await navigator.serviceWorker.register("/service-worker.js?v=11", {
+          scope: "/",
+          updateViaCache: "none",
+        });
+      }
+
+      await navigator.serviceWorker.ready;
+      return registration;
+    }
+
+    async function saveSubscriptionOnServer(subscription) {
+      const response = await fetch("/requests/api/push/subscribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ subscription }),
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data || !data.ok) {
+        throw new Error(data?.message || "Unable to save push subscription.");
+      }
+    }
+
+    async function removeSubscriptionFromServer(endpoint) {
+      const response = await fetch("/requests/api/push/unsubscribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ endpoint }),
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data || !data.ok) {
+        throw new Error(data?.message || "Unable to remove push subscription.");
+      }
+    }
+
+    async function ensurePushSubscribed(options) {
+      const config = options || {};
+      if (!pushServerEnabled || !pushPublicKey) {
+        setPushStatus("Push service not configured on server.", "warn");
+        renderPushButtons({ showEnable: false, showDisable: false });
+        return false;
+      }
+
+      if (!("Notification" in window) || !("PushManager" in window) || !("serviceWorker" in navigator)) {
+        setPushStatus("Push is not supported in this browser.", "warn");
+        renderPushButtons({ showEnable: false, showDisable: false });
+        return false;
+      }
+
+      let permission = Notification.permission;
+      if (permission === "default" && config.requestPermission) {
+        permission = await Notification.requestPermission();
+      }
+
+      if (permission !== "granted") {
+        if (permission === "denied") {
+          setPushStatus("Push blocked. Browser settings me allow karein.", "error");
+          renderPushButtons({ showEnable: false, showDisable: false });
+        } else {
+          setPushStatus("Enable button dabake push permission allow karein.", "info");
+          renderPushButtons({ showEnable: true, showDisable: false });
+        }
+        return false;
+      }
+
+      const registration = await getAdminServiceWorkerRegistration();
+      let subscription = await registration.pushManager.getSubscription();
+
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(pushPublicKey),
+        });
+      }
+
+      const serializedSubscription = subscription.toJSON ? subscription.toJSON() : subscription;
+      await saveSubscriptionOnServer(serializedSubscription);
+      setPushStatus("Push enabled. Ab website band hone par bhi notification ayegi.", "success");
+      renderPushButtons({ showEnable: false, showDisable: true });
+      return true;
+    }
+
+    async function disablePushSubscription() {
+      if (!("serviceWorker" in navigator)) return;
+
+      const registration = await navigator.serviceWorker.getRegistration("/");
+      if (!registration) {
+        setPushStatus("Push disabled.", "warn");
+        renderPushButtons({ showEnable: true, showDisable: false });
+        return;
+      }
+
+      const subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        setPushStatus("Push disabled.", "warn");
+        renderPushButtons({ showEnable: true, showDisable: false });
+        return;
+      }
+
+      const endpoint = String(subscription.endpoint || "").trim();
+      await subscription.unsubscribe();
+      if (endpoint) {
+        await removeSubscriptionFromServer(endpoint);
+      }
+
+      setPushStatus("Push disabled on this device.", "warn");
+      renderPushButtons({ showEnable: true, showDisable: false });
+    }
+
+    async function initializePushControls() {
+      const pushConfig = await fetchPushPublicKey();
+      pushServerEnabled = Boolean(pushConfig.enabled);
+      pushPublicKey = String(pushConfig.publicKey || "").trim();
+
+      if (!pushServerEnabled || !pushPublicKey) {
+        setPushStatus("Server push not configured. VAPID keys missing.", "warn");
+        renderPushButtons({ showEnable: false, showDisable: false });
+        return;
+      }
+
+      if (!("Notification" in window) || !("PushManager" in window) || !("serviceWorker" in navigator)) {
+        setPushStatus("Push is not supported in this browser.", "warn");
+        renderPushButtons({ showEnable: false, showDisable: false });
+        return;
+      }
+
+      if (Notification.permission === "granted") {
+        try {
+          await ensurePushSubscribed({ requestPermission: false });
+        } catch (_err) {
+          setPushStatus("Push setup failed. Retry karo.", "error");
+          renderPushButtons({ showEnable: true, showDisable: false });
+        }
+        return;
+      }
+
+      if (Notification.permission === "denied") {
+        setPushStatus("Push blocked. Browser settings me notifications allow karo.", "error");
+        renderPushButtons({ showEnable: false, showDisable: false });
+        return;
+      }
+
+      setPushStatus("Enable button dabao to mobile push start ho jayega.", "info");
+      renderPushButtons({ showEnable: true, showDisable: false });
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function formatTime(isoString) {
+      if (!isoString) return "";
+      const parsed = new Date(isoString);
+      if (Number.isNaN(parsed.getTime())) return "";
+      try {
+        return parsed.toLocaleString("en-IN", {
+          dateStyle: "medium",
+          timeStyle: "short",
+        });
+      } catch (_err) {
+        return parsed.toLocaleString();
+      }
+    }
+
+    function renderGlobalNotificationCount(rawCount) {
+      const count = Number(rawCount) || 0;
+      if (unreadCountElement) unreadCountElement.textContent = String(count);
+
+      if (markAllButton) {
+        if (count > 0) {
+          markAllButton.classList.remove("hidden");
+        } else {
+          markAllButton.classList.add("hidden");
+        }
+      }
+
+      const badges = document.querySelectorAll("[data-admin-notification-count]");
+      badges.forEach((badge) => {
+        if (count > 0) {
+          badge.textContent = String(count);
+          badge.classList.remove("hidden");
+        } else {
+          badge.classList.add("hidden");
+        }
+      });
+    }
+
+    function toggleEmptyState() {
+      const hasItems = listElement.querySelectorAll("[data-notification-id]").length > 0;
+      if (hasItems) {
+        listElement.classList.remove("hidden");
+        emptyElement.classList.add("hidden");
+      } else {
+        listElement.classList.add("hidden");
+        emptyElement.classList.remove("hidden");
+      }
+    }
+
+    function applyReadState(itemElement, isRead) {
+      if (!itemElement) return;
+      const nextRead = Boolean(isRead);
+      itemElement.setAttribute("data-notification-read", nextRead ? "true" : "false");
+
+      itemElement.classList.remove("border-indigo-500/30", "bg-indigo-500/10", "border-slate-800", "bg-slate-950/40");
+      if (nextRead) {
+        itemElement.classList.add("border-slate-800", "bg-slate-950/40");
+      } else {
+        itemElement.classList.add("border-indigo-500/30", "bg-indigo-500/10");
+      }
+
+      const newTag = itemElement.querySelector('[data-role="new-badge"]');
+      if (newTag) {
+        if (nextRead) {
+          newTag.remove();
+        }
+      }
+
+      const readButton = itemElement.querySelector('[data-action="mark-read"]');
+      if (readButton && nextRead) {
+        readButton.remove();
+      }
+    }
+
+    function createNotificationItem(notification) {
+      const itemElement = document.createElement("li");
+      const notificationId = String(notification.id || "").trim();
+      const isRead = Boolean(notification.isRead);
+      const updatedAt = String(notification.updatedAt || notification.createdAt || "");
+      const actorName = String(notification.actorName || "").trim() || "System";
+      const link = String(notification.link || "/requests/dashboard").trim() || "/requests/dashboard";
+
+      itemElement.setAttribute("data-notification-id", notificationId);
+      itemElement.setAttribute("data-notification-read", isRead ? "true" : "false");
+      itemElement.setAttribute("data-notification-updated", updatedAt);
+      itemElement.className = `rounded-2xl border p-4 md:p-4 transition ${isRead ? "border-slate-800 bg-slate-950/40" : "border-indigo-500/30 bg-indigo-500/10"}`;
+
+      const safeTitle = escapeHtml(notification.title || "Notification");
+      const safeMessage = escapeHtml(notification.message || "");
+      const safeActor = escapeHtml(actorName);
+      const safeTime = escapeHtml(formatTime(updatedAt));
+      const safeLink = escapeHtml(link.startsWith("/") ? link : "/requests/dashboard");
+
+      itemElement.innerHTML = `
+        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <h3 class="text-sm md:text-base font-semibold text-white break-words">${safeTitle}</h3>
+              ${isRead ? "" : '<span data-role="new-badge" class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border border-rose-500/30 bg-rose-500/15 text-rose-300">NEW</span>'}
+            </div>
+            <p class="mt-1 text-sm text-slate-300 break-words">${safeMessage}</p>
+            <p class="mt-2 text-xs text-slate-500" data-role="metaLine">
+              ${safeActor}
+              ${safeTime ? `<span class="mx-1">|</span><span data-role="time">${safeTime}</span>` : ""}
+            </p>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <a href="${safeLink}" data-action="open" class="px-3 py-2 rounded-lg border border-slate-700 text-slate-200 text-xs font-semibold hover:border-indigo-500 hover:text-indigo-200 transition">
+              Open
+            </a>
+            ${isRead ? "" : '<button type="button" data-action="mark-read" class="px-3 py-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-xs font-semibold hover:bg-emerald-500/20 transition">Mark Read</button>'}
+          </div>
+        </div>
+      `;
+
+      return itemElement;
+    }
+
+    function upsertNotification(notification) {
+      if (!notification || !notification.id) return;
+      const notificationId = String(notification.id);
+      let itemElement = notificationById.get(notificationId);
+
+      if (!itemElement) {
+        itemElement = listElement.querySelector(`[data-notification-id="${notificationId}"]`);
+      }
+
+      const newItem = createNotificationItem(notification);
+      if (itemElement && itemElement.parentNode) {
+        itemElement.parentNode.replaceChild(newItem, itemElement);
+      } else {
+        listElement.prepend(newItem);
+      }
+
+      notificationById.set(notificationId, newItem);
+      toggleEmptyState();
+    }
+
+    function hydrateExistingItems() {
+      const existing = listElement.querySelectorAll("[data-notification-id]");
+      existing.forEach((itemElement) => {
+        const notificationId = itemElement.getAttribute("data-notification-id");
+        if (notificationId) {
+          notificationById.set(notificationId, itemElement);
+        }
+      });
+      toggleEmptyState();
+    }
+
+    async function markNotificationRead(notificationId) {
+      const normalizedId = String(notificationId || "").trim();
+      if (!normalizedId) return;
+
+      try {
+        const response = await fetch(`/requests/api/notifications/${encodeURIComponent(normalizedId)}/read`, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
+        const data = await response.json();
+        if (!data || !data.ok) return;
+
+        const itemElement = notificationById.get(normalizedId)
+          || listElement.querySelector(`[data-notification-id="${normalizedId}"]`);
+        applyReadState(itemElement, true);
+      } catch (_err) {
+        // silent fail
+      }
+    }
+
+    async function markAllRead() {
+      try {
+        const response = await fetch("/requests/api/notifications/read-all", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+          },
+        });
+        const data = await response.json();
+        if (!data || !data.ok) return;
+
+        const items = listElement.querySelectorAll("[data-notification-id]");
+        items.forEach((itemElement) => applyReadState(itemElement, true));
+        renderGlobalNotificationCount(0);
+      } catch (_err) {
+        // silent fail
+      }
+    }
+
+    async function refreshNotifications() {
+      try {
+        const response = await fetch("/requests/api/notifications?limit=30", {
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
+        const data = await response.json();
+        if (!data || !data.ok) return;
+
+        const incoming = Array.isArray(data.notifications) ? data.notifications : [];
+        const incomingIds = new Set();
+
+        incoming.forEach((notification) => {
+          if (!notification || !notification.id) return;
+          incomingIds.add(String(notification.id));
+          upsertNotification(notification);
+        });
+
+        const existingItems = listElement.querySelectorAll("[data-notification-id]");
+        existingItems.forEach((itemElement) => {
+          const id = String(itemElement.getAttribute("data-notification-id") || "");
+          if (id && !incomingIds.has(id)) {
+            itemElement.remove();
+            notificationById.delete(id);
+          }
+        });
+
+        toggleEmptyState();
+        renderGlobalNotificationCount(data.unreadCount);
+      } catch (_err) {
+        // silent fallback
+      }
+    }
+
+    listElement.addEventListener("click", function (event) {
+      const trigger = event.target.closest("[data-action]");
+      if (!trigger) return;
+
+      const itemElement = trigger.closest("[data-notification-id]");
+      const notificationId = itemElement ? itemElement.getAttribute("data-notification-id") : "";
+      const action = trigger.getAttribute("data-action");
+
+      if (action === "mark-read") {
+        event.preventDefault();
+        markNotificationRead(notificationId);
+        return;
+      }
+
+      if (action === "open") {
+        markNotificationRead(notificationId);
+      }
+    });
+
+    if (markAllButton) {
+      markAllButton.addEventListener("click", function () {
+        markAllRead();
+      });
+    }
+
+    if (enablePushBtn) {
+      enablePushBtn.addEventListener("click", async function () {
+        enablePushBtn.disabled = true;
+        try {
+          await ensurePushSubscribed({ requestPermission: true });
+        } catch (_err) {
+          setPushStatus("Push enable failed. Dobara try karo.", "error");
+          renderPushButtons({ showEnable: true, showDisable: false });
+        } finally {
+          enablePushBtn.disabled = false;
+        }
+      });
+    }
+
+    if (disablePushBtn) {
+      disablePushBtn.addEventListener("click", async function () {
+        disablePushBtn.disabled = true;
+        try {
+          await disablePushSubscription();
+        } catch (_err) {
+          setPushStatus("Push disable failed. Dobara try karo.", "error");
+        } finally {
+          disablePushBtn.disabled = false;
+        }
+      });
+    }
+
+    hydrateExistingItems();
+    renderGlobalNotificationCount(<%= unreadCount %>);
+    initializePushControls();
+
+    let socket = null;
+    if (typeof io === "function") {
+      socket = window.__VISH_ADMIN_SOCKET__;
+      if (!socket) {
+        socket = io();
+        window.__VISH_ADMIN_SOCKET__ = socket;
+      }
+    }
+
+    realtimeConnected = Boolean(socket && socket.connected);
+    if (socket) {
+      socket.on("connect", function () {
+        realtimeConnected = true;
+      });
+
+      socket.on("disconnect", function () {
+        realtimeConnected = false;
+      });
+
+      socket.on("adminNotificationCreated", function (payload) {
+        if (!payload || !payload.notification) return;
+        upsertNotification(payload.notification);
+        renderGlobalNotificationCount(payload.unreadCount);
+      });
+
+      socket.on("adminNotificationCountUpdated", function (payload) {
+        renderGlobalNotificationCount(payload && payload.unreadCount);
+      });
+    }
+
+    setInterval(function () {
+      if (!realtimeConnected) {
+        refreshNotifications();
+      }
+    }, 12000);
+  })();
+</script>

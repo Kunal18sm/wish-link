@@ -220,7 +220,11 @@
 
     let socket = null;
     if (typeof io === "function") {
-      socket = io();
+      socket = window.__VISH_ADMIN_SOCKET__;
+      if (!socket) {
+        socket = io();
+        window.__VISH_ADMIN_SOCKET__ = socket;
+      }
 
       socket.on("connect", function () {
         realtimeConnected = true;
@@ -243,6 +247,8 @@
         window.location.href = "/chat/admin";
       });
     }
+
+    realtimeConnected = Boolean(socket && socket.connected);
 
     chatForm.addEventListener("submit", async function (e) {
       e.preventDefault();

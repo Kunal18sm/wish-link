@@ -55,8 +55,16 @@
     const grid = document.getElementById("chatGrid");
     const emptyState = document.getElementById("emptyState");
     const threadCount = document.getElementById("threadCount");
-    const socket = typeof io === "function" ? io() : null;
+    let socket = null;
+    if (typeof io === "function") {
+      socket = window.__VISH_ADMIN_SOCKET__;
+      if (!socket) {
+        socket = io();
+        window.__VISH_ADMIN_SOCKET__ = socket;
+      }
+    }
     let realtimeConnected = false;
+    realtimeConnected = Boolean(socket && socket.connected);
 
     function updateLayoutState() {
       const total = grid.querySelectorAll("[data-chat-id]").length;

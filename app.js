@@ -14,7 +14,15 @@ const methodOverride = require("method-override");
 const path = require("path");
 const { createWindowRateLimiter } = require("./utils/rateLimiter.js");
 const { toOptimizedCloudinaryUrl } = require("./utils/cloudinaryUrl.js");
-const { invalidateChatInboxCache } = require("./utils/runtimeCaches.js");
+const {
+  cache,
+  getAdminNotificationCacheKey,
+  invalidateChatInboxCache,
+} = require("./utils/runtimeCaches.js");
+const {
+  createAdminNotification,
+  getAdminUnreadNotificationCount,
+} = require("./utils/adminNotifications.js");
 const {
   getCreditDateKey,
   getDailyRewardCredits,
@@ -557,15 +565,29 @@ setInterval(() => {
   }
 }, Math.max(MUTATING_REQUEST_WINDOW_MS, 60 * 1000)).unref();
 
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
   const todayCreditDateKey = getCreditDateKey();
   const hasClaimedDailyCredit =
     String(req.user?.dailyCreditClaim?.dateKey || "") === todayCreditDateKey;
+  let adminUnreadNotificationCount = 0;
+
+  if (req.user?.isAdmin) {
+    try {
+      adminUnreadNotificationCount = await cache.getOrSet(
+        getAdminNotificationCacheKey("unread-count"),
+        async () => getAdminUnreadNotificationCount(),
+        5 * 1000
+      );
+    } catch (_err) {
+      adminUnreadNotificationCount = 0;
+    }
+  }
 
   res.locals.success = req.flash("success");
   res.locals.error = req.flash("error");
   res.locals.currUser = req.user;
   res.locals.userLightPalette = req.user?.lightPalette === "pink" ? "pink" : "blue";
+  res.locals.adminUnreadNotificationCount = Number(adminUnreadNotificationCount || 0);
   res.locals.userCredits = Number(req.user?.winnerCount || 0);
   res.locals.hideFooter = false;
   res.locals.chatLayout = false;
@@ -586,7 +608,7 @@ app.use((req, res, next) => {
   res.locals.assetVersion = ASSET_VERSION;
   res.locals.getOptimizedCloudinaryUrl = app.locals.getOptimizedCloudinaryUrl;
   res.locals.getResponsiveCloudinarySrcSet = app.locals.getResponsiveCloudinarySrcSet;
-  next();
+  return next();
 });
 
 app.use((req, res, next) => {
@@ -869,6 +891,30 @@ io.on("connection", (socket) => {
         lastMessageAt: chat.lastMessageAt,
         adminUnreadCount: chat.adminUnreadCount || 0,
       });
+
+      if (senderRole !== "admin") {
+        createAdminNotification(
+          app,
+          {
+            type: "chat_message",
+            title: "New Chat Message",
+            message: `${socket.user?.username || "A user"} sent: ${messageText}`,
+            link: `/chat/admin/${chat._id}`,
+            entityType: "chat",
+            entityId: String(chat._id),
+            dedupeKey: `chat:${chat._id}`,
+            actor: socket.user,
+            meta: {
+              chatId: String(chat._id),
+            },
+          },
+          {
+            upsertUnreadByDedupeKey: true,
+          }
+        ).catch((notifyErr) => {
+          console.log("Admin chat notification warning:", notifyErr?.message || notifyErr);
+        });
+      }
 
       if (typeof cb === "function") cb({ ok: true, chatId: String(chat._id) });
     } catch (_err) {

@@ -6,6 +6,7 @@ const WebSample = require("../models/WebSample.js");
 const purchasedWeb = require("../models/purchasedWeb.js");
 const user = require("../models/user.js");
 const wrapAsync = require("../utils/wrapAsync.js");
+const { createAdminNotification } = require("../utils/adminNotifications.js");
 const { isLoggedIn, isAdmin, validatepurchase } = require("../middleware.js");
 const { getTemplateByIdCached, invalidateWebSampleCache } = require("../utils/webSampleCache.js");
 const {
@@ -305,6 +306,28 @@ const createPurchaseHandler = (expectedIsTemporary) =>
         isTemporary,
       }).save();
 
+      try {
+        await createAdminNotification(req.app, {
+          type: "purchase_request",
+          title: isTemporary ? "New Temporary Request" : "New Permanent Request",
+          message: `${sender} requested ${selectedWeb.webName} for ${receiver || "a recipient"}.`,
+          link: isTemporary ? "/requests" : "/requests/permanent",
+          entityType: "purchase",
+          entityId: String(savedPurchase._id),
+          actor: req.user,
+          meta: {
+            requestScope: isTemporary ? "default" : "permanent",
+            templateName: selectedWeb.webName,
+            sender,
+            receiver,
+            price,
+            isTemporary,
+          },
+        });
+      } catch (notifyErr) {
+        console.log("Admin purchase notification warning:", notifyErr?.message || notifyErr);
+      }
+
       // Non-critical updates should not block a successful purchase document save.
       try {
         await user.findByIdAndUpdate(userId, {
@@ -401,6 +424,25 @@ router.post(
     });
     await newSample.save();
     invalidateWebSampleCache(newSample._id);
+
+    try {
+      await createAdminNotification(req.app, {
+        type: "template_created",
+        title: "New Website Template Added",
+        message: `${req.user?.username || "Admin"} added ${newSample.webName}.`,
+        link: `/web/template/${newSample._id}/edit`,
+        entityType: "template",
+        entityId: String(newSample._id),
+        actor: req.user,
+        meta: {
+          templateName: newSample.webName,
+          tags: newSample.tags || [],
+        },
+      });
+    } catch (notifyErr) {
+      console.log("Admin template notification warning:", notifyErr?.message || notifyErr);
+    }
+
     req.flash("success", "Added new website");
     res.redirect("/");
   })
