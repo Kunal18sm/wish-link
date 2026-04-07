@@ -15,13 +15,10 @@ const path = require("path");
 const { createWindowRateLimiter } = require("./utils/rateLimiter.js");
 const { toOptimizedCloudinaryUrl } = require("./utils/cloudinaryUrl.js");
 const {
-  cache,
-  getAdminNotificationCacheKey,
   invalidateChatInboxCache,
 } = require("./utils/runtimeCaches.js");
 const {
   createAdminNotification,
-  getAdminUnreadNotificationCount,
 } = require("./utils/adminNotifications.js");
 const {
   getCreditDateKey,
@@ -569,19 +566,7 @@ app.use(async (req, res, next) => {
   const todayCreditDateKey = getCreditDateKey();
   const hasClaimedDailyCredit =
     String(req.user?.dailyCreditClaim?.dateKey || "") === todayCreditDateKey;
-  let adminUnreadNotificationCount = 0;
-
-  if (req.user?.isAdmin) {
-    try {
-      adminUnreadNotificationCount = await cache.getOrSet(
-        getAdminNotificationCacheKey("unread-count"),
-        async () => getAdminUnreadNotificationCount(),
-        5 * 1000
-      );
-    } catch (_err) {
-      adminUnreadNotificationCount = 0;
-    }
-  }
+  const adminUnreadNotificationCount = 0;
 
   res.locals.success = req.flash("success");
   res.locals.error = req.flash("error");

@@ -7,7 +7,6 @@ const cache = createMemoryCache({
 
 const PREFIX = {
   ADMIN_USERS: "admin-users:",
-  ADMIN_NOTIFICATIONS: "admin-notifications:",
   CHAT_INBOX: "chat-inbox:",
   GAME_LEADERBOARD: "game-leaderboard:",
 };
@@ -22,11 +21,6 @@ function getChatInboxCacheKey() {
   return `${PREFIX.CHAT_INBOX}default`;
 }
 
-function getAdminNotificationCacheKey(scope = "default") {
-  const normalizedScope = String(scope || "default").trim().toLowerCase() || "default";
-  return `${PREFIX.ADMIN_NOTIFICATIONS}${normalizedScope}`;
-}
-
 function getLeaderboardCacheKey() {
   return `${PREFIX.GAME_LEADERBOARD}default`;
 }
@@ -39,10 +33,6 @@ function invalidateChatInboxCache() {
   cache.deleteByPrefix(PREFIX.CHAT_INBOX);
 }
 
-function invalidateAdminNotificationCache() {
-  cache.deleteByPrefix(PREFIX.ADMIN_NOTIFICATIONS);
-}
-
 function invalidateLeaderboardCache() {
   cache.deleteByPrefix(PREFIX.GAME_LEADERBOARD);
 }
@@ -50,11 +40,9 @@ function invalidateLeaderboardCache() {
 module.exports = {
   cache,
   getAdminUsersCacheKey,
-  getAdminNotificationCacheKey,
   getChatInboxCacheKey,
   getLeaderboardCacheKey,
   invalidateAdminUsersCache,
-  invalidateAdminNotificationCache,
   invalidateChatInboxCache,
   invalidateLeaderboardCache,
 };

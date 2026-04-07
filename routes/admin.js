@@ -5,7 +5,6 @@ const multer = require("multer");
 const purchasedWeb = require("../models/purchasedWeb.js");
 const WebSample = require("../models/WebSample.js");
 const BannerConfig = require("../models/bannerConfig.js");
-const AdminNotification = require("../models/adminNotification.js");
 const user = require("../models/user.js");
 const wrapAsync = require("../utils/wrapAsync.js");
 const { isLoggedIn, isAdmin } = require("../middleware.js");
@@ -22,10 +21,7 @@ const {
   BANNER_PAGES,
 } = require("../utils/bannerConfigCache.js");
 const {
-  emitAdminNotificationCount,
-  getAdminUnreadNotificationCount,
   markAdminNotificationsAsRead,
-  toPublicAdminNotification,
   createAdminNotification,
 } = require("../utils/adminNotifications.js");
 const {
@@ -53,7 +49,6 @@ const MAX_FRAME_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024;
 const FRAME_SLOT_MAX_Z_INDEX = 999;
 const FRAME_TEXT_MIN_Z_INDEX = 1000;
 const FRAME_TEXT_MAX_Z_INDEX = 2000;
-const ADMIN_NOTIFICATION_LIMIT = 30;
 const ADMIN_DASHBOARD_CARDS = [
   {
     title: "Add Template",
@@ -602,12 +597,6 @@ function getDeleteRedirectPath(req, scope) {
   return req.get("Referrer") || getRequestsHomePath(scope);
 }
 
-function parseNotificationLimit(rawLimit) {
-  const parsed = Number.parseInt(rawLimit, 10);
-  if (!Number.isInteger(parsed) || parsed < 1) return ADMIN_NOTIFICATION_LIMIT;
-  return Math.min(parsed, 100);
-}
-
 function getPurchaseModelByScope(req, scope) {
   if (scope === REQUEST_SCOPE.DEFAULT) return purchasedWeb;
 
@@ -894,21 +883,11 @@ router.get(
   "/dashboard",
   isLoggedIn,
   isAdmin,
-  wrapAsync(async (req, res) => {
-    const [notifications, unreadNotificationCount] = await Promise.all([
-      AdminNotification.find({})
-        .sort({ updatedAt: -1 })
-        .limit(ADMIN_NOTIFICATION_LIMIT)
-        .lean(),
-      getAdminUnreadNotificationCount(),
-    ]);
-
+  wrapAsync(async (_req, res) => {
     return res.render("adminDashboard", {
       adminCards: ADMIN_DASHBOARD_CARDS,
-      adminNotifications: notifications
-        .map((notification) => toPublicAdminNotification(notification))
-        .filter(Boolean),
-      unreadNotificationCount: Number(unreadNotificationCount || 0),
+      adminNotifications: [],
+      unreadNotificationCount: 0,
       title: "Admin Dashboard - VishLink",
       description: "Quick access dashboard for all admin tools and routes.",
       robots: "noindex, nofollow",
@@ -920,22 +899,11 @@ router.get(
   "/api/notifications",
   isLoggedIn,
   isAdmin,
-  wrapAsync(async (req, res) => {
-    const limit = parseNotificationLimit(req.query.limit);
-    const [notifications, unreadNotificationCount] = await Promise.all([
-      AdminNotification.find({})
-        .sort({ updatedAt: -1 })
-        .limit(limit)
-        .lean(),
-      getAdminUnreadNotificationCount(),
-    ]);
-
+  wrapAsync(async (_req, res) => {
     return res.json({
       ok: true,
-      unreadCount: Number(unreadNotificationCount || 0),
-      notifications: notifications
-        .map((notification) => toPublicAdminNotification(notification))
-        .filter(Boolean),
+      unreadCount: 0,
+      notifications: [],
     });
   })
 );
@@ -945,10 +913,9 @@ router.get(
   isLoggedIn,
   isAdmin,
   wrapAsync(async (_req, res) => {
-    const unreadCount = await getAdminUnreadNotificationCount();
     return res.json({
       ok: true,
-      unreadCount: Number(unreadCount || 0),
+      unreadCount: 0,
     });
   })
 );
@@ -970,35 +937,10 @@ router.post(
   "/api/notifications/:id/read",
   isLoggedIn,
   isAdmin,
-  wrapAsync(async (req, res) => {
-    const notificationId = String(req.params.id || "").trim();
-    if (!mongoose.Types.ObjectId.isValid(notificationId)) {
-      return res.status(400).json({
-        ok: false,
-        message: "Invalid notification id.",
-      });
-    }
-
-    const notification = await AdminNotification.findById(notificationId).lean();
-    if (!notification) {
-      return res.status(404).json({
-        ok: false,
-        message: "Notification not found.",
-      });
-    }
-
-    let modifiedCount = 0;
-    if (!notification.isRead) {
-      modifiedCount = await markAdminNotificationsAsRead(req.app, {
-        _id: new mongoose.Types.ObjectId(notificationId),
-      });
-    } else {
-      await emitAdminNotificationCount(req.app);
-    }
-
+  wrapAsync(async (_req, res) => {
     return res.json({
       ok: true,
-      modifiedCount: Number(modifiedCount || 0),
+      modifiedCount: 0,
     });
   })
 );

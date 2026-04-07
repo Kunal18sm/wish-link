@@ -1,5 +1,3 @@
-const AdminNotification = require("../models/adminNotification.js");
-const { invalidateAdminNotificationCache } = require("./runtimeCaches.js");
 const { sendAdminPushNotification } = require("./pushNotifications.js");
 
 const DEFAULT_LINK = "/requests/dashboard";
@@ -28,65 +26,11 @@ function normalizeActor(actor = {}) {
   };
 }
 
-function toPublicAdminNotification(notificationDoc) {
-  if (!notificationDoc) return null;
-
-  const actor = notificationDoc.actor || {};
-
-  return {
-    id: String(notificationDoc._id),
-    type: toTrimmedText(notificationDoc.type, "general", 40),
-    title: toTrimmedText(notificationDoc.title, "Notification", 120),
-    message: toTrimmedText(notificationDoc.message, "", 300),
-    link: normalizeLink(notificationDoc.link),
-    entityType: toTrimmedText(notificationDoc.entityType, "", 40),
-    entityId: toTrimmedText(notificationDoc.entityId, "", 80),
-    actorName: toTrimmedText(actor.username || "", "", 80),
-    actorEmail: toTrimmedText(actor.email || "", "", 160),
-    isRead: Boolean(notificationDoc.isRead),
-    createdAt: notificationDoc.createdAt || null,
-    updatedAt: notificationDoc.updatedAt || notificationDoc.createdAt || null,
-  };
-}
-
-async function getAdminUnreadNotificationCount() {
-  return AdminNotification.countDocuments({ isRead: false });
-}
-
 async function emitAdminNotificationCount(app, unreadCount = null) {
   const io = app?.get?.("io");
   if (!io) return Number(unreadCount || 0);
 
-  const nextUnreadCount =
-    unreadCount === null || unreadCount === undefined
-      ? await getAdminUnreadNotificationCount()
-      : Number(unreadCount) || 0;
-
-  io.to("admins").emit("adminNotificationCountUpdated", {
-    unreadCount: nextUnreadCount,
-  });
-
-  return nextUnreadCount;
-}
-
-async function emitAdminNotificationCreated(app, notificationDoc, unreadCount = null) {
-  const io = app?.get?.("io");
-  if (!io) return Number(unreadCount || 0);
-
-  const serialized = toPublicAdminNotification(notificationDoc);
-  if (!serialized) {
-    return emitAdminNotificationCount(app, unreadCount);
-  }
-
-  const nextUnreadCount =
-    unreadCount === null || unreadCount === undefined
-      ? await getAdminUnreadNotificationCount()
-      : Number(unreadCount) || 0;
-
-  io.to("admins").emit("adminNotificationCreated", {
-    notification: serialized,
-    unreadCount: nextUnreadCount,
-  });
+  const nextUnreadCount = Number(unreadCount) || 0;
 
   io.to("admins").emit("adminNotificationCountUpdated", {
     unreadCount: nextUnreadCount,
@@ -113,69 +57,34 @@ function buildNotificationPayload(payload = {}) {
 
 async function createAdminNotification(app, payload = {}, options = {}) {
   const normalizedPayload = buildNotificationPayload(payload);
-  const shouldUpsertUnread = Boolean(options.upsertUnreadByDedupeKey);
-
-  let notification;
-  if (shouldUpsertUnread && normalizedPayload.dedupeKey) {
-    notification = await AdminNotification.findOneAndUpdate(
-      {
-        dedupeKey: normalizedPayload.dedupeKey,
-        isRead: false,
-      },
-      {
-        $set: normalizedPayload,
-      },
-      {
-        upsert: true,
-        new: true,
-        setDefaultsOnInsert: true,
-        runValidators: true,
-      }
-    );
-  } else {
-    notification = await AdminNotification.create(normalizedPayload);
-  }
-
-  invalidateAdminNotificationCache();
-  const unreadCount = await getAdminUnreadNotificationCount();
-  await emitAdminNotificationCreated(app, notification, unreadCount);
+  void options;
+  await emitAdminNotificationCount(app, 0);
   sendAdminPushNotification({
     title: normalizedPayload.title,
     body: normalizedPayload.message,
     link: normalizedPayload.link,
-    tag: normalizedPayload.dedupeKey || `admin:${String(notification?._id || "")}`,
+    tag: normalizedPayload.dedupeKey || `admin:ephemeral:${Date.now()}`,
   }).catch((pushErr) => {
     // eslint-disable-next-line no-console
     console.log("Admin push notification warning:", pushErr?.message || pushErr);
   });
 
-  return notification;
+  return {
+    ...normalizedPayload,
+    _id: null,
+    isRead: false,
+    createdAt: null,
+    updatedAt: null,
+  };
 }
 
 async function markAdminNotificationsAsRead(app, filter = {}) {
-  const safeFilter = { ...filter, isRead: false };
-
-  const result = await AdminNotification.updateMany(safeFilter, {
-    $set: {
-      isRead: true,
-      readAt: new Date(),
-    },
-  });
-
-  const modifiedCount = Number(result?.modifiedCount || 0);
-
-  if (modifiedCount > 0) {
-    invalidateAdminNotificationCache();
-    await emitAdminNotificationCount(app);
-  }
-
-  return modifiedCount;
+  void filter;
+  await emitAdminNotificationCount(app, 0);
+  return 0;
 }
 
 module.exports = {
   createAdminNotification,
-  emitAdminNotificationCount,
-  getAdminUnreadNotificationCount,
   markAdminNotificationsAsRead,
-  toPublicAdminNotification,
 };
