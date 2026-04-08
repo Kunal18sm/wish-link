@@ -2,6 +2,13 @@
 <%
     const displayUser = (typeof profileUser !== "undefined" && profileUser) ? profileUser : currUser;
     const safePurchasedLinks = Array.isArray(purchasedLinks) ? purchasedLinks : [];
+    const historySortedPurchasedLinks = viewHistory
+        ? [...safePurchasedLinks].sort((a, b) => {
+            const aTime = new Date(a?.dateOfBuy || a?.date || 0).getTime();
+            const bTime = new Date(b?.dateOfBuy || b?.date || 0).getTime();
+            return bTime - aTime;
+        })
+        : safePurchasedLinks;
     const createdLinksCount = typeof totalLinksCreated === "number" ? totalLinksCreated : safePurchasedLinks.length;
     const coinIconPath = `/assets/icons/coin.svg?v=${assetVersion}`;
     const selectedLightPalette = (displayUser && displayUser.lightPalette === "pink") ? "pink" : "blue";
@@ -162,13 +169,13 @@
                 </p>
             </div>
             
-            <% if(!safePurchasedLinks.length) { %>
+            <% if(!historySortedPurchasedLinks.length) { %>
                 <div class="text-center py-12 text-slate-500 border border-dashed border-slate-700/50 rounded-2xl">
                     No active links found. <a href="/" class="text-indigo-400 hover:text-indigo-300 hover:underline">Create one now?</a>
                 </div>
             <% } else { %>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    <% for(let order of safePurchasedLinks){ %>
+                    <% for(let order of historySortedPurchasedLinks){ %>
                         <div class="bg-slate-800/40 border border-slate-700/60 rounded-2xl p-5 hover:border-indigo-500/40 hover:bg-slate-800/80 transition group h-full flex flex-col">
                             
                             <div class="flex justify-between items-start mb-3">
@@ -194,6 +201,14 @@
                             
                             <p class="text-sm text-slate-400 mb-5">For: <span class="text-white font-medium"><%= order.receiver %></span></p>
                             <p class="text-sm text-slate-400 mb-5">Price: <span class="text-white font-medium"><%= order.price %></span></p>
+                            <% if(viewHistory && order.isFakePaymentProof) { %>
+                            <div class="mb-5 rounded-xl border border-rose-500/40 bg-rose-500/10 p-3">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-rose-300">Fake Payment Proof</p>
+                                <p class="mt-1 text-xs text-rose-200">
+                                    <%= order.adminFakePaymentNote || "Fake payment proof was submitted. This template request/link was deleted by admin." %>
+                                </p>
+                            </div>
+                            <% } %>
                             
                             <% if(order.permanentLink) { %>
                             <p class="text-sm text-slate-400 mb-5">Link: <span class="text-white font-medium">                                

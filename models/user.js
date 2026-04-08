@@ -19,6 +19,15 @@ const userSchema = new Schema({
     dateOfBuy: Date,
     receiver: String,
     price: Number,
+    isFakePaymentProof: {
+      type: Boolean,
+      default: false,
+    },
+    adminFakePaymentNote: {
+      type: String,
+      default: "",
+    },
+    adminActionAt: Date,
     permanentLink: String,
     paymentProofUrl: {
       url: String,

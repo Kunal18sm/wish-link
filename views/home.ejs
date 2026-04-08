@@ -120,7 +120,7 @@
         <div id="templateScroller" class="flex overflow-x-auto no-scrollbar gap-4 md:gap-6 pb-10 snap-x snap-mandatory"
           style="-webkit-overflow-scrolling: touch;">
 
-          <% for(let sample of websiteTopTemplates) { %>
+          <% websiteTopTemplates.forEach((sample, sampleIndex) => { %>
             <div class="flex-none w-[85vw] sm:w-[45vw] md:w-[40vw] lg:w-[30vw] xl:w-[24vw] snap-start group">
               <div
                 class="bg-slate-900/50 border border-slate-800 rounded-3xl overflow-hidden transition-all duration-500 hover:border-indigo-500/50 hover:shadow-[0_0_30px_rgba(99,102,241,0.1)] flex flex-col h-full backdrop-blur-sm">
@@ -131,7 +131,8 @@
                     class="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent  opacity-60">
                   </div>
                   <a href="<%= sample.webUrl %>"
-                    class="block w-full h-full">
+                    class="block w-full h-full"
+                    <%= sampleIndex < 3 ? 'data-top-template-preview-link="true"' : '' %>>
                     <img src="<%= getOptimizedCloudinaryUrl(sample.imageUrl.url, "card") %>"
                       srcset="<%= getResponsiveCloudinarySrcSet(sample.imageUrl.url, 'card') %>"
                       sizes="(max-width: 640px) 85vw, (max-width: 1024px) 45vw, 30vw"
@@ -185,7 +186,7 @@
                 </div>
               </div>
             </div>
-            <% } %>
+            <% }) %>
         </div>
       </div>
 

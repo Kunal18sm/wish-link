@@ -157,10 +157,71 @@
     });
   }
 
+  function initTopTemplateTapHint() {
+    const targetPreviewLinks = Array.from(
+      document.querySelectorAll("[data-top-template-preview-link]")
+    ).slice(0, 3);
+    if (!targetPreviewLinks.length) return;
+
+    const storageKey = "vishlinkTopTemplateTapHintDismissed";
+    try {
+      if (localStorage.getItem(storageKey) === "1") return;
+    } catch (_err) {
+      // Ignore localStorage access errors and continue.
+    }
+
+    const hintElements = [];
+    targetPreviewLinks.forEach((targetPreviewLink) => {
+      const imageContainer =
+        targetPreviewLink.closest(".relative") || targetPreviewLink.parentElement;
+      if (!imageContainer) return;
+
+      const hintEl = document.createElement("div");
+      hintEl.className = "top-template-tap-hint";
+      hintEl.setAttribute("aria-hidden", "true");
+      hintEl.innerHTML = `
+        <img
+          src="/assets/tap-tap-here.gif"
+          alt="Tap here to preview"
+          loading="eager"
+          decoding="async"
+          class="top-template-tap-hint__gif"
+        />
+      `;
+      imageContainer.appendChild(hintEl);
+      hintElements.push(hintEl);
+    });
+
+    if (!hintElements.length) return;
+
+    let removed = false;
+    const dismissHint = () => {
+      if (removed) return;
+      removed = true;
+      hintElements.forEach((hintEl) => hintEl.classList.add("is-hidden"));
+      window.setTimeout(() => {
+        hintElements.forEach((hintEl) => {
+          if (hintEl.isConnected) hintEl.remove();
+        });
+      }, 220);
+      try {
+        localStorage.setItem(storageKey, "1");
+      } catch (_err) {
+        // Ignore localStorage access errors.
+      }
+    };
+
+    targetPreviewLinks.forEach((targetPreviewLink) => {
+      targetPreviewLink.addEventListener("click", dismissHint, { once: true });
+    });
+    window.setTimeout(dismissHint, 25000);
+  }
+
   bindThemeToggle("homeThemeToggleBtn");
   bindThemeToggle("collectionThemeToggleBtn");
   initBannerSlider();
   initTemplateScroller();
   initFeedbackForm();
   initPurchaseLinks();
+  initTopTemplateTapHint();
 })();

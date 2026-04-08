@@ -61,6 +61,7 @@
                         const cardScope = request.requestScope || currentScope;
                         const scopeQuery = cardScope === "permanent" ? "?scope=permanent" : "";
                         const deleteQuery = cardScope === "permanent" ? "?scope=permanent&_method=DELETE" : "?_method=DELETE";
+                        const fakeDeleteQuery = cardScope === "permanent" ? "?scope=permanent&reason=fake-payment&_method=DELETE" : "?reason=fake-payment&_method=DELETE";
                         const paymentProofUrl = request.paymentProofUrl && request.paymentProofUrl.url ? request.paymentProofUrl.url : "";
                     %>
                     <div class="group bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col lg:flex-row items-center gap-6 md:gap-8 transition-all hover:border-indigo-500/30">
@@ -111,11 +112,16 @@
                                 </a>
 
                                 <% if(request.isTemporary) { %>
-                                <button type="button" onclick="openDeleteModal('/requests/delete/<%= request._id %><%= deleteQuery %>')" class="flex-1 w-full py-3 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-600 hover:text-white transition font-semibold text-sm">
+                                <button type="button" onclick="openDeleteModal('/requests/delete/<%= request._id %><%= deleteQuery %>', 'normal')" class="flex-1 w-full py-3 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-600 hover:text-white transition font-semibold text-sm">
                                     Delete
                                 </button>
                                 <% } %>
                             </div>
+                            <% if (!request.isLive) { %>
+                            <button type="button" onclick="openDeleteModal('/requests/delete/<%= request._id %><%= fakeDeleteQuery %>', 'fake')" class="w-full py-3 rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500 hover:text-slate-950 transition font-semibold text-sm">
+                                Fake Payment Delete
+                            </button>
+                            <% } %>
                         </div>
                     </div>
                 <% } %>
@@ -126,8 +132,8 @@
 
 <div id="deleteModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
     <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-[90%] max-w-sm text-center shadow-2xl">
-        <h3 class="text-xl font-bold text-white mb-2">Confirm Delete</h3>
-        <p class="text-slate-400 mb-6">Do you really want to delete it?</p>
+        <h3 id="deleteModalTitle" class="text-xl font-bold text-white mb-2">Confirm Delete</h3>
+        <p id="deleteModalMessage" class="text-slate-400 mb-6">Do you really want to delete it?</p>
 
         <div class="flex gap-3">
             <button type="button" onclick="closeDeleteModal()" class="flex-1 py-2 rounded-xl bg-slate-700 text-white hover:bg-slate-600 transition">
@@ -147,10 +153,24 @@
     const deleteModal = document.getElementById("deleteModal");
     const deleteForm = document.getElementById("deleteForm");
     const deleteSubmitBtn = document.getElementById("deleteSubmitBtn");
+    const deleteModalTitle = document.getElementById("deleteModalTitle");
+    const deleteModalMessage = document.getElementById("deleteModalMessage");
 
-    function openDeleteModal(action) {
+    function openDeleteModal(action, mode = "normal") {
         if (!deleteModal || !deleteForm) return;
+        const isFakeDelete = mode === "fake";
         deleteForm.action = action;
+        if (deleteModalTitle) {
+            deleteModalTitle.innerText = isFakeDelete ? "Mark Fake Payment?" : "Confirm Delete";
+        }
+        if (deleteModalMessage) {
+            deleteModalMessage.innerText = isFakeDelete
+                ? "This will delete request and add fake payment warning in user's history."
+                : "Do you really want to delete it?";
+        }
+        if (deleteSubmitBtn) {
+            deleteSubmitBtn.innerText = isFakeDelete ? "Yes, Mark Fake & Delete" : "Yes, Delete";
+        }
         deleteModal.classList.remove("hidden");
         deleteModal.classList.add("flex");
     }

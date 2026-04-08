@@ -587,7 +587,8 @@ app.use(async (req, res, next) => {
   res.locals.userCredits = Number(req.user?.winnerCount || 0);
   res.locals.hideFooter = false;
   res.locals.chatLayout = false;
-  res.locals.showInstallPrompt = req.path === "/";
+  res.locals.showInstallPrompt = req.path === "/" || req.path.startsWith("/category/");
+  res.locals.showDailyRewardModal = req.path === "/" || req.path.startsWith("/category/");
   res.locals.todayCreditDateKey = todayCreditDateKey;
   res.locals.dailyRewardByDay = DAILY_REWARD_BY_DAY;
   res.locals.dailyCreditReward =

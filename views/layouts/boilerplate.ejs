@@ -132,7 +132,7 @@
                 </style>
             <% } %>
 
-            <% if (dailyCreditReward && showInstallPrompt) { %>
+            <% if (dailyCreditReward && showDailyRewardModal) { %>
                 <style>
                     #dailyRewardModal {
                         font-family: 'Poppins', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
@@ -915,7 +915,7 @@
                     <% if (showInstallPrompt) { %>
                         <script defer src="/installPrompt.js?v=<%= assetVersion %>"></script>
                     <% } %>
-                    <% if (dailyCreditReward && showInstallPrompt) { %>
+                    <% if (dailyCreditReward && showDailyRewardModal) { %>
                         <script defer src="/dailyReward.js?v=<%= assetVersion %>"></script>
                     <% } %>
 </body>

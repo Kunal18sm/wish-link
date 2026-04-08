@@ -41,6 +41,10 @@ const REQUEST_SCOPE = {
   DEFAULT: "default",
   PERMANENT: "permanent",
 };
+const DELETE_REASON = {
+  DEFAULT: "default",
+  FAKE_PAYMENT: "fake-payment",
+};
 const USERS_PAGE_LIMIT = 20;
 const REQUEST_CARD_SELECT = "webName sender receiver price paymentProofUrl webUrl isLive isTemporary author";
 const PROFILE_PURCHASE_SELECT = "webName webUrl receiver price isLive isTemporary date author";
@@ -595,6 +599,14 @@ function getRequestsHomePath(scope) {
 function getDeleteRedirectPath(req, scope) {
   if (!req.user?.isAdmin) return "/profile";
   return req.get("Referrer") || getRequestsHomePath(scope);
+}
+
+function getDeleteReason(req) {
+  const rawReason = String(req.query.reason || "").trim().toLowerCase();
+  if (rawReason === DELETE_REASON.FAKE_PAYMENT || rawReason === "fake_payment") {
+    return DELETE_REASON.FAKE_PAYMENT;
+  }
+  return DELETE_REASON.DEFAULT;
 }
 
 function getPurchaseModelByScope(req, scope) {
@@ -1889,6 +1901,7 @@ router.delete(
     const requestScope = getRequestScope(req);
     const PurchaseModel = getPurchaseModelByScope(req, requestScope);
     const redirectPath = getDeleteRedirectPath(req, requestScope);
+    const deleteReason = getDeleteReason(req);
 
     if (!PurchaseModel) {
       req.flash("error", "Permanent request database is not configured.");
@@ -1904,6 +1917,30 @@ router.delete(
     if (!req.user?.isAdmin && !isOwner) {
       req.flash("error", "You are not allowed to delete this link.");
       return res.redirect("/profile");
+    }
+
+    const isFakePaymentDelete =
+      Boolean(req.user?.isAdmin) && deleteReason === DELETE_REASON.FAKE_PAYMENT;
+
+    if (isFakePaymentDelete) {
+      const ownerId = String(toDelete.author || "").trim();
+      if (mongoose.Types.ObjectId.isValid(ownerId)) {
+        await user.updateOne(
+          {
+            _id: new mongoose.Types.ObjectId(ownerId),
+            "webCollection.purchasedId": new mongoose.Types.ObjectId(toDelete._id),
+          },
+          {
+            $set: {
+              "webCollection.$.isFakePaymentProof": true,
+              "webCollection.$.adminFakePaymentNote":
+                "Fake payment proof submitted. Template request/link was deleted by admin.",
+              "webCollection.$.adminActionAt": new Date(),
+              "webCollection.$.permanentLink": "",
+            },
+          }
+        );
+      }
     }
 
     if (requestScope === REQUEST_SCOPE.PERMANENT && !permanentCloudinaryOptions) {
@@ -1928,7 +1965,7 @@ router.delete(
 
     await PurchaseModel.findByIdAndDelete(req.params.id);
     invalidateAdminUsersCache();
-    req.flash("success", "Deleted");
+    req.flash("success", isFakePaymentDelete ? "Fake payment marked and request deleted." : "Deleted");
     return res.redirect(redirectPath);
   })
 );

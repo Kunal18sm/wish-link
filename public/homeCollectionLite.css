@@ -44,6 +44,31 @@ body {
   background: #6366f1;
 }
 
+.top-template-tap-hint {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+.top-template-tap-hint.is-hidden {
+  opacity: 0;
+  transform: scale(0.94);
+}
+
+.top-template-tap-hint__gif {
+  width: min(36%, 130px);
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 18px rgba(2, 6, 23, 0.45));
+}
+
 /* Lite pages light-theme consistency (home + collection) */
 html[data-theme="light"] body {
   background:
@@ -63,6 +88,10 @@ html[data-theme="light"] .theme-switch-btn {
   border-color: rgba(79, 70, 229, 0.3) !important;
   color: #4338ca !important;
   background: rgba(79, 70, 229, 0.1) !important;
+}
+
+html[data-theme="light"] .top-template-tap-hint__gif {
+  filter: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.2));
 }
 
 html[data-theme="light"] .theme-switch-btn:hover {

@@ -8,10 +8,12 @@
   const installPromptInstallBtn = document.getElementById("installPromptInstallBtn");
   const installPromptLaterBtn = document.getElementById("installPromptLaterBtn");
   const installPromptCloseBtn = document.getElementById("installPromptCloseBtn");
+  const firstVisitStorageKey = "vishlinkInstallPromptSeen";
 
   if (!installPromptBackdrop || !installPromptModal) return;
 
   let deferredInstallPromptEvent = null;
+  let hasShownOnThisPage = false;
 
   function isStandaloneMode() {
     try {
@@ -37,13 +39,33 @@
     return "Install VishLink in one click.";
   }
 
+  function isFirstVisit() {
+    try {
+      return localStorage.getItem(firstVisitStorageKey) !== "1";
+    } catch (_err) {
+      return true;
+    }
+  }
+
+  function markInstallPromptSeen() {
+    try {
+      localStorage.setItem(firstVisitStorageKey, "1");
+    } catch (_err) {
+      // Ignore storage access issues.
+    }
+  }
+
   function showInstallPrompt(message) {
     if (isStandaloneMode()) return;
+    if (!isFirstVisit()) return;
+    if (hasShownOnThisPage) return;
 
     if (installPromptText && message) {
       installPromptText.textContent = message;
     }
 
+    hasShownOnThisPage = true;
+    markInstallPromptSeen();
     installPromptBackdrop.classList.remove("hidden");
     installPromptModal.classList.remove("hidden");
   }
@@ -106,7 +128,7 @@
         });
     }
 
-    if (!isStandaloneMode()) {
+    if (!isStandaloneMode() && isFirstVisit()) {
       setTimeout(() => {
         showInstallPrompt(getManualInstallMessage());
       }, 1200);
