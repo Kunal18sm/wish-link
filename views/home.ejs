@@ -141,10 +141,12 @@
                       class="w-full h-full object-cover transform group-hover:scale-105 transition duration-700 ease-in-out">
                   </a>
                   <div class="absolute bottom-4 left-1 right-4 w-full flex items-center justify-between ">
-                    <span
+                    <a
+                      href="<%= sample.webUrl %>"
+                      aria-label="Open live preview for <%= sample.webName %>"
                       class="ml-1 px-3 py-1 bg-white/10 backdrop-blur-md border border-white/20 text-white text-[10px] font-bold rounded-lg uppercase tracking-wider">
                       Live Preview
-                    </span>
+                    </a>
 
                     <% if(sample.priceForPermanent && sample.priceForTemporary===0 ) { %>
                       <span

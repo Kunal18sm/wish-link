@@ -54,6 +54,14 @@
           </details>
         <% } %>
 
+        <div class="w-full rounded-2xl border border-indigo-500/25 bg-indigo-500/10 p-4">
+          <h2 class="text-sm md:text-base font-semibold text-indigo-200">Multiple Attempts Allowed</h2>
+          <p class="mt-2 text-sm text-slate-300 leading-relaxed">
+            If you are not satisfied with your images on the template or want any changes, you can create a new attempt and upload the same payment screenshot again.
+            After the new link is created, your old link will be deleted.
+          </p>
+        </div>
+
         <!-- MAIN FORM -->
         
         <div class="glass-effect p-8 md:p-10 rounded-3xl shadow-2xl">
@@ -171,17 +179,20 @@
                 </button>
               </form>
         </div>
-                <details class="purchase-accordion w-full mt-2 bg-slate-900/20 border border-slate-800/30 p-4 rounded-2xl">
+        <details class="purchase-accordion w-full mt-2 bg-slate-900/20 border border-slate-800/30 p-4 rounded-2xl">
           <summary class="cursor-pointer flex items-center justify-between text-slate-300 font-semibold text-sm md:text-base" style="list-style:none;">
             <span>Need help or support?</span>
             <span class="text-xs text-slate-400">&#9662;</span>
           </summary>
-          <p class="mt-3 text-sm text-slate-400">
-            For any assistance or support, feel free to contact us directly on
-            <a style="color: rgba(241, 39, 191, 0.781);" href="https://www.instagram.com/vish_link18/#">Instagram</a>.
+          <p class="mt-3 text-sm text-slate-400 leading-relaxed">
+            Need quick help? Connect with us on
+            <a class="text-indigo-400 hover:text-indigo-300" href="/chat">Chat Support</a>
+            or message us on
+            <a class="text-pink-400 hover:text-pink-300" href="https://www.instagram.com/vish_link18/#" target="_blank" rel="noopener noreferrer">Instagram</a>.
+            <br>
+            If you want any customizations or need a special template, just talk to Chat Support and we will help you set it up.
           </p>
         </details>
-
 
         <% if(selectedWeb.articleTitle){ %>
         <article class="bg-slate-900/30 border border-slate-800/50 p-6 md:p-10 rounded-3xl">

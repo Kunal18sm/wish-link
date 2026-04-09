@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require("uuid");
 
 const WebSample = require("../models/WebSample.js");
 const purchasedWeb = require("../models/purchasedWeb.js");
+const Feedback = require("../models/feedback.js");
 const user = require("../models/user.js");
 const wrapAsync = require("../utils/wrapAsync.js");
 const { createAdminNotification } = require("../utils/adminNotifications.js");
@@ -524,7 +525,14 @@ router.get(
   isLoggedIn,
   wrapAsync(async (req, res) => {
     const { id } = req.params;
-    const selectedWeb = await getTemplateByIdCached(id, PURCHASE_FORM_TEMPLATE_SELECT, 30 * 1000);
+    const [selectedWeb, recentFeedbacks] = await Promise.all([
+      getTemplateByIdCached(id, PURCHASE_FORM_TEMPLATE_SELECT, 30 * 1000),
+      Feedback.find({})
+        .select("userName feedbackmsg date")
+        .sort({ _id: -1 })
+        .limit(3)
+        .lean(),
+    ]);
     if (!selectedWeb) {
       req.flash("error", "Template not found.");
       return res.redirect("/");
@@ -549,6 +557,7 @@ router.get(
       upiLinks,
       paymentQrImageUrl: PAYMENT_QR_IMAGE_URL,
       paymentUpiId: PAYMENT_UPI_ID,
+      recentFeedbacks,
     });
   })
 );
@@ -559,7 +568,14 @@ router.get(
   isLoggedIn,
   wrapAsync(async (req, res) => {
     const { id } = req.params;
-    const selectedWeb = await getTemplateByIdCached(id, PURCHASE_FORM_TEMPLATE_SELECT, 30 * 1000);
+    const [selectedWeb, recentFeedbacks] = await Promise.all([
+      getTemplateByIdCached(id, PURCHASE_FORM_TEMPLATE_SELECT, 30 * 1000),
+      Feedback.find({})
+        .select("userName feedbackmsg date")
+        .sort({ _id: -1 })
+        .limit(3)
+        .lean(),
+    ]);
     if (!selectedWeb) {
       req.flash("error", "Template not found.");
       return res.redirect("/");
@@ -584,6 +600,7 @@ router.get(
       upiLinks,
       paymentQrImageUrl: PAYMENT_QR_IMAGE_URL,
       paymentUpiId: PAYMENT_UPI_ID,
+      recentFeedbacks,
     });
   })
 );
