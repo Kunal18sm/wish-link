@@ -56,6 +56,7 @@
     <main class="max-w-7xl mx-auto px-4 md:px-6 mb-20">
       <% const websiteTopTemplates = Array.isArray(topTemplates) ? topTemplates : (Array.isArray(allSamples) ? allSamples.slice(0, 10) : []); %>
       <% const homeTopPhotoFrameTemplates = Array.isArray(topPhotoFrameTemplates) ? topPhotoFrameTemplates.slice(0, 4) : []; %>
+      <% const templateCoinIconPath = `/assets/icons/coin.svg?v=${assetVersion}`; %>
 
       <div class="flex items-center justify-between mb-2 border-b border-slate-800/60 pb-6">
         <div>
@@ -168,6 +169,14 @@
                   <p class="text-slate-400 text-sm line-clamp-2 mb-6 h-10">
                     <%= sample.description %>
                   </p>
+                  <% const rawCoinPrice = Number(sample.purchaseCredits); %>
+                  <% const coinPrice = Number.isFinite(rawCoinPrice) && rawCoinPrice > 0 ? Math.floor(rawCoinPrice) : 25; %>
+                  <% if (coinPrice > 0) { %>
+                  <p class="mb-5 inline-flex items-center gap-1.5 rounded-xl border border-amber-400/30 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-200 w-fit">
+                    <img src="<%= templateCoinIconPath %>" alt="coin" width="14" height="14" loading="lazy" decoding="async" class="h-3.5 w-3.5">
+                    <span><%= coinPrice %> Coins</span>
+                  </p>
+                  <% } %>
 
                   <div class="grid grid-cols-2 gap-3 mt-auto">
                     <a href="/web/purchase/permanent/<%= sample.id %>"

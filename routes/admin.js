@@ -46,8 +46,10 @@ const DELETE_REASON = {
   FAKE_PAYMENT: "fake-payment",
 };
 const USERS_PAGE_LIMIT = 20;
-const REQUEST_CARD_SELECT = "webName sender receiver price paymentProofUrl webUrl isLive isTemporary author";
-const PROFILE_PURCHASE_SELECT = "webName webUrl receiver price isLive isTemporary date author";
+const REQUEST_CARD_SELECT =
+  "webName sender receiver price paymentProofUrl webUrl isLive isTemporary author date purchaseMode paidCredits expiresAt";
+const PROFILE_PURCHASE_SELECT =
+  "webName webUrl receiver price isLive isTemporary date author purchaseMode paidCredits expiresAt";
 const MAX_BANNER_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_FRAME_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024;
 const FRAME_SLOT_MAX_Z_INDEX = 999;
@@ -617,6 +619,28 @@ function getPurchaseModelByScope(req, scope) {
   return permanentModel;
 }
 
+function isExpiredPurchase(expiresAt) {
+  if (!expiresAt) return false;
+  const expiryDate = new Date(expiresAt);
+  if (Number.isNaN(expiryDate.getTime())) return false;
+  return expiryDate.getTime() <= Date.now();
+}
+
+function normalizePurchaseForView(rawPurchase) {
+  const doc = rawPurchase && typeof rawPurchase.toObject === "function"
+    ? rawPurchase.toObject()
+    : { ...(rawPurchase || {}) };
+  const isExpired = isExpiredPurchase(doc.expiresAt);
+
+  return {
+    ...doc,
+    purchaseMode: String(doc.purchaseMode || "upi").toLowerCase() === "coins" ? "coins" : "upi",
+    paidCredits: Number(doc.paidCredits || 0),
+    isExpired,
+    isLive: Boolean(doc.isLive) && !isExpired,
+  };
+}
+
 function parseLegacyBannerSlides(rawSlides) {
   const slideEntries = Array.isArray(rawSlides)
     ? rawSlides
@@ -758,7 +782,7 @@ function normalizeBannerSlideInput(input = {}, fallbackSortOrder = 0) {
 
 function toScopedDocs(docs, scope) {
   return docs.map((doc) => ({
-    ...(typeof doc.toObject === "function" ? doc.toObject() : doc),
+    ...normalizePurchaseForView(doc),
     requestScope: scope,
   }));
 }
@@ -775,14 +799,14 @@ async function loadMergedPurchases(req, authorId) {
 
   const [normalLinks, permanentLinks] = await Promise.all([normalQuery, permanentQuery]);
   const merged = normalLinks.map((item) => ({
-    ...item,
+    ...normalizePurchaseForView(item),
     requestScope: REQUEST_SCOPE.DEFAULT,
   }));
 
   if (permanentLinks.length) {
     merged.push(
       ...permanentLinks.map((item) => ({
-        ...item,
+        ...normalizePurchaseForView(item),
         requestScope: REQUEST_SCOPE.PERMANENT,
       }))
     );
@@ -1830,29 +1854,60 @@ router.get(
   })
 );
 
-// get expired websites (temporary scope only)
+// get expired websites (legacy temporary + coin-expired links)
 router.get(
   "/expired",
   isLoggedIn,
   isAdmin,
   wrapAsync(async (req, res) => {
+    const now = new Date();
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
-    const userPurchased = toScopedDocs(
-      await purchasedWeb
-        .find({ date: { $lte: oneMonthAgo }, isTemporary: true })
+    const legacyTemporaryExpiryQuery = {
+      date: { $lte: oneMonthAgo },
+      isTemporary: true,
+      purchaseMode: { $ne: "coins" },
+    };
+    const coinExpiryQuery = {
+      purchaseMode: "coins",
+      expiresAt: { $lte: now },
+    };
+
+    const permanentModel = getPurchaseModelByScope(req, REQUEST_SCOPE.PERMANENT);
+    const [defaultExpired, permanentCoinExpired] = await Promise.all([
+      purchasedWeb
+        .find({
+          $or: [legacyTemporaryExpiryQuery, coinExpiryQuery],
+        })
         .select(REQUEST_CARD_SELECT)
         .sort({ _id: -1 })
         .lean(),
-      REQUEST_SCOPE.DEFAULT
-    );
+      permanentModel
+        ? permanentModel
+          .find(coinExpiryQuery)
+          .select(REQUEST_CARD_SELECT)
+          .sort({ _id: -1 })
+          .lean()
+        : Promise.resolve([]),
+    ]);
+
+    const userPurchased = [
+      ...toScopedDocs(defaultExpired, REQUEST_SCOPE.DEFAULT),
+      ...toScopedDocs(permanentCoinExpired, REQUEST_SCOPE.PERMANENT),
+    ]
+      .map((item) => ({
+        ...item,
+        isExpired: true,
+        isLive: false,
+      }))
+      .sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
 
     res.render("requests", {
       userPurchased,
       requestScope: REQUEST_SCOPE.DEFAULT,
       title: "Expired Websites - Admin | VishLink",
-      description: "Admin panel to manage expired websites.",
+      description: "Admin panel to manage expired websites and coin based expiries.",
       robots: "noindex, nofollow",
     });
   })
@@ -1872,8 +1927,16 @@ router.get(
       return res.redirect("/requests");
     }
 
+    const now = new Date();
     const userPurchased = toScopedDocs(
-      await PurchaseModel.find({ isLive: true })
+      await PurchaseModel.find({
+        isLive: true,
+        $or: [
+          { expiresAt: { $exists: false } },
+          { expiresAt: null },
+          { expiresAt: { $gt: now } },
+        ],
+      })
         .select(REQUEST_CARD_SELECT)
         .sort({ _id: -1 })
         .lean(),
@@ -2095,7 +2158,9 @@ router.get(
       return res.redirect("/requests/users");
     }
 
-    const purchasedLinks = profileUser.webCollection || [];
+    const purchasedLinks = Array.isArray(profileUser.webCollection)
+      ? profileUser.webCollection.map((item) => normalizePurchaseForView(item))
+      : [];
     const viewHistory = true;
 
     res.render("profile", {

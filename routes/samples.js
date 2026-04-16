@@ -25,7 +25,8 @@ const PHOTO_FRAME_DOWNLOAD_CREDITS = Math.max(
   Number.parseInt(process.env.PHOTO_FRAME_DOWNLOAD_CREDITS || "1", 10) || 1
 );
 const NEW_SIGNUP_CREDITS = 15;
-const PROFILE_PURCHASE_SELECT = "webName webUrl receiver price isLive isTemporary date author";
+const PROFILE_PURCHASE_SELECT =
+  "webName webUrl receiver price isLive isTemporary date author purchaseMode paidCredits expiresAt";
 const HERO_PRIMARY_IMAGE =
   "https://res.cloudinary.com/drzq6kjgp/image/upload/v1770794063/Gemini_Generated_Image_4qzfxy4qzfxy4qzf_l5tidy.png";
 const SEO_LANDING_PAGES = {
@@ -258,6 +259,28 @@ function toTitleCase(rawValue) {
     .join(" ");
 }
 
+function isExpiredPurchase(expiresAt) {
+  if (!expiresAt) return false;
+  const expiryDate = new Date(expiresAt);
+  if (Number.isNaN(expiryDate.getTime())) return false;
+  return expiryDate.getTime() <= Date.now();
+}
+
+function normalizePurchaseForView(rawPurchase) {
+  const doc = rawPurchase && typeof rawPurchase.toObject === "function"
+    ? rawPurchase.toObject()
+    : { ...(rawPurchase || {}) };
+  const isExpired = isExpiredPurchase(doc.expiresAt);
+
+  return {
+    ...doc,
+    purchaseMode: String(doc.purchaseMode || "upi").toLowerCase() === "coins" ? "coins" : "upi",
+    paidCredits: Number(doc.paidCredits || 0),
+    isExpired,
+    isLive: Boolean(doc.isLive) && !isExpired,
+  };
+}
+
 async function buildUniqueUsername(seedText) {
   const base = makeUsernameSlug(seedText);
   let candidate = base;
@@ -283,14 +306,14 @@ async function loadMergedPurchases(req, authorId) {
 
   const [normalLinks, permanentLinks] = await Promise.all([normalQuery, permanentQuery]);
   const mergedLinks = normalLinks.map((item) => ({
-    ...item,
+    ...normalizePurchaseForView(item),
     requestScope: REQUEST_SCOPE.DEFAULT,
   }));
 
   if (permanentLinks.length) {
     mergedLinks.push(
       ...permanentLinks.map((item) => ({
-        ...item,
+        ...normalizePurchaseForView(item),
         requestScope: REQUEST_SCOPE.PERMANENT,
       }))
     );
@@ -831,7 +854,9 @@ router.get("/viewHistory", isLoggedIn, wrapAsync(async (req, res) => {
     .findById(req.user._id)
     .select("_id username email winnerCount lightPalette webCollection")
     .lean();
-  const purchasedLinks = Array.isArray(profileUser?.webCollection) ? profileUser.webCollection : [];
+  const purchasedLinks = Array.isArray(profileUser?.webCollection)
+    ? profileUser.webCollection.map((item) => normalizePurchaseForView(item))
+    : [];
   const viewHistory = true;
 
   res.render("profile", {

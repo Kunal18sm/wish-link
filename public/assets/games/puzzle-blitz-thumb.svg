@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-label="Puzzle Blitz thumbnail">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#111827"/>
+      <stop offset="55%" stop-color="#1f2937"/>
+      <stop offset="100%" stop-color="#134e4a"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <g transform="translate(470,200)">
+    <rect x="0" y="0" width="220" height="220" rx="20" fill="#facc15"/>
+    <rect x="240" y="0" width="220" height="220" rx="20" fill="#fb7185"/>
+    <rect x="480" y="0" width="220" height="220" rx="20" fill="#60a5fa"/>
+    <rect x="120" y="240" width="220" height="220" rx="20" fill="#34d399"/>
+    <rect x="360" y="240" width="220" height="220" rx="20" fill="#a3e635"/>
+    <path d="M700 350 C790 320, 860 400, 840 480 C820 560, 730 590, 660 540 C620 500, 620 420, 700 350 Z" fill="#f8fafc" fill-opacity="0.92"/>
+  </g>
+  <text x="100" y="790" fill="#ecfeff" font-family="Segoe UI, Arial, sans-serif" font-size="74" font-weight="700" letter-spacing="5">PUZZLE BLITZ</text>
+</svg>

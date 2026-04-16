@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-label="Sky Sprint thumbnail">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="55%" stop-color="#0c4a6e"/>
+      <stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+    <linearGradient id="track" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f8fafc" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#f8fafc" stop-opacity="0.85"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <circle cx="1270" cy="190" r="140" fill="#bae6fd" fill-opacity="0.5"/>
+  <path d="M120 700 C430 560, 710 590, 980 510 C1100 470, 1260 420, 1480 340" stroke="url(#track)" stroke-width="26" fill="none" stroke-linecap="round"/>
+  <path d="M140 760 C470 620, 730 650, 1010 570 C1150 530, 1320 470, 1500 420" stroke="#7dd3fc" stroke-opacity="0.6" stroke-width="12" fill="none" stroke-linecap="round"/>
+  <g transform="translate(640,430)">
+    <path d="M0 0 L160 -40 L120 20 L260 -10 L130 90 L160 40 L20 70 Z" fill="#f8fafc"/>
+    <circle cx="30" cy="30" r="18" fill="#38bdf8"/>
+  </g>
+  <text x="100" y="790" fill="#e0f2fe" font-family="Segoe UI, Arial, sans-serif" font-size="74" font-weight="700" letter-spacing="5">SKY SPRINT</text>
+</svg>

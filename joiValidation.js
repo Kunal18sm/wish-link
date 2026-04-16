@@ -35,6 +35,7 @@ module.exports.purchaseSchema = Joi.object({
 
     adminInterected: Joi.boolean().optional(),
 
-    isTemporary: Joi.boolean().truthy("true").falsy("false").default(true)
+    isTemporary: Joi.boolean().truthy("true").falsy("false").default(true),
+    paymentMode: Joi.string().trim().lowercase().valid("upi", "coins").default("upi")
   }).default({}).unknown(true)
 }).required().unknown(true);

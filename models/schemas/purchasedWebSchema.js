@@ -27,6 +27,23 @@ const purchasedWebSchema = new Schema({
     default: 0,
   },
 
+  purchaseMode: {
+    type: String,
+    enum: ["upi", "coins"],
+    default: "upi",
+  },
+
+  paidCredits: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+
+  expiresAt: {
+    type: Date,
+    default: null,
+  },
+
   images: [
     {
       url: String,
@@ -83,5 +100,6 @@ purchasedWebSchema.index({ author: 1, date: -1 });
 purchasedWebSchema.index({ adminInterected: 1, _id: -1 });
 purchasedWebSchema.index({ isLive: 1, _id: -1 });
 purchasedWebSchema.index({ date: 1, isTemporary: 1 });
+purchasedWebSchema.index({ expiresAt: 1, isLive: 1 });
 
 module.exports = purchasedWebSchema;

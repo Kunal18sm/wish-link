@@ -19,6 +19,7 @@ const HOME_SELECT_FIELDS = [
   "webUrl",
   "priceForTemporary",
   "priceForPermanent",
+  "purchaseCredits",
   "priority",
 ].join(" ");
 

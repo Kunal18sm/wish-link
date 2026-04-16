@@ -50,7 +50,7 @@ const getPermanentFrameTemplateModel = require("./models/permanentFrameTemplate.
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3000;
 const SITE_URL = (process.env.SITE_URL || "https://wishlink-7j0a.onrender.com").replace(/\/+$/, "");
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || "";
 const ASSET_VERSION = process.env.ASSET_VERSION || "20260329l";
@@ -582,6 +582,7 @@ app.use(async (req, res, next) => {
   res.locals.success = req.flash("success");
   res.locals.error = req.flash("error");
   res.locals.currUser = req.user;
+  res.locals.currentPath = req.path;
   res.locals.userLightPalette = req.user?.lightPalette === "pink" ? "pink" : "blue";
   res.locals.adminUnreadNotificationCount = Number(adminUnreadNotificationCount || 0);
   res.locals.userCredits = Number(req.user?.winnerCount || 0);

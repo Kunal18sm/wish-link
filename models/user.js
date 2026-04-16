@@ -19,6 +19,20 @@ const userSchema = new Schema({
     dateOfBuy: Date,
     receiver: String,
     price: Number,
+    purchaseMode: {
+      type: String,
+      enum: ["upi", "coins"],
+      default: "upi",
+    },
+    paidCredits: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    expiresAt: {
+      type: Date,
+      default: null,
+    },
     isFakePaymentProof: {
       type: Boolean,
       default: false,

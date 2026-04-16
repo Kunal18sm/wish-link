@@ -4,21 +4,51 @@ const wrapAsync = require("../utils/wrapAsync.js");
 const { isLoggedIn, isAdmin } = require("../middleware.js");
 const feedback = require("../models/feedback.js");
 
+const toTrimmedString = (value, maxLength = 500) =>
+  String(value || "")
+    .trim()
+    .slice(0, maxLength);
+
+const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+
 // feedback
 router.post(
   "/add",
-  isLoggedIn,
   wrapAsync(async (req, res) => {
-    const { message } = req.body;
+    const redirectBack = req.get("Referrer") || "/";
+    const payload = req.body.feedback || {};
+    const message = toTrimmedString(payload.message || req.body.message, 1000);
+    const isAuthenticated = Boolean(req.user?._id);
+
+    if (!message) {
+      req.flash("error", "Please enter your feedback message.");
+      return res.redirect(redirectBack);
+    }
+
+    const fallbackName = isAuthenticated ? toTrimmedString(req.user?.username, 80) : "";
+    const fallbackEmail = isAuthenticated ? toTrimmedString(req.user?.email, 120).toLowerCase() : "";
+    const submittedName = toTrimmedString(payload.name || req.body.name, 80);
+    const submittedEmail = toTrimmedString(payload.email || req.body.email, 120).toLowerCase();
+
+    const finalName = fallbackName || submittedName || "Guest User";
+    const finalEmail =
+      fallbackEmail || submittedEmail || `guest-${Date.now()}@wishlo.local`;
+
+    if (!isValidEmail(finalEmail)) {
+      req.flash("error", "Please enter a valid email address.");
+      return res.redirect(redirectBack);
+    }
+
     const newFeedBack = new feedback({
       feedbackmsg: message,
-      email: req.user.email,
-      userName: req.user.username,
-      author: req.user._id,
+      email: finalEmail,
+      userName: finalName,
+      author: isAuthenticated ? req.user._id : undefined,
     });
 
     await newFeedBack.save();
-    res.redirect("/feedback/feedbackpage");
+    req.flash("success", "Thanks for sharing your feedback.");
+    return res.redirect(redirectBack);
   })
 );
 

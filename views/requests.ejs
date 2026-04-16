@@ -78,7 +78,20 @@
 
                                 <a href="/requests/userProfile/<%= request.author %>"><p class="text-slate-100 truncate text-lg">Sender: <%= request.sender %></p></a>
                                 <a href="/requests/userProfileHistory/<%= request.author %>"><p class="text-slate-100 truncate text-lg">Receiver: <%= request.receiver %></p></a>
-                                <p class="text-emerald-400 font-mono font-bold">&#8377;<%= request.price %></p>
+                                <% if (String(request.purchaseMode || "upi").toLowerCase() === "coins") { %>
+                                  <p class="text-amber-300 font-mono font-bold"><%= Number(request.paidCredits || 0) %> coins</p>
+                                <% } else { %>
+                                  <p class="text-emerald-400 font-mono font-bold">&#8377;<%= Number(request.price || 0) %></p>
+                                <% } %>
+                                <p class="text-[11px] text-slate-400 mt-1">
+                                  Mode: <%= String(request.purchaseMode || "upi").toLowerCase() === "coins" ? "Coins" : "UPI" %>
+                                  <% if (request.expiresAt) { %>
+                                    | Expires: <%= new Date(request.expiresAt).toLocaleDateString("en-IN", { dateStyle: "medium", timeZone: "Asia/Kolkata" }) %>
+                                  <% } %>
+                                </p>
+                                <% if (request.isExpired) { %>
+                                  <p class="text-[11px] text-rose-300 mt-1">Status: Expired</p>
+                                <% } %>
                             </div>
                         </div>
 
@@ -93,18 +106,22 @@
                                     </a>
                                 </div>
                                 <% } else { %>
-                                <p class="text-slate-500 text-sm text-center px-5">No payment proof uploaded.</p>
+                                <p class="text-slate-500 text-sm text-center px-5">
+                                  <%= String(request.purchaseMode || "upi").toLowerCase() === "coins" ? "Coins purchase. No payment proof required." : "No payment proof uploaded." %>
+                                </p>
                                 <% } %>
                             </div>
                         </div>
 
                         <div class="w-full lg:w-1/4 flex flex-row lg:flex-col gap-3 justify-end h-full">
-                            <form action="/requests/accept/<%= request._id %><%= scopeQuery %>" class="action-form w-full">
-                                <button type="submit" class="w-full py-3 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-600 hover:text-white transition font-bold text-sm flex justify-center items-center gap-2 group/btn">
-                                    <svg class="w-4 h-4 group-hover/btn:scale-110 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                    Accept
-                                </button>
-                            </form>
+                            <% if (!request.isExpired) { %>
+                              <form action="/requests/accept/<%= request._id %><%= scopeQuery %>" class="action-form w-full">
+                                  <button type="submit" class="w-full py-3 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-600 hover:text-white transition font-bold text-sm flex justify-center items-center gap-2 group/btn">
+                                      <svg class="w-4 h-4 group-hover/btn:scale-110 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                      Accept
+                                  </button>
+                              </form>
+                            <% } %>
 
                             <div class="flex gap-3 w-full">
                                 <a href="<%= request.webUrl %>" target="_blank" class="flex-1 py-3 text-center rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-600 hover:text-white transition font-semibold text-sm">
@@ -117,7 +134,7 @@
                                 </button>
                                 <% } %>
                             </div>
-                            <% if (!request.isLive) { %>
+                            <% if (!request.isLive && String(request.purchaseMode || "upi").toLowerCase() !== "coins") { %>
                             <button type="button" onclick="openDeleteModal('/requests/delete/<%= request._id %><%= fakeDeleteQuery %>', 'fake')" class="w-full py-3 rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500 hover:text-slate-950 transition font-semibold text-sm">
                                 Fake Payment Delete
                             </button>

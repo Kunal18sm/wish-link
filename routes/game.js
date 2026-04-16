@@ -3,13 +3,113 @@ const router = express.Router({ mergeParams: true });
 const wrapAsync = require("../utils/wrapAsync.js");
 const { isLoggedIn, isAdmin } = require("../middleware.js");
 const game = require("../models/game.js");
+const gameTournament = require("../models/gameTournament.js");
 const user = require("../models/user.js");
+const { getBannerSlides, BANNER_PAGES } = require("../utils/bannerConfigCache.js");
 const {
   cache,
   getLeaderboardCacheKey,
   invalidateLeaderboardCache,
 } = require("../utils/runtimeCaches.js");
 const SITE_URL = (process.env.SITE_URL || "https://wishlink-7j0a.onrender.com").replace(/\/+$/, "");
+
+const TOURNAMENT_STATUS = {
+  LIVE: "Live",
+};
+
+const SINGLE_TOURNAMENT_SLUG = "phoenix-rise-weekly-cup";
+const FALLBACK_GAME_BANNER_IMAGE =
+  "https://res.cloudinary.com/drzq6kjgp/image/upload/v1770794063/Gemini_Generated_Image_4qzfxy4qzfxy4qzf_l5tidy.png";
+
+let tournamentSyncPromise = null;
+
+function getGameBannerSlide(slides = []) {
+  if (!Array.isArray(slides) || !slides.length) return null;
+
+  return slides.find((slide) => String(slide?.linkUrl || "").trim().startsWith("/game")) || null;
+}
+
+async function resolveGameBannerImageUrl() {
+  try {
+    const [homeSlides, collectionSlides] = await Promise.all([
+      getBannerSlides(BANNER_PAGES.HOME),
+      getBannerSlides(BANNER_PAGES.COLLECTION),
+    ]);
+
+    const selectedSlide = getGameBannerSlide(homeSlides) || getGameBannerSlide(collectionSlides);
+    const imageUrl = String(selectedSlide?.imageUrl || "").trim();
+    return imageUrl || FALLBACK_GAME_BANNER_IMAGE;
+  } catch (_error) {
+    return FALLBACK_GAME_BANNER_IMAGE;
+  }
+}
+
+async function ensureSingleGameTournament() {
+  if (tournamentSyncPromise) {
+    await tournamentSyncPromise;
+    return;
+  }
+
+  tournamentSyncPromise = (async () => {
+    try {
+      const bannerImageUrl = await resolveGameBannerImageUrl();
+      const existingPrimary = await gameTournament.findOne({ slug: SINGLE_TOURNAMENT_SLUG }).lean();
+
+      if (!existingPrimary) {
+        await gameTournament.create({
+          gameName: "Phoenix Rise",
+          slug: SINGLE_TOURNAMENT_SLUG,
+          title: "Phoenix Rise Weekly Cup",
+          description: "Play Phoenix Rise, post your best score, and climb the monthly rankings.",
+          status: TOURNAMENT_STATUS.LIVE,
+          thumbnailUrl: bannerImageUrl,
+          playUrl: "/game",
+          leaderboardUrl: "/game/leaderboard",
+          isActive: true,
+          priority: 1,
+        });
+      } else if (String(existingPrimary.thumbnailUrl || "").trim() !== bannerImageUrl) {
+        await gameTournament.updateOne(
+          { _id: existingPrimary._id },
+          { $set: { thumbnailUrl: bannerImageUrl } }
+        );
+      }
+
+      // Keep only one game tournament for now.
+      await gameTournament.deleteMany({ slug: { $ne: SINGLE_TOURNAMENT_SLUG } });
+    } catch (error) {
+      const isDuplicateKeyError = Number(error?.code) === 11000;
+      if (!isDuplicateKeyError) {
+        console.log("Game tournament sync warning:", error?.message || error);
+      }
+    }
+  })().finally(() => {
+    tournamentSyncPromise = null;
+  });
+
+  await tournamentSyncPromise;
+}
+
+router.get("/tournaments", wrapAsync(async (req, res) => {
+  const isAuthenticated = Boolean(req.user?._id);
+
+  await ensureSingleGameTournament();
+
+  const tournaments = await gameTournament
+    .find({ isActive: true })
+    .select("gameName slug title description status thumbnailUrl playUrl leaderboardUrl priority")
+    .sort({ priority: 1, createdAt: -1 })
+    .lean();
+
+  return res.render("game/tournaments", {
+    tournaments,
+    isAuthenticated,
+    title: "Game Tournaments - VishLink",
+    description: "Explore all VishLink game tournaments, live events, and leaderboards in one place.",
+    canonical: `${SITE_URL}/game/tournaments`,
+    robots: "index, follow",
+  });
+}));
 
 router.get("/", isLoggedIn, wrapAsync(async (req, res) => {
   res.render("game/butterfly", {

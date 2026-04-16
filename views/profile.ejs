@@ -187,20 +187,34 @@
                                 <h3 class="font-bold text-slate-100 w-full truncate" title="<%= order.webName %>"><%= order.webName %></h3>
                                 
                                 <% if(!viewHistory) { %>
-                                <span class="px-2.5 py-1 text-[10px] uppercase font-bold tracking-wide rounded-full border <%= order.isLive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20' %>">
-                                    <%= order.isLive ? 'Live' : 'Pending' %>
+                                <span class="px-2.5 py-1 text-[10px] uppercase font-bold tracking-wide rounded-full border <%= order.isExpired ? 'bg-rose-500/10 text-rose-300 border-rose-500/30' : (order.isLive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20') %>">
+                                    <%= order.isExpired ? 'Expired' : (order.isLive ? 'Live' : 'Pending') %>
                                 </span>
                                 <% } %>
 
                                 <% if(viewHistory) { %>
-                                    <span class="px-2.5 py-1 text-[10px] uppercase font-bold tracking-wide rounded-full border <%= order.isLive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20' %>">
-                                    <%= new Date(order.dateOfBuy).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata'}) %>
+                                    <span class="px-2.5 py-1 text-[10px] uppercase font-bold tracking-wide rounded-full border <%= order.isExpired ? 'bg-rose-500/10 text-rose-300 border-rose-500/30' : (order.isLive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20') %>">
+                                    <%= new Date(order.dateOfBuy || order.date || 0).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata'}) %>
                                     </span>
                                 <% } %>
                             </div>
                             
                             <p class="text-sm text-slate-400 mb-5">For: <span class="text-white font-medium"><%= order.receiver %></span></p>
-                            <p class="text-sm text-slate-400 mb-5">Price: <span class="text-white font-medium"><%= order.price %></span></p>
+                            <p class="text-sm text-slate-400 mb-2">
+                                Payment:
+                                <% if (String(order.purchaseMode || "upi").toLowerCase() === "coins") { %>
+                                    <span class="inline-flex items-center gap-1 text-amber-300 font-medium">
+                                        <img src="<%= coinIconPath %>" alt="coin" width="14" height="14" loading="lazy" decoding="async" class="w-3.5 h-3.5">
+                                        <%= Number(order.paidCredits || 0) %> coins
+                                    </span>
+                                <% } else { %>
+                                    <span class="text-white font-medium">&#8377;<%= Number(order.price || 0) %></span>
+                                <% } %>
+                            </p>
+                            <p class="text-xs text-slate-500 mb-4">Mode: <%= String(order.purchaseMode || "upi").toLowerCase() === "coins" ? "Coins" : "UPI" %></p>
+                            <% if (order.expiresAt) { %>
+                                <p class="text-xs text-amber-300 mb-4">Expires on: <%= new Date(order.expiresAt).toLocaleDateString('en-IN', { dateStyle: 'medium', timeZone: 'Asia/Kolkata' }) %></p>
+                            <% } %>
                             <% if(viewHistory && order.isFakePaymentProof) { %>
                             <div class="mb-5 rounded-xl border border-rose-500/40 bg-rose-500/10 p-3">
                                 <p class="text-xs font-semibold uppercase tracking-wide text-rose-300">Fake Payment Proof</p>
@@ -238,7 +252,7 @@
                                 <% } else { %>
                                     <% if( !viewHistory ){ %>
                                     <div class="w-full bg-slate-800/50 h-10 rounded-xl flex items-center justify-center gap-2 text-xs text-slate-500 animate-pulse border border-dashed border-slate-700">
-                                        Verifying your payment details...
+                                        <%= order.isExpired ? 'This link has expired.' : 'Verifying your payment details...' %>
                                     </div>
                                     <% } %>
                                 <% } %>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-label="Phoenix Rise thumbnail">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a8a"/>
+      <stop offset="60%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#7c2d12"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="72%" cy="32%" r="58%">
+      <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#f97316" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <circle cx="1120" cy="290" r="360" fill="url(#sun)"/>
+  <path d="M360 610 C520 540, 640 430, 780 360 C760 470, 700 560, 640 650 C760 600, 860 520, 940 420 C900 600, 760 720, 560 760 C470 770, 390 720, 360 610 Z" fill="#fb923c" fill-opacity="0.88"/>
+  <path d="M470 640 C560 610, 680 520, 770 430 C740 530, 670 620, 600 680 C670 660, 750 610, 810 550 C760 670, 650 740, 530 740 C500 730, 480 700, 470 640 Z" fill="#facc15" fill-opacity="0.95"/>
+  <text x="100" y="760" fill="#e2e8f0" font-family="Segoe UI, Arial, sans-serif" font-size="74" font-weight="700" letter-spacing="5">PHOENIX RISE</text>
+</svg>

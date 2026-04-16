@@ -70,7 +70,7 @@
       <div class="w-full max-w-5xl overflow-hidden">
         <div class="overflow-x-auto no-scrollbar py-2">
           <div class="flex flex-nowrap gap-2 px-4 w-max mx-auto">
-            <% const categories=["All","Free", "Birthday" , "Valentine's" , "Sorry" , "Family" , "Couple"
+            <% const categories=["All", "Birthday" , "Valentine's" , "Sorry" , "Family" , "Couple"
               , "Anniversary" , "Wedding" , "Best Friend" , "Festival" , "New Year" ]; %>
               <% categories.forEach(tag=> { %>
                 <a href="/category/<%= tag.toLowerCase() %>"
@@ -131,12 +131,6 @@
                   Live Preview
                 </a>
 
-                <% if(sample.priceForPermanent && sample.priceForTemporary===0 ) { %>
-                  <span
-                    class="mr-2 px-3 py-1 bg-emerald-500 text-white-400 border border-emerald-500/20 text-[10px] font-medium rounded-md tracking-wide">
-                    Free
-                  </span>
-                  <% } %>
               </div>
             </div>
 
@@ -153,7 +147,6 @@
               <p class="text-slate-400 text-xs md:text-sm mb-4 md:mb-6 line-clamp-2 flex-grow">
                 <%= sample.description %>
               </p>
-
               <!-- Action Buttons -->
               <div class="grid grid-cols-2 gap-3 mt-auto">
                 <!-- Preview Button -->

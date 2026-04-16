@@ -55,6 +55,12 @@ const PAYMENT_UPI_NOTE = getFirstEnvValue("PAYMENT_UPI_NOTE", "UPI_NOTE") || "Vi
 const PAYMENT_QR_IMAGE_URL =
   getFirstEnvValue("PAYMENT_QR_IMAGE_URL", "UPI_QR_IMAGE_URL") || DEFAULT_PAYMENT_QR_IMAGE_URL;
 const PAYMENT_CURRENCY = "INR";
+const PURCHASE_MODE = {
+  UPI: "upi",
+  COINS: "coins",
+};
+const COIN_PURCHASE_EXPIRY_MONTHS = 6;
+const DEFAULT_TEMPLATE_COIN_PRICE = 25;
 
 const purchaseUploadFields = [
   { name: "images", maxCount: 5 },
@@ -84,12 +90,12 @@ const TEMPLATE_CATEGORIES = [
   "eid",
   "holi",
 ];
-const PURCHASE_TEMPLATE_SELECT = "webName webUrl priceForTemporary priceForPermanent";
+const PURCHASE_TEMPLATE_SELECT = "webName webUrl priceForTemporary priceForPermanent purchaseCredits";
 const PREVIEW_TEMPLATE_SELECT = "webUrl";
 const PURCHASE_FORM_TEMPLATE_SELECT =
-  "webName webUrl priceForTemporary priceForPermanent imageNeeded description";
+  "webName webUrl priceForTemporary priceForPermanent purchaseCredits imageNeeded description";
 const EDIT_TEMPLATE_SELECT =
-  "webName priceForTemporary priceForPermanent imageUrl webUrl description imageNeeded tags articleTitle articleContent priority";
+  "webName priceForTemporary priceForPermanent purchaseCredits imageUrl webUrl description imageNeeded tags articleTitle articleContent priority";
 
 const getRedirectBack = (req) => req.get("Referrer") || "/";
 
@@ -110,6 +116,15 @@ const getPurchaseFailureMessage = (err) => {
   if (message.includes("payment screenshot is required")) {
     return "Please upload payment screenshot to continue.";
   }
+  if (message.includes("insufficient coins")) {
+    return "Aapke coins kam hain. Daily reward claim karein ya admin se coins add karwayen.";
+  }
+  if (message.includes("coin purchase is not enabled")) {
+    return "Is template ke liye coins purchase abhi enabled nahi hai.";
+  }
+  if (message.includes("coins are not available for permanent links")) {
+    return "Permanent links can only be purchased via UPI.";
+  }
   return "Purchase failed. Please try again.";
 };
 
@@ -117,14 +132,38 @@ const parseIsTemporary = (value) => {
   if (typeof value === "boolean") return value;
   return String(value).toLowerCase() === "true";
 };
+const parsePurchaseMode = (value) =>
+  String(value || PURCHASE_MODE.UPI).trim().toLowerCase() === PURCHASE_MODE.COINS
+    ? PURCHASE_MODE.COINS
+    : PURCHASE_MODE.UPI;
 
 const toFiniteNumberOrDefault = (value, fallback = 0) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
 };
+const toNonNegativeInteger = (value, fallback = 0) => {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed < 0) return fallback;
+  return parsed;
+};
+const resolveTemplateCoinPrice = (value, fallback = DEFAULT_TEMPLATE_COIN_PRICE) =>
+  Math.max(0, toNonNegativeInteger(value, fallback));
 
 const toCurrencyAmount = (value) =>
   Number(Math.max(0, toFiniteNumberOrDefault(value, 0)).toFixed(2));
+const getCoinPurchaseExpiryDate = (fromDate = new Date()) => {
+  const expiryDate = new Date(fromDate);
+  expiryDate.setMonth(expiryDate.getMonth() + COIN_PURCHASE_EXPIRY_MONTHS);
+  return expiryDate;
+};
+const formatDateIndia = (dateValue) => {
+  const parsedDate = new Date(dateValue);
+  if (Number.isNaN(parsedDate.getTime())) return "";
+  return parsedDate.toLocaleDateString("en-IN", {
+    dateStyle: "medium",
+    timeZone: "Asia/Kolkata",
+  });
+};
 
 const buildUpiPaymentQuery = (amount, templateName = "", purchaseType = "") => {
   if (!PAYMENT_UPI_ID || amount <= 0) return "";
@@ -187,6 +226,7 @@ const buildTemplatePayload = (formData = {}) => ({
   webName: String(formData.webName || "").trim(),
   priceForTemporary: toFiniteNumberOrDefault(formData.priceForTemporary, 0),
   priceForPermanent: toFiniteNumberOrDefault(formData.priceForPermanent, 0),
+  purchaseCredits: resolveTemplateCoinPrice(formData.purchaseCredits),
   webUrl: String(formData.webUrl || "").trim(),
   description: String(formData.description || "").trim(),
   imageNeeded: toFiniteNumberOrDefault(formData.imageNeeded, 5),
@@ -221,6 +261,8 @@ const createPurchaseHandler = (expectedIsTemporary) =>
     const isPermanentPurchase = !isTemporary;
     const destroyOptions = isPermanentPurchase ? permanentCloudinaryOptions : null;
     const userId = req.user?._id;
+    let deductedCredits = 0;
+    let purchaseSaved = false;
 
     const uploadedPublicIds = [
       ...(req.files?.images || []).map((file) => file.filename),
@@ -243,6 +285,7 @@ const createPurchaseHandler = (expectedIsTemporary) =>
         throw new Error("Invalid purchase type for this form.");
       }
 
+      const purchaseMode = parsePurchaseMode(buyinfo.paymentMode);
       const PurchaseModel = getPurchaseModelForType(req, isTemporary);
       const imagesArr = (req.files?.images || []).map((file) => ({
         url: file.path,
@@ -267,8 +310,16 @@ const createPurchaseHandler = (expectedIsTemporary) =>
 
       const temporaryPrice = Math.max(0, toFiniteNumberOrDefault(selectedWeb.priceForTemporary, 0));
       const permanentPrice = Math.max(0, toFiniteNumberOrDefault(selectedWeb.priceForPermanent, 0));
+      const purchaseCredits = resolveTemplateCoinPrice(selectedWeb.purchaseCredits);
       const paymentAmount = isTemporary ? temporaryPrice : permanentPrice;
-      const requiresPaymentProof = paymentAmount > 0;
+      const isCoinPurchase = purchaseMode === PURCHASE_MODE.COINS;
+      if (!isTemporary && isCoinPurchase) {
+        throw new Error("Coins are not available for permanent links.");
+      }
+      if (isCoinPurchase && purchaseCredits <= 0) {
+        throw new Error("Coin purchase is not enabled.");
+      }
+      const requiresPaymentProof = !isCoinPurchase && paymentAmount > 0;
       if (requiresPaymentProof && !paymentImg) {
         throw new Error("Payment screenshot is required.");
       }
@@ -277,7 +328,43 @@ const createPurchaseHandler = (expectedIsTemporary) =>
         paymentImg = null;
       }
 
-      const price = paymentAmount;
+      let price = paymentAmount;
+      let paidCredits = 0;
+      let expiresAt = null;
+
+      if (isCoinPurchase) {
+        if (!userId) {
+          throw new Error("User session not found for coin purchase.");
+        }
+
+        paidCredits = purchaseCredits;
+        expiresAt = getCoinPurchaseExpiryDate();
+        price = 0;
+
+        const updatedUser = await user.findOneAndUpdate(
+          {
+            _id: userId,
+            winnerCount: { $gte: paidCredits },
+          },
+          {
+            $inc: { winnerCount: -paidCredits },
+          },
+          {
+            new: true,
+            projection: { winnerCount: 1 },
+          }
+        );
+
+        if (!updatedUser) {
+          throw new Error("Insufficient coins.");
+        }
+
+        deductedCredits = paidCredits;
+        if (req.user) {
+          req.user.winnerCount = Number(updatedUser.winnerCount || 0);
+        }
+      }
+
       const sender =
         typeof buyinfo.sender === "string" && buyinfo.sender.trim()
           ? buyinfo.sender.trim()
@@ -290,7 +377,7 @@ const createPurchaseHandler = (expectedIsTemporary) =>
 
       const purchaseId = uuidv4();
       const finalWebUrl = buildPurchasedWebUrl(selectedWeb.webUrl, purchaseId, isTemporary);
-      const isLive = price <= 15;
+      const isLive = isCoinPurchase ? true : price <= 15;
 
       const savedPurchase = await new PurchaseModel({
         purchaseId,
@@ -305,28 +392,36 @@ const createPurchaseHandler = (expectedIsTemporary) =>
         webName: buyinfo.webName || selectedWeb.webName,
         isLive,
         isTemporary,
+        adminInterected: isCoinPurchase,
+        purchaseMode,
+        paidCredits,
+        expiresAt,
       }).save();
+      purchaseSaved = true;
 
-      try {
-        await createAdminNotification(req.app, {
-          type: "purchase_request",
-          title: isTemporary ? "New Temporary Request" : "New Permanent Request",
-          message: `${sender} requested ${selectedWeb.webName} for ${receiver || "a recipient"}.`,
-          link: isTemporary ? "/requests" : "/requests/permanent",
-          entityType: "purchase",
-          entityId: String(savedPurchase._id),
-          actor: req.user,
-          meta: {
-            requestScope: isTemporary ? "default" : "permanent",
-            templateName: selectedWeb.webName,
-            sender,
-            receiver,
-            price,
-            isTemporary,
-          },
-        });
-      } catch (notifyErr) {
-        console.log("Admin purchase notification warning:", notifyErr?.message || notifyErr);
+      if (!isCoinPurchase) {
+        try {
+          await createAdminNotification(req.app, {
+            type: "purchase_request",
+            title: isTemporary ? "New Temporary Request" : "New Permanent Request",
+            message: `${sender} requested ${selectedWeb.webName} for ${receiver || "a recipient"}.`,
+            link: isTemporary ? "/requests" : "/requests/permanent",
+            entityType: "purchase",
+            entityId: String(savedPurchase._id),
+            actor: req.user,
+            meta: {
+              requestScope: isTemporary ? "default" : "permanent",
+              templateName: selectedWeb.webName,
+              sender,
+              receiver,
+              price,
+              isTemporary,
+              purchaseMode,
+            },
+          });
+        } catch (notifyErr) {
+          console.log("Admin purchase notification warning:", notifyErr?.message || notifyErr);
+        }
       }
 
       // Non-critical updates should not block a successful purchase document save.
@@ -338,6 +433,9 @@ const createPurchaseHandler = (expectedIsTemporary) =>
               dateOfBuy: new Date(),
               receiver,
               price,
+              purchaseMode,
+              paidCredits,
+              expiresAt,
               paymentProofUrl: paymentImg,
               purchasedId: savedPurchase._id,
               permanentLink: isTemporary ? "" : finalWebUrl,
@@ -350,9 +448,31 @@ const createPurchaseHandler = (expectedIsTemporary) =>
         console.log("Post-save sync warning:", postSaveErr.message);
       }
 
-      req.flash("success", "Purchase Success");
+      if (isCoinPurchase) {
+        req.flash(
+          "success",
+          `Template unlocked with ${paidCredits} coins. Valid till ${formatDateIndia(expiresAt)}.`
+        );
+      } else {
+        req.flash("success", "Purchase Success");
+      }
       return res.redirect("/profile");
     } catch (err) {
+      if (deductedCredits > 0 && !purchaseSaved && userId) {
+        try {
+          const refundedUser = await user.findByIdAndUpdate(
+            userId,
+            { $inc: { winnerCount: deductedCredits } },
+            { new: true, projection: { winnerCount: 1 } }
+          );
+          if (req.user && refundedUser) {
+            req.user.winnerCount = Number(refundedUser.winnerCount || 0);
+          }
+        } catch (refundErr) {
+          console.log("Coin refund warning:", refundErr?.message || refundErr);
+        }
+      }
+
       await cleanupUploads();
       console.log("Purchase failed:", err.message);
       req.flash("error", getPurchaseFailureMessage(err));
@@ -413,7 +533,7 @@ router.post(
       priceForTemporary: payload.priceForTemporary,
       priceForPermanent: payload.priceForPermanent,
       previewCredits: 0,
-      purchaseCredits: 0,
+      purchaseCredits: payload.purchaseCredits,
       imageUrl: { url, filename },
       webUrl: payload.webUrl,
       description: payload.description,
@@ -490,7 +610,7 @@ router.put(
       priceForTemporary: payload.priceForTemporary,
       priceForPermanent: payload.priceForPermanent,
       previewCredits: 0,
-      purchaseCredits: 0,
+      purchaseCredits: payload.purchaseCredits,
       webUrl: payload.webUrl,
       description: payload.description,
       imageNeeded: payload.imageNeeded,
@@ -539,6 +659,10 @@ router.get(
     }
     const isTemporary = true;
     const paymentAmount = toCurrencyAmount(selectedWeb.priceForTemporary);
+    const coinPrice = resolveTemplateCoinPrice(selectedWeb.purchaseCredits);
+    const requestedPaymentMode = parsePurchaseMode(req.query.pay);
+    const defaultPaymentMode =
+      coinPrice > 0 ? requestedPaymentMode : PURCHASE_MODE.UPI;
     const upiLinks = buildUpiPaymentLinks(
       paymentAmount,
       selectedWeb.webName,
@@ -557,6 +681,9 @@ router.get(
       upiLinks,
       paymentQrImageUrl: PAYMENT_QR_IMAGE_URL,
       paymentUpiId: PAYMENT_UPI_ID,
+      coinPrice,
+      defaultPaymentMode,
+      coinPurchaseValidityMonths: COIN_PURCHASE_EXPIRY_MONTHS,
       recentFeedbacks,
     });
   })
@@ -582,6 +709,8 @@ router.get(
     }
     const isTemporary = false;
     const paymentAmount = toCurrencyAmount(selectedWeb.priceForPermanent);
+    const coinPrice = 0;
+    const defaultPaymentMode = PURCHASE_MODE.UPI;
     const upiLinks = buildUpiPaymentLinks(
       paymentAmount,
       selectedWeb.webName,
@@ -600,6 +729,9 @@ router.get(
       upiLinks,
       paymentQrImageUrl: PAYMENT_QR_IMAGE_URL,
       paymentUpiId: PAYMENT_UPI_ID,
+      coinPrice,
+      defaultPaymentMode,
+      coinPurchaseValidityMonths: COIN_PURCHASE_EXPIRY_MONTHS,
       recentFeedbacks,
     });
   })

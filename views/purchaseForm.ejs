@@ -5,6 +5,20 @@
   const fallbackAmount = isTemporary ? temporaryPrice : permanentPrice;
   const payableAmount = Number.isFinite(Number(paymentAmount)) ? Number(paymentAmount) : fallbackAmount;
   const requiresPayment = payableAmount > 0;
+  const fallbackCoinPrice = Number(selectedWeb?.purchaseCredits);
+  const resolvedCoinPrice = Number.isFinite(Number(coinPrice)) ? Number(coinPrice) : fallbackCoinPrice;
+  const templateCoinPrice = Number.isFinite(resolvedCoinPrice)
+    ? Math.max(0, Math.floor(resolvedCoinPrice))
+    : 0;
+  const canUseCoins = isTemporary && templateCoinPrice > 0;
+  const currentUserCoins = Number.isFinite(Number(userCredits)) ? Math.max(0, Number(userCredits)) : 0;
+  const hasEnoughCoins = currentUserCoins >= templateCoinPrice;
+  const requestedDefaultMode = String(defaultPaymentMode || "upi").toLowerCase();
+  const initialPaymentMode =
+    requestedDefaultMode === "coins" && canUseCoins && hasEnoughCoins ? "coins" : "upi";
+  const coinValidityMonths = Number.isFinite(Number(coinPurchaseValidityMonths))
+    ? Math.max(1, Number(coinPurchaseValidityMonths))
+    : 6;
   const resolvedUpiLinks = upiLinks || {};
   const universalUpiLink = autoPaymentLink || resolvedUpiLinks.upi || "";
   const intentUpiLink = resolvedUpiLinks.intent || "";
@@ -45,22 +59,25 @@
         <% if(isTemporary) { %>
           <details class="purchase-accordion bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl w-full">
             <summary class="cursor-pointer flex items-center justify-between text-amber-300 font-semibold text-sm md:text-base" style="list-style:none;">
-              <span>This link will expire in 1 month</span>
+              <span>UPI purchase expires in 1 month | Coins purchase expires in <%= coinValidityMonths %> months</span>
               <span class="text-xs text-amber-300">&#9662;</span>
             </summary>
             <p class="mt-3 text-amber-100/90 text-sm leading-relaxed">
-              To generate a permanent link, please return to the template and select the "Permanent Link" option.
+              Coin payment unlocks your link instantly and keeps it valid for <%= coinValidityMonths %> months.
             </p>
           </details>
         <% } %>
 
-        <div class="w-full rounded-2xl border border-indigo-500/25 bg-indigo-500/10 p-4">
-          <h2 class="text-sm md:text-base font-semibold text-indigo-200">Multiple Attempts Allowed</h2>
+        <details class="purchase-accordion w-full rounded-2xl border border-indigo-500/25 bg-indigo-500/10 p-4">
+          <summary class="cursor-pointer flex items-center justify-between text-indigo-200 font-semibold text-sm md:text-base" style="list-style:none;">
+            <span>Multiple Attempts Allowed</span>
+            <span class="text-xs text-indigo-200">&#9662;</span>
+          </summary>
           <p class="mt-2 text-sm text-slate-300 leading-relaxed">
-            If you are not satisfied with your images on the template or want any changes, you can create a new attempt and upload the same payment screenshot again.
-            After the new link is created, your old link will be deleted.
+            Not happy with current output? Create a new attempt and reuse the same payment screenshot.
+            Once the new link is created, the old one is removed automatically.
           </p>
-        </div>
+        </details>
 
         <!-- MAIN FORM -->
         
@@ -69,7 +86,7 @@
             <p class="text-emerald-500 text-lg mb-2">All created links will be shown in your profile.</p>         
 
           <% if( !isTemporary ){ %>
-            <div class="mt-4 mb-4 inline-flex items-center gap-2 px-4 py-2 
+            <div id="paymentVerificationNote" class="mt-4 mb-4 inline-flex items-center gap-2 px-4 py-2 <%= initialPaymentMode === 'coins' ? 'hidden' : '' %>
             bg-amber-500/5 text-amber-600 
             rounded-xl text-xs font-medium 
             tracking-wide border border-amber-500/10">
@@ -94,6 +111,45 @@
 
                   <% if( isTemporary ){ %>
                     <input type="hidden" name="purchase[isTemporary]" value="true">
+                  <% } %>
+
+                  <% if (canUseCoins) { %>
+                    <div class="col-span-1 md:col-span-2">
+                      <label class="block text-sm font-semibold mb-2 text-slate-300">Payment Method</label>
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label class="cursor-pointer rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3">
+                          <input
+                            type="radio"
+                            name="purchase[paymentMode]"
+                            value="upi"
+                            class="mr-2 align-middle"
+                            <%= initialPaymentMode === "upi" ? "checked" : "" %>>
+                          <span class="align-middle text-sm font-semibold text-emerald-200">UPI / Screenshot</span>
+                          <p class="mt-1 text-xs text-emerald-100/80">Your link goes live after manual verification.</p>
+                        </label>
+                        <label class="cursor-pointer rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 <%= hasEnoughCoins ? '' : 'opacity-70' %>">
+                          <input
+                            type="radio"
+                            name="purchase[paymentMode]"
+                            value="coins"
+                            class="mr-2 align-middle"
+                            <%= initialPaymentMode === "coins" ? "checked" : "" %>
+                            <%= hasEnoughCoins ? "" : "disabled" %>>
+                          <span class="align-middle text-sm font-semibold text-amber-200">Coins</span>
+                          <p class="mt-1 text-xs text-amber-100/90">
+                            <strong><%= templateCoinPrice %> coins</strong> | Balance: <%= currentUserCoins %>
+                          </p>
+                          <p class="mt-1 text-xs text-amber-100/80">Instant unlock, expiry <%= coinValidityMonths %> months.</p>
+                        </label>
+                      </div>
+                      <% if (!hasEnoughCoins) { %>
+                        <p id="coinInsufficientMessage" class="mt-2 text-xs text-rose-300">
+                          Your coin balance is too low. Use UPI mode or collect more coins from daily rewards.
+                        </p>
+                      <% } %>
+                    </div>
+                  <% } else { %>
+                    <input type="hidden" name="purchase[paymentMode]" value="upi">
                   <% } %>
 
                   <div>
@@ -127,8 +183,19 @@
                         class="w-full px-4 py-3 rounded-xl form-input text-white" required></textarea>
                     </div>
 
+                  <% if (canUseCoins) { %>
+                    <div id="coinPaymentSection" class="col-span-1 md:col-span-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 <%= initialPaymentMode === 'coins' ? '' : 'hidden' %>">
+                      <h3 class="text-sm font-semibold text-amber-200">Coins Checkout</h3>
+                      <p class="mt-2 text-sm text-amber-100/90">
+                        This template requires <strong><%= templateCoinPrice %> coins</strong>.
+                      </p>
+                      <p class="mt-1 text-xs text-amber-100/80">Current balance: <%= currentUserCoins %> coins.</p>
+                      <p class="mt-1 text-xs text-amber-100/80">After coin purchase, this link stays valid for <%= coinValidityMonths %> months.</p>
+                    </div>
+                  <% } %>
+
                   <% if(requiresPayment){ %>
-                    <div class="col-span-1 md:col-span-2">
+                    <div id="upiPaymentSection" class="col-span-1 md:col-span-2 <%= initialPaymentMode === 'coins' ? 'hidden' : '' %>">
                       <details class="purchase-accordion rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
                         <summary class="cursor-pointer flex items-center justify-between text-emerald-300 font-semibold text-sm" style="list-style:none;">
                           <span>Price - &#8377;<%= displayPaymentAmount %></span>
@@ -164,10 +231,10 @@
                   <% } %>
 
                   <% if(requiresPayment){ %>
-                    <div class="col-span-1 md:col-span-2">
+                    <div id="upiProofSection" class="col-span-1 md:col-span-2 <%= initialPaymentMode === 'coins' ? 'hidden' : '' %>">
                       <label class="block text-sm font-semibold mb-2 text-slate-300">Payment Screenshot</label>
-                      <input name="paymentImage" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
-                          class="w-full px-4 py-3 rounded-xl form-input text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-500/10 file:text-emerald-400 hover:file:bg-emerald-500/20" required>
+                      <input id="paymentImageInput" name="paymentImage" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+                          class="w-full px-4 py-3 rounded-xl form-input text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-500/10 file:text-emerald-400 hover:file:bg-emerald-500/20" <%= initialPaymentMode === 'coins' ? '' : 'required' %>>
                     </div>
                   <% } %>
 
@@ -175,7 +242,7 @@
 
                 <button type="submit" id="submitBtn"
                   class="w-full gradient-bg py-4 rounded-xl font-bold text-white shadow-lg shadow-indigo-500/30 hover:opacity-90 transition transform hover:-translate-y-1">
-                  Create Link
+                  <%= initialPaymentMode === "coins" ? "Unlock With Coins" : "Create Link" %>
                 </button>
               </form>
         </div>
@@ -284,6 +351,63 @@
       const form = document.getElementById("BuyForm");
       const btn = document.getElementById("submitBtn");
       const upiPayBtn = document.getElementById("upiPayBtn");
+      const paymentModeInputs = Array.from(
+        document.querySelectorAll('input[name="purchase[paymentMode]"]')
+      );
+      const upiPaymentSection = document.getElementById("upiPaymentSection");
+      const upiProofSection = document.getElementById("upiProofSection");
+      const paymentImageInput = document.getElementById("paymentImageInput");
+      const coinPaymentSection = document.getElementById("coinPaymentSection");
+      const verificationNote = document.getElementById("paymentVerificationNote");
+      const coinOptionEnabled = <%= canUseCoins ? "true" : "false" %>;
+      const hasEnoughCoinsForPurchase = <%= hasEnoughCoins ? "true" : "false" %>;
+      const upiProofRequired = <%= requiresPayment ? "true" : "false" %>;
+
+      function getSelectedPaymentMode() {
+        if (!paymentModeInputs.length) return "upi";
+        const checkedInput = paymentModeInputs.find((input) => input.checked);
+        return checkedInput ? String(checkedInput.value || "upi").toLowerCase() : "upi";
+      }
+
+      function setVisibility(element, visible) {
+        if (!element) return;
+        element.classList.toggle("hidden", !visible);
+      }
+
+      function syncPaymentModeUi() {
+        const mode = getSelectedPaymentMode();
+        const usingCoins = coinOptionEnabled && mode === "coins";
+
+        setVisibility(coinPaymentSection, usingCoins);
+        setVisibility(upiPaymentSection, !usingCoins && upiProofRequired);
+        setVisibility(upiProofSection, !usingCoins && upiProofRequired);
+        setVisibility(verificationNote, !usingCoins && Boolean(verificationNote));
+
+        if (paymentImageInput) {
+          paymentImageInput.required = !usingCoins && upiProofRequired;
+        }
+
+        if (!btn) return;
+
+        if (usingCoins) {
+          if (!hasEnoughCoinsForPurchase) {
+            btn.disabled = true;
+            btn.innerText = "Not Enough Coins";
+            return;
+          }
+          btn.disabled = false;
+          btn.innerText = "Unlock With Coins";
+          return;
+        }
+
+        btn.disabled = false;
+        btn.innerText = "Create Link";
+      }
+
+      paymentModeInputs.forEach((input) => {
+        input.addEventListener("change", syncPaymentModeUi);
+      });
+      syncPaymentModeUi();
 
       if (upiPayBtn) {
         upiPayBtn.addEventListener("click", (event) => {
@@ -319,13 +443,22 @@
       form.addEventListener("submit", async function (event) {
         if (form.dataset.optimizedSubmit === "true") return;
         event.preventDefault();
+        const selectedMode = getSelectedPaymentMode();
+        const usingCoins = coinOptionEnabled && selectedMode === "coins";
+
+        if (usingCoins && !hasEnoughCoinsForPurchase) {
+          alert("You do not have enough coins for this template.");
+          return;
+        }
 
         btn.disabled = true;
         btn.innerText = "Optimizing images...";
 
         try {
           await optimizeInputFiles(form.querySelector('input[name="images"]'));
-          await optimizeInputFiles(form.querySelector('input[name="paymentImage"]'));
+          if (!usingCoins) {
+            await optimizeInputFiles(form.querySelector('input[name="paymentImage"]'));
+          }
         } catch (_err) {
           // If optimization fails, original images will still be uploaded.
         }

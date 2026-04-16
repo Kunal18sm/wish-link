@@ -53,7 +53,7 @@ const WebSampleSchema = new Schema({
   },
   purchaseCredits: {
     type: Number,
-    default: 0,
+    default: 25,
     min: 0,
   },
   priority: {
