@@ -25,6 +25,7 @@ const PHOTO_FRAME_DOWNLOAD_CREDITS = Math.max(
   Number.parseInt(process.env.PHOTO_FRAME_DOWNLOAD_CREDITS || "1", 10) || 1
 );
 const NEW_SIGNUP_CREDITS = 15;
+const MONEY_PURCHASE_EXPIRY_MONTHS = 6;
 const PROFILE_PURCHASE_SELECT =
   "webName webUrl receiver price isLive isTemporary date author purchaseMode paidCredits expiresAt";
 const HERO_PRIMARY_IMAGE =
@@ -259,18 +260,34 @@ function toTitleCase(rawValue) {
     .join(" ");
 }
 
-function isExpiredPurchase(expiresAt) {
-  if (!expiresAt) return false;
-  const expiryDate = new Date(expiresAt);
-  if (Number.isNaN(expiryDate.getTime())) return false;
-  return expiryDate.getTime() <= Date.now();
+function getDateAfterAddingMonths(dateValue, monthsToAdd) {
+  const baseDate = new Date(dateValue);
+  if (Number.isNaN(baseDate.getTime())) return null;
+  baseDate.setMonth(baseDate.getMonth() + monthsToAdd);
+  return baseDate;
+}
+
+function isExpiredPurchase(rawPurchase) {
+  const purchaseDoc =
+    rawPurchase && typeof rawPurchase === "object" ? rawPurchase : { expiresAt: rawPurchase };
+  const expiryDate = new Date(purchaseDoc?.expiresAt);
+  if (!Number.isNaN(expiryDate.getTime())) {
+    return expiryDate.getTime() <= Date.now();
+  }
+
+  // Legacy UPI docs may not have expiresAt. Fall back to purchase date + configured validity.
+  const purchaseMode = String(purchaseDoc?.purchaseMode || "upi").toLowerCase();
+  if (purchaseMode === "coins") return false;
+  const legacyExpiryDate = getDateAfterAddingMonths(purchaseDoc?.date, MONEY_PURCHASE_EXPIRY_MONTHS);
+  if (!legacyExpiryDate) return false;
+  return legacyExpiryDate.getTime() <= Date.now();
 }
 
 function normalizePurchaseForView(rawPurchase) {
   const doc = rawPurchase && typeof rawPurchase.toObject === "function"
     ? rawPurchase.toObject()
     : { ...(rawPurchase || {}) };
-  const isExpired = isExpiredPurchase(doc.expiresAt);
+  const isExpired = isExpiredPurchase(doc);
 
   return {
     ...doc,

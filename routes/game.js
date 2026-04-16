@@ -17,9 +17,10 @@ const TOURNAMENT_STATUS = {
   LIVE: "Live",
 };
 
-const SINGLE_TOURNAMENT_SLUG = "phoenix-rise-weekly-cup";
+const SINGLE_TOURNAMENT_SLUG = "phoenix-rise-daily-cup";
 const FALLBACK_GAME_BANNER_IMAGE =
   "https://res.cloudinary.com/drzq6kjgp/image/upload/v1770794063/Gemini_Generated_Image_4qzfxy4qzfxy4qzf_l5tidy.png";
+const LEADERBOARD_REWARDS_BY_RANK = [10, 7, 5, 1, 1, 1, 1, 1, 1, 1];
 
 let tournamentSyncPromise = null;
 
@@ -59,8 +60,8 @@ async function ensureSingleGameTournament() {
         await gameTournament.create({
           gameName: "Phoenix Rise",
           slug: SINGLE_TOURNAMENT_SLUG,
-          title: "Phoenix Rise Weekly Cup",
-          description: "Play Phoenix Rise, post your best score, and climb the monthly rankings.",
+          title: "Phoenix Rise Daily Cup",
+          description: "Play Phoenix Rise, post your best score, and climb the daily rankings.",
           status: TOURNAMENT_STATUS.LIVE,
           thumbnailUrl: bannerImageUrl,
           playUrl: "/game",
@@ -68,11 +69,29 @@ async function ensureSingleGameTournament() {
           isActive: true,
           priority: 1,
         });
-      } else if (String(existingPrimary.thumbnailUrl || "").trim() !== bannerImageUrl) {
-        await gameTournament.updateOne(
-          { _id: existingPrimary._id },
-          { $set: { thumbnailUrl: bannerImageUrl } }
-        );
+      } else {
+        const nextTournamentValues = {
+          gameName: "Phoenix Rise",
+          title: "Phoenix Rise Daily Cup",
+          description: "Play Phoenix Rise, post your best score, and climb the daily rankings.",
+          status: TOURNAMENT_STATUS.LIVE,
+          thumbnailUrl: bannerImageUrl,
+          playUrl: "/game",
+          leaderboardUrl: "/game/leaderboard",
+          isActive: true,
+          priority: 1,
+        };
+
+        const shouldUpdate = Object.entries(nextTournamentValues).some(([key, value]) => {
+          return String(existingPrimary?.[key] ?? "") !== String(value ?? "");
+        });
+
+        if (shouldUpdate) {
+          await gameTournament.updateOne(
+            { _id: existingPrimary._id },
+            { $set: nextTournamentValues }
+          );
+        }
       }
 
       // Keep only one game tournament for now.
@@ -105,7 +124,7 @@ router.get("/tournaments", wrapAsync(async (req, res) => {
     tournaments,
     isAuthenticated,
     title: "Game Tournaments - VishLink",
-    description: "Explore all VishLink game tournaments, live events, and leaderboards in one place.",
+    description: "Explore all VishLink daily game tournaments, live events, and leaderboards in one place.",
     canonical: `${SITE_URL}/game/tournaments`,
     robots: "index, follow",
   });
@@ -155,7 +174,7 @@ router.get("/leaderboard", isLoggedIn, wrapAsync(async (req, res) => {
     players,
     isAdmin,
     title: "Game Leaderboard - VishLink",
-    description: "View VishLink game leaderboard rankings.",
+    description: "View VishLink daily game leaderboard rankings.",
     canonical: `${SITE_URL}/game/leaderboard`,
     robots: "noindex, nofollow"
   });
@@ -163,21 +182,28 @@ router.get("/leaderboard", isLoggedIn, wrapAsync(async (req, res) => {
 
 router.post("/updateWinners", isLoggedIn, isAdmin, wrapAsync(async (req, res) => {
   try {
-    const topPlayers = await game.find({})
+    const rankedPlayers = await game.find({})
       .select("author")
-      .sort({ userScore: -1 })
-      .limit(3)
+      .sort({ userScore: -1, _id: 1 })
+      .limit(LEADERBOARD_REWARDS_BY_RANK.length)
       .lean();
 
-    const userIds = topPlayers
-      .map((p) => p.author)
-      .filter(Boolean);
+    const rewardUpdates = rankedPlayers.reduce((ops, player, index) => {
+      const userId = player?.author;
+      const rewardCoins = Number(LEADERBOARD_REWARDS_BY_RANK[index] || 0);
+      if (!userId || rewardCoins <= 0) return ops;
 
-    if (userIds.length) {
-      await user.updateMany(
-        { _id: { $in: userIds } },
-        { $inc: { winnerCount: 1 } }
-      );
+      ops.push({
+        updateOne: {
+          filter: { _id: userId },
+          update: { $inc: { winnerCount: rewardCoins } },
+        },
+      });
+      return ops;
+    }, []);
+
+    if (rewardUpdates.length) {
+      await user.bulkWrite(rewardUpdates);
     }
 
     await game.deleteMany({});

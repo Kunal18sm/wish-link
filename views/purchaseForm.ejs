@@ -18,6 +18,9 @@
     requestedDefaultMode === "coins" && canUseCoins && hasEnoughCoins ? "coins" : "upi";
   const coinValidityMonths = Number.isFinite(Number(coinPurchaseValidityMonths))
     ? Math.max(1, Number(coinPurchaseValidityMonths))
+    : 3;
+  const upiValidityMonths = Number.isFinite(Number(moneyPurchaseValidityMonths))
+    ? Math.max(1, Number(moneyPurchaseValidityMonths))
     : 6;
   const resolvedUpiLinks = upiLinks || {};
   const universalUpiLink = autoPaymentLink || resolvedUpiLinks.upi || "";
@@ -56,17 +59,23 @@
             All VishLink websites are fully secure. When a link is deleted or expires, all associated images, messages, and data are permanently removed from our systems. We do not share, transfer, or sell user data to any third party. All submitted details remain securely stored with us and are protected at all times.
           </p>
         </details>
-        <% if(isTemporary) { %>
-          <details class="purchase-accordion bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl w-full">
-            <summary class="cursor-pointer flex items-center justify-between text-amber-300 font-semibold text-sm md:text-base" style="list-style:none;">
-              <span>UPI purchase expires in 1 month | Coins purchase expires in <%= coinValidityMonths %> months</span>
-              <span class="text-xs text-amber-300">&#9662;</span>
-            </summary>
-            <p class="mt-3 text-amber-100/90 text-sm leading-relaxed">
-              Coin payment unlocks your link instantly and keeps it valid for <%= coinValidityMonths %> months.
-            </p>
-          </details>
-        <% } %>
+        <details class="purchase-accordion bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl w-full">
+          <summary class="cursor-pointer flex items-center justify-between text-amber-300 font-semibold text-sm md:text-base" style="list-style:none;">
+            <% if (canUseCoins) { %>
+              <span>UPI purchase expires in <%= upiValidityMonths %> months | Coins purchase expires in <%= coinValidityMonths %> months</span>
+            <% } else { %>
+              <span>UPI purchase expires in <%= upiValidityMonths %> months</span>
+            <% } %>
+            <span class="text-xs text-amber-300">&#9662;</span>
+          </summary>
+          <p class="mt-3 text-amber-100/90 text-sm leading-relaxed">
+            <% if (canUseCoins) { %>
+              Coin payment unlocks your link instantly for <%= coinValidityMonths %> months, and UPI payment keeps it valid for <%= upiValidityMonths %> months.
+            <% } else { %>
+              UPI payment keeps this link valid for <%= upiValidityMonths %> months.
+            <% } %>
+          </p>
+        </details>
 
         <details class="purchase-accordion w-full rounded-2xl border border-indigo-500/25 bg-indigo-500/10 p-4">
           <summary class="cursor-pointer flex items-center justify-between text-indigo-200 font-semibold text-sm md:text-base" style="list-style:none;">

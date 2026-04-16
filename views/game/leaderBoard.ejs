@@ -132,7 +132,7 @@
 
                 <!-- Header: Very Compact -->
                 <header class="text-center py-4">
-                    <p class="text-[9px] text-slate-500 uppercase tracking-[0.2em] mt-0.5">Official Rankings</p>
+                    <p class="text-[9px] text-slate-500 uppercase tracking-[0.2em] mt-0.5">Official Daily Rankings</p>
                 </header>
 
                 <!-- Prize Banner: Slimmed down -->
@@ -141,13 +141,19 @@
                         <i data-lucide="gift" class="w-3.5 h-3.5 text-indigo-400"></i>
                     </div>
                     <div>
-                        <h2 class="text-[11px] font-bold text-white">Weekly Rewards 🎁</h2>
-                        <p class="text-[9px] mt-1 text-slate-400 leading-tight">Top 3 players will receive 1 credit. Credits can be used only for photo frame downloads inside VishLink.<br><br>Results will be announced on the 1st day of every month.
+                        <h2 class="text-[11px] font-bold text-white">Daily Rewards</h2>
+                        <p class="text-[9px] mt-1 text-slate-400 leading-tight">1st: 10 coins, 2nd: 7 coins, 3rd: 5 coins, 4th to 10th: 1 coin each.<br><br>Results are declared daily.
                         </p> 
                        
                     </div>
                 </div>
-
+                <% if(isAdmin) {%>
+                <div class="w-full flex items-center justify-center mb-4">
+                    <form id="resultForm" action="/game/updateWinners" method="POST">
+                        <button class="leaderboard-result-btn gradient-bg p-4 py-4 rounded-xl font-bold text-white shadow-lg shadow-indigo-500/30 hover:opacity-90 transition transform hover:-translate-y-1" type="button" onclick="openResultModal()">Declare Daily Result</button>
+                    </form>
+                </div>
+                <% } %>
                 <!-- Leaderboard Table -->
                 <div class="glass rounded-xl overflow-hidden shadow-2xl">
                     <div class="px-4 py-2.5 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
@@ -226,16 +232,10 @@
             
         </main>
         <% if(isAdmin) {%>
-        <div class="w-full flex items-center justify-center mb-8 border-b border-slate-800/60 pb-6">
-            <form id="resultForm" action="/game/updateWinners" method="POST">
-                <button class="leaderboard-result-btn gradient-bg p-4 py-4 rounded-xl font-bold text-white shadow-lg shadow-indigo-500/30 hover:opacity-90 transition transform hover:-translate-y-1" type="button" onclick="openResultModal()">result</button>
-            </form>
-        </div>
-
         <div id="resultModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
             <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-[90%] max-w-sm text-center shadow-2xl">
-                <h3 class="text-xl font-bold text-white mb-2">Declare Result</h3>
-                <p class="text-slate-400 mb-6">Are you sure you want to declare the result?</p>
+                <h3 class="text-xl font-bold text-white mb-2">Declare Daily Result</h3>
+                <p class="text-slate-400 mb-6">Are you sure you want to declare today's result?</p>
 
                 <div class="flex gap-3">
                     <button type="button" onclick="closeResultModal()" class="flex-1 py-2 rounded-xl bg-slate-700 text-white hover:bg-slate-600 transition">

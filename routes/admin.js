@@ -46,6 +46,7 @@ const DELETE_REASON = {
   FAKE_PAYMENT: "fake-payment",
 };
 const USERS_PAGE_LIMIT = 20;
+const MONEY_PURCHASE_EXPIRY_MONTHS = 6;
 const REQUEST_CARD_SELECT =
   "webName sender receiver price paymentProofUrl webUrl isLive isTemporary author date purchaseMode paidCredits expiresAt";
 const PROFILE_PURCHASE_SELECT =
@@ -79,14 +80,14 @@ const ADMIN_DASHBOARD_CARDS = [
   },
   {
     title: "Expired Requests",
-    description: "View expired temporary links.",
+    description: "View expired template links.",
     href: "/requests/expired",
     icon: "\u23F3",
     toneClass: "from-amber-500/20 to-orange-500/20 border-amber-500/30",
   },
   {
     title: "All Live",
-    description: "Check live temporary link status.",
+    description: "Check live template link status.",
     href: "/requests/allLive",
     icon: "\uD83D\uDFE2",
     toneClass: "from-emerald-500/20 to-teal-500/20 border-emerald-500/30",
@@ -619,18 +620,34 @@ function getPurchaseModelByScope(req, scope) {
   return permanentModel;
 }
 
-function isExpiredPurchase(expiresAt) {
-  if (!expiresAt) return false;
-  const expiryDate = new Date(expiresAt);
-  if (Number.isNaN(expiryDate.getTime())) return false;
-  return expiryDate.getTime() <= Date.now();
+function getDateAfterAddingMonths(dateValue, monthsToAdd) {
+  const baseDate = new Date(dateValue);
+  if (Number.isNaN(baseDate.getTime())) return null;
+  baseDate.setMonth(baseDate.getMonth() + monthsToAdd);
+  return baseDate;
+}
+
+function isExpiredPurchase(rawPurchase) {
+  const purchaseDoc =
+    rawPurchase && typeof rawPurchase === "object" ? rawPurchase : { expiresAt: rawPurchase };
+  const expiryDate = new Date(purchaseDoc?.expiresAt);
+  if (!Number.isNaN(expiryDate.getTime())) {
+    return expiryDate.getTime() <= Date.now();
+  }
+
+  // Legacy UPI docs may not have expiresAt. Fall back to purchase date + configured validity.
+  const purchaseMode = String(purchaseDoc?.purchaseMode || "upi").toLowerCase();
+  if (purchaseMode === "coins") return false;
+  const legacyExpiryDate = getDateAfterAddingMonths(purchaseDoc?.date, MONEY_PURCHASE_EXPIRY_MONTHS);
+  if (!legacyExpiryDate) return false;
+  return legacyExpiryDate.getTime() <= Date.now();
 }
 
 function normalizePurchaseForView(rawPurchase) {
   const doc = rawPurchase && typeof rawPurchase.toObject === "function"
     ? rawPurchase.toObject()
     : { ...(rawPurchase || {}) };
-  const isExpired = isExpiredPurchase(doc.expiresAt);
+  const isExpired = isExpiredPurchase(doc);
 
   return {
     ...doc,
@@ -1854,38 +1871,36 @@ router.get(
   })
 );
 
-// get expired websites (legacy temporary + coin-expired links)
+// get expired websites (explicit expiresAt + legacy UPI fallback)
 router.get(
   "/expired",
   isLoggedIn,
   isAdmin,
   wrapAsync(async (req, res) => {
     const now = new Date();
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-
-    const legacyTemporaryExpiryQuery = {
-      date: { $lte: oneMonthAgo },
-      isTemporary: true,
-      purchaseMode: { $ne: "coins" },
-    };
-    const coinExpiryQuery = {
-      purchaseMode: "coins",
-      expiresAt: { $lte: now },
+    const legacyMoneyCutoffDate = new Date(now);
+    legacyMoneyCutoffDate.setMonth(legacyMoneyCutoffDate.getMonth() - MONEY_PURCHASE_EXPIRY_MONTHS);
+    const expiredByDateOrModeQuery = {
+      $or: [
+        { expiresAt: { $lte: now } },
+        {
+          purchaseMode: { $ne: "coins" },
+          date: { $lte: legacyMoneyCutoffDate },
+          $or: [{ expiresAt: { $exists: false } }, { expiresAt: null }],
+        },
+      ],
     };
 
     const permanentModel = getPurchaseModelByScope(req, REQUEST_SCOPE.PERMANENT);
-    const [defaultExpired, permanentCoinExpired] = await Promise.all([
+    const [defaultExpired, permanentExpired] = await Promise.all([
       purchasedWeb
-        .find({
-          $or: [legacyTemporaryExpiryQuery, coinExpiryQuery],
-        })
+        .find(expiredByDateOrModeQuery)
         .select(REQUEST_CARD_SELECT)
         .sort({ _id: -1 })
         .lean(),
       permanentModel
         ? permanentModel
-          .find(coinExpiryQuery)
+          .find(expiredByDateOrModeQuery)
           .select(REQUEST_CARD_SELECT)
           .sort({ _id: -1 })
           .lean()
@@ -1894,7 +1909,7 @@ router.get(
 
     const userPurchased = [
       ...toScopedDocs(defaultExpired, REQUEST_SCOPE.DEFAULT),
-      ...toScopedDocs(permanentCoinExpired, REQUEST_SCOPE.PERMANENT),
+      ...toScopedDocs(permanentExpired, REQUEST_SCOPE.PERMANENT),
     ]
       .map((item) => ({
         ...item,
@@ -1907,7 +1922,7 @@ router.get(
       userPurchased,
       requestScope: REQUEST_SCOPE.DEFAULT,
       title: "Expired Websites - Admin | VishLink",
-      description: "Admin panel to manage expired websites and coin based expiries.",
+      description: "Admin panel to manage expired websites based on purchase expiry windows.",
       robots: "noindex, nofollow",
     });
   })
@@ -1927,19 +1942,12 @@ router.get(
       return res.redirect("/requests");
     }
 
-    const now = new Date();
+    const liveDocs = await PurchaseModel.find({ isLive: true })
+      .select(REQUEST_CARD_SELECT)
+      .sort({ _id: -1 })
+      .lean();
     const userPurchased = toScopedDocs(
-      await PurchaseModel.find({
-        isLive: true,
-        $or: [
-          { expiresAt: { $exists: false } },
-          { expiresAt: null },
-          { expiresAt: { $gt: now } },
-        ],
-      })
-        .select(REQUEST_CARD_SELECT)
-        .sort({ _id: -1 })
-        .lean(),
+      liveDocs.filter((doc) => !isExpiredPurchase(doc)),
       requestScope
     );
 

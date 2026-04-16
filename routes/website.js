@@ -59,7 +59,8 @@ const PURCHASE_MODE = {
   UPI: "upi",
   COINS: "coins",
 };
-const COIN_PURCHASE_EXPIRY_MONTHS = 6;
+const COIN_PURCHASE_EXPIRY_MONTHS = 3;
+const MONEY_PURCHASE_EXPIRY_MONTHS = 6;
 const DEFAULT_TEMPLATE_COIN_PRICE = 25;
 
 const purchaseUploadFields = [
@@ -151,9 +152,14 @@ const resolveTemplateCoinPrice = (value, fallback = DEFAULT_TEMPLATE_COIN_PRICE)
 
 const toCurrencyAmount = (value) =>
   Number(Math.max(0, toFiniteNumberOrDefault(value, 0)).toFixed(2));
-const getCoinPurchaseExpiryDate = (fromDate = new Date()) => {
+const getPurchaseExpiryDate = (purchaseMode, fromDate = new Date()) => {
+  const normalizedMode = parsePurchaseMode(purchaseMode);
+  const monthsToAdd =
+    normalizedMode === PURCHASE_MODE.COINS
+      ? COIN_PURCHASE_EXPIRY_MONTHS
+      : MONEY_PURCHASE_EXPIRY_MONTHS;
   const expiryDate = new Date(fromDate);
-  expiryDate.setMonth(expiryDate.getMonth() + COIN_PURCHASE_EXPIRY_MONTHS);
+  expiryDate.setMonth(expiryDate.getMonth() + monthsToAdd);
   return expiryDate;
 };
 const formatDateIndia = (dateValue) => {
@@ -330,7 +336,7 @@ const createPurchaseHandler = (expectedIsTemporary) =>
 
       let price = paymentAmount;
       let paidCredits = 0;
-      let expiresAt = null;
+      let expiresAt = getPurchaseExpiryDate(purchaseMode);
 
       if (isCoinPurchase) {
         if (!userId) {
@@ -338,7 +344,6 @@ const createPurchaseHandler = (expectedIsTemporary) =>
         }
 
         paidCredits = purchaseCredits;
-        expiresAt = getCoinPurchaseExpiryDate();
         price = 0;
 
         const updatedUser = await user.findOneAndUpdate(
@@ -454,7 +459,7 @@ const createPurchaseHandler = (expectedIsTemporary) =>
           `Template unlocked with ${paidCredits} coins. Valid till ${formatDateIndia(expiresAt)}.`
         );
       } else {
-        req.flash("success", "Purchase Success");
+        req.flash("success", `Purchase Success. Link valid till ${formatDateIndia(expiresAt)}.`);
       }
       return res.redirect("/profile");
     } catch (err) {
@@ -684,6 +689,7 @@ router.get(
       coinPrice,
       defaultPaymentMode,
       coinPurchaseValidityMonths: COIN_PURCHASE_EXPIRY_MONTHS,
+      moneyPurchaseValidityMonths: MONEY_PURCHASE_EXPIRY_MONTHS,
       recentFeedbacks,
     });
   })
@@ -732,6 +738,7 @@ router.get(
       coinPrice,
       defaultPaymentMode,
       coinPurchaseValidityMonths: COIN_PURCHASE_EXPIRY_MONTHS,
+      moneyPurchaseValidityMonths: MONEY_PURCHASE_EXPIRY_MONTHS,
       recentFeedbacks,
     });
   })
