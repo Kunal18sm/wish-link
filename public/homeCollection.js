@@ -131,17 +131,6 @@
     }, { passive: true });
   }
 
-  function initFeedbackForm() {
-    const form = document.getElementById("feedbackform");
-    const button = document.getElementById("sendfeedback");
-    if (!form || !button) return;
-
-    form.addEventListener("submit", () => {
-      button.disabled = true;
-      button.innerText = "Please wait...";
-    });
-  }
-
   function initPurchaseLinks() {
     const purchaseLinks = document.querySelectorAll(".submitBtnLink");
     if (!purchaseLinks.length) return;
@@ -221,7 +210,6 @@
   bindThemeToggle("collectionThemeToggleBtn");
   initBannerSlider();
   initTemplateScroller();
-  initFeedbackForm();
   initPurchaseLinks();
   initTopTemplateTapHint();
 })();

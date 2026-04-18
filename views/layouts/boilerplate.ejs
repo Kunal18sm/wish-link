@@ -346,52 +346,81 @@
                 <% if (!(typeof chatLayout !== "undefined" && chatLayout)) { %>
                     <style>
                         #mobileFootbar {
-                            background: #0b1220;
-                            border-top: 1px solid #1f2a3c;
-                            box-shadow: 0 -8px 24px rgba(2, 6, 23, 0.42);
+                            background: rgba(11, 18, 32, 0.85);
+                            backdrop-filter: blur(16px);
+                            -webkit-backdrop-filter: blur(16px);
+                            border: 1px solid rgba(255, 255, 255, 0.08);
+                            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+                            border-radius: 1.5rem;
+                            bottom: max(env(safe-area-inset-bottom, 1rem), 1rem);
+                            left: 1rem;
+                            right: 1rem;
+                            padding: 0.35rem;
+                            transition: all 0.3s ease;
                         }
                         #mobileFootbar .mobile-footbar-link {
+                            color: #64748b;
+                            background: transparent;
+                            transition: all 0.25s ease;
+                            border-radius: 1.15rem;
+                        }
+                        #mobileFootbar .mobile-footbar-link svg {
+                            transition: transform 0.25s ease, stroke 0.25s ease;
+                        }
+                        #mobileFootbar .mobile-footbar-link:hover {
                             color: #94a3b8;
-                            border: 1px solid transparent;
-                            background: #0b1220;
+                            background: rgba(255, 255, 255, 0.04);
                         }
                         #mobileFootbar .mobile-footbar-link.is-active {
-                            color: #e0e7ff;
-                            background: #1e293b;
-                            border-color: #334155;
+                            color: #38bdf8;
+                            background: rgba(56, 189, 248, 0.1);
                         }
+                        #mobileFootbar .mobile-footbar-link.is-active svg {
+                            stroke: #38bdf8;
+                            transform: translateY(-2px);
+                        }
+                        #mobileFootbar .mobile-footbar-link.is-active span {
+                            font-weight: 700;
+                        }
+                        
+                        /* Light Theme Styling */
                         html[data-theme="light"] #mobileFootbar {
-                            background: #e8f1ff;
-                            border-top-color: #b9d1f4;
-                            box-shadow: 0 -8px 22px rgba(37, 99, 235, 0.14);
+                            background: rgba(255, 255, 255, 0.9);
+                            border: 1px solid rgba(148, 163, 184, 0.3);
+                            box-shadow: 0 16px 36px rgba(15, 23, 42, 0.12);
                         }
                         html[data-theme="light"] #mobileFootbar .mobile-footbar-link {
-                            color: #2f4f77;
-                            background: #e8f1ff;
+                            color: #94a3b8;
+                        }
+                        html[data-theme="light"] #mobileFootbar .mobile-footbar-link:hover {
+                            background: rgba(15, 23, 42, 0.04);
+                            color: #64748b;
                         }
                         html[data-theme="light"] #mobileFootbar .mobile-footbar-link.is-active {
-                            color: #18407e;
-                            background: #d6e7ff;
-                            border-color: #9bbcf0;
+                            color: var(--sky-accent, #2563eb);
+                            background: var(--sky-accent-soft, rgba(37, 99, 235, 0.1));
+                        }
+                        html[data-theme="light"] #mobileFootbar .mobile-footbar-link.is-active svg {
+                            stroke: var(--sky-accent, #2563eb);
                         }
                     </style>
-                    <nav id="mobileFootbar" class=" md:hidden fixed bottom-0 left-0 right-0 z-[170] pb-[max(env(safe-area-inset-bottom),0.45rem)]">
-                        <div class="flex items-center gap-1 px-2 pt-2 pb-2">
-                            <a href="/category/all" class="mobile-footbar-link <%= currentPath === '/category/all' || currentPath === '/' ? 'is-active' : '' %> flex-1 min-w-0 flex items-center justify-center gap-1 rounded-xl px-1.5 py-2 whitespace-nowrap">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.8V21h14V9.8"/></svg>
-                                <span class="text-[10px] font-semibold">Home</span>
+                    <nav id="mobileFootbar" class="md:hidden fixed z-[215]">
+                        <div class="flex items-center gap-1 w-full relative">
+                            <a href="/category/all" class="mobile-footbar-link <%= currentPath === '/category/all' || currentPath === '/' ? 'is-active' : '' %> flex-1 flex flex-col items-center justify-center gap-1.5 py-2">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="w-5 h-5 drop-shadow-sm" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10.5 12 3l9 7.5"/><path stroke-linecap="round" stroke-linejoin="round" d="M5 10v11h14V10"/></svg>
+                                <span class="text-[9px] font-semibold tracking-wide">Home</span>
                             </a>
-                            <a href="/photo-frames" class="mobile-footbar-link <%= String(currentPath || '').startsWith('/photo-frames') ? 'is-active' : '' %> flex-1 min-w-0 flex items-center justify-center gap-1 rounded-xl px-1.5 py-2 whitespace-nowrap">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="m21 15-4.5-4.5L7 20"/></svg>
-                                <span class="text-[10px] font-semibold">Templates</span>
+                            <a href="/photo-frames" class="mobile-footbar-link <%= String(currentPath || '').startsWith('/photo-frames') ? 'is-active' : '' %> flex-1 flex flex-col items-center justify-center gap-1.5 py-2">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="w-5 h-5 drop-shadow-sm" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.5"/><path stroke-linecap="round" stroke-linejoin="round" d="m21 15-4.5-4.5L7 20"/></svg>
+                                <span class="text-[9px] font-semibold tracking-wide">Templates</span>
                             </a>
-                            <a href="/game/tournaments" class="mobile-footbar-link <%= String(currentPath || '').startsWith('/game') ? 'is-active' : '' %> flex-1 min-w-0 flex items-center justify-center gap-1 rounded-xl px-1.5 py-2 whitespace-nowrap">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4" aria-hidden="true"><path d="M6 10h4l2-2h6a3 3 0 0 1 3 3v2a3 3 0 0 1-3 3h-2l-2 2H8a5 5 0 0 1-5-5v0a5 5 0 0 1 3-4.6z"/><path d="M10 12h.01"/><path d="M14 14h.01"/><path d="M17 12h.01"/></svg>
-                                <span class="text-[10px] font-semibold">Games</span>
+                            <a href="/game/tournaments" class="mobile-footbar-link <%= String(currentPath || '').startsWith('/game') ? 'is-active' : '' %> flex-1 flex flex-col items-center justify-center gap-1.5 py-2">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="w-5 h-5 drop-shadow-sm" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 10h4l2-2h6a3 3 0 0 1 3 3v2a3 3 0 0 1-3 3h-2l-2 2H8a5 5 0 0 1-5-5v0a5 5 0 0 1 3-4.6z"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 12h.01"/><path stroke-linecap="round" stroke-linejoin="round" d="M14 14h.01"/><path stroke-linecap="round" stroke-linejoin="round" d="M17 12h.01"/></svg>
+                                <span class="text-[9px] font-semibold tracking-wide">Games</span>
                             </a>
-                            <a href="<%= currUser ? '/profile' : '/logInForm' %>" class="mobile-footbar-link <%= String(currentPath || '').startsWith('/profile') ? 'is-active' : '' %> flex-1 min-w-0 flex items-center justify-center gap-1 rounded-xl px-1.5 py-2 whitespace-nowrap">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
-                                <span class="text-[10px] font-semibold">Profile</span>
+                            <a href="<%= currUser ? '/profile' : '/logInForm' %>" class="mobile-footbar-link <%= String(currentPath || '').startsWith('/profile') ? 'is-active' : '' %> flex-1 flex flex-col items-center justify-center gap-1.5 py-2">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="w-5 h-5 drop-shadow-sm" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path stroke-linecap="round" stroke-linejoin="round" d="M4 21a8 8 0 0 1 16 0"/></svg>
+                                <span class="text-[9px] font-semibold tracking-wide">Profile</span>
                             </a>
                         </div>
                     </nav>
@@ -970,7 +999,6 @@
                     </style>
 
                     <script defer src="/script.js?v=<%= assetVersion %>"></script>
-                    <script defer src="/inlineFeedbackWidget.js?v=<%= assetVersion %>"></script>
                     <% if (showInstallPrompt) { %>
                         <script defer src="/installPrompt.js?v=<%= assetVersion %>"></script>
                     <% } %>

@@ -31,260 +31,320 @@
 %>
 
 <style>
-  .purchase-accordion summary::-webkit-details-marker {
-    display: none;
+  /* Base & Animations */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+  
+  /* Glassmorphism & premium UI */
+  .premium-glass {
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  }
+  
+  .input-glass {
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s ease;
+  }
+  .input-glass:focus {
+    background: rgba(30, 41, 59, 0.8);
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
   }
 
-  .payment-upi-id {
-    word-break: break-all;
+  /* Segmented Control for Payment */
+  .segmented-control {
+    background: rgba(15, 23, 42, 0.6);
+    padding: 0.25rem;
+    border-radius: 1rem;
+    display: flex;
+    gap: 0.25rem;
+  }
+  .segment-label {
+    flex: 1;
+    text-align: center;
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+  }
+  .segment-input:checked + .segment-label {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: rgba(99, 102, 241, 0.4);
+    color: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  }
+  .segment-input:disabled + .segment-label {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  
+  /* Dynamic Light Theme Overrides (Supports Pink & Blue Palettes) */
+  html[data-theme="light"] .premium-glass,
+  html[data-theme="light"] .backdrop-blur-md {
+    background: var(--sky-surface) !important;
+    border-color: var(--sky-border) !important;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05) !important;
+  }
+  html[data-theme="light"] .input-glass {
+    background: var(--sky-bg) !important;
+    border-color: var(--sky-border) !important;
+    color: var(--sky-text) !important;
+  }
+  html[data-theme="light"] .input-glass:focus {
+    background: var(--sky-surface) !important;
+    border-color: var(--sky-accent) !important;
+    box-shadow: 0 0 0 2px var(--sky-accent-soft) !important;
+  }
+  html[data-theme="light"] .input-glass::placeholder,
+  html[data-theme="light"] textarea::placeholder {
+    color: var(--sky-muted) !important;
+  }
+  html[data-theme="light"] .segmented-control {
+    background: var(--sky-bg-soft) !important;
+  }
+  html[data-theme="light"] .segment-label {
+    color: var(--sky-text-soft) !important;
+  }
+  html[data-theme="light"] .segment-input:checked + .segment-label {
+    background: var(--sky-surface) !important;
+    border-color: var(--sky-accent) !important;
+    color: var(--sky-text) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
+  }
+  html[data-theme="light"] .aurora-bg-1 { background-color: rgba(var(--sky-glow-a-rgb), 0.3) !important; }
+  html[data-theme="light"] .aurora-bg-2 { background-color: rgba(var(--sky-glow-b-rgb), 0.25) !important; }
+  
+  html[data-theme="light"] .bg-slate-900\/50,
+  html[data-theme="light"] .bg-amber-500\/5,
+  html[data-theme="light"] .bg-emerald-500\/5 {
+    background: var(--sky-surface) !important;
+    border-color: var(--sky-border) !important;
+  }
+  
+  /* Text gradient fix for light mode */
+  html[data-theme="light"] .title-gradient {
+    background: linear-gradient(to right, var(--sky-accent), var(--sky-accent-hover)) !important;
+    -webkit-background-clip: text !important;
+    color: transparent !important;
+  }
+
+  /* Explicitly fix main submit button and accents for Light Theme */
+  html[data-theme="light"] #submitBtn,
+  html[data-theme="light"] .theme-btn-primary {
+    background: var(--sky-accent) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 15px var(--sky-accent-soft) !important;
+    border: none !important;
+  }
+  html[data-theme="light"] #submitBtn:hover,
+  html[data-theme="light"] .theme-btn-primary:hover {
+    background: var(--sky-accent-hover) !important;
+    transform: scale(1.01);
+  }
+  
+  /* Form chips and icon buttons */
+  html[data-theme="light"] .theme-chip,
+  html[data-theme="light"] .theme-icon-btn {
+    background: var(--sky-accent-soft) !important;
+    color: var(--sky-accent) !important;
+    border-color: var(--sky-accent-border) !important;
+  }
+  html[data-theme="light"] .theme-icon-btn:hover {
+    background: var(--sky-accent-hover) !important;
+    color: #ffffff !important;
+  }
+  
+  html[data-theme="light"] .theme-text-accent {
+    color: var(--sky-accent) !important;
+  }
+  
+  /* Hide details marker */
+  details > summary::-webkit-details-marker {
+    display: none;
   }
 </style>
 
-  <body class="bg-[#020617] text-slate-200 min-h-screen flex flex-col">
-    <div class=" w-full flex mt-4 items-center justify-center">
-          <h1 class="text-2xl font-extrabold leading-tight">
-            Create your <span class="text-indigo-500">Link</span>
-          </h1>
-    </div>
-    <main class="flex-grow flex items-center justify-center px-6 py-12">
+<div class="bg-[#020617] text-slate-200 min-h-screen flex flex-col relative overflow-x-hidden font-sans">
+  
+  <!-- Aurora Background Effect -->
+  <div class="fixed inset-0 z-[-1] pointer-events-none opacity-60">
+    <div class="aurora-bg-1 absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-600/30 blur-[120px]"></div>
+    <div class="aurora-bg-2 absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-emerald-600/20 blur-[120px]"></div>
+  </div>
+
+  <main class="flex-grow flex justify-center px-4 py-8 md:py-12 relative z-10 w-full max-w-2xl mx-auto">
+    <div class="w-full flex flex-col gap-6 animate-fade-in">
       
-      <div class="max-w-5xl w-full flex flex-col gap-4 items-center">
+      <!-- Header -->
+      <div class="text-center">
+        <h1 class="text-3xl md:text-4xl font-black tracking-tight text-white mb-2">
+          Create <span class="title-gradient text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Link</span>
+        </h1>
+        <p class="text-sm text-slate-400">Configure your template details</p>
+      </div>
 
-        <details class="purchase-accordion bg-slate-900/20 border border-slate-800/30 p-4 rounded-2xl w-full">
-          <summary class="cursor-pointer flex items-center justify-between text-slate-300 font-semibold text-sm md:text-base" style="list-style:none;">
-            <span>Privacy & Security</span>
-            <span class="text-xs text-slate-400">&#9662;</span>
-          </summary>
-          <p class="mt-3 text-slate-400 text-sm leading-relaxed">
-            All VishLink websites are fully secure. When a link is deleted or expires, all associated images, messages, and data are permanently removed from our systems. We do not share, transfer, or sell user data to any third party. All submitted details remain securely stored with us and are protected at all times.
-          </p>
-        </details>
-        <details class="purchase-accordion bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl w-full">
-          <summary class="cursor-pointer flex items-center justify-between text-amber-300 font-semibold text-sm md:text-base" style="list-style:none;">
-            <% if (canUseCoins) { %>
-              <span>UPI purchase expires in <%= upiValidityMonths %> months | Coins purchase expires in <%= coinValidityMonths %> months</span>
-            <% } else { %>
-              <span>UPI purchase expires in <%= upiValidityMonths %> months</span>
-            <% } %>
-            <span class="text-xs text-amber-300">&#9662;</span>
-          </summary>
-          <p class="mt-3 text-amber-100/90 text-sm leading-relaxed">
-            <% if (canUseCoins) { %>
-              Coin payment unlocks your link instantly for <%= coinValidityMonths %> months, and UPI payment keeps it valid for <%= upiValidityMonths %> months.
-            <% } else { %>
-              UPI payment keeps this link valid for <%= upiValidityMonths %> months.
-            <% } %>
-          </p>
-        </details>
+      <!-- Main Form Container -->
+      <div class="premium-glass p-6 md:p-8 rounded-3xl">
+        <form id="BuyForm" action="/web/purchase/<%= isTemporary ? 'temporary' : 'permanent' %>/<%= id %>" method="POST" class="space-y-6" enctype="multipart/form-data">
+          
+          <!-- Hidden Inputs -->
+          <% if( !isTemporary ){ %> <input type="hidden" name="purchase[isTemporary]" value="false"> <% } else { %> <input type="hidden" name="purchase[isTemporary]" value="true"> <% } %>
+          <% if (!canUseCoins) { %> <input type="hidden" name="purchase[paymentMode]" value="upi"> <% } %>
 
-        <details class="purchase-accordion w-full rounded-2xl border border-indigo-500/25 bg-indigo-500/10 p-4">
-          <summary class="cursor-pointer flex items-center justify-between text-indigo-200 font-semibold text-sm md:text-base" style="list-style:none;">
-            <span>Multiple Attempts Allowed</span>
-            <span class="text-xs text-indigo-200">&#9662;</span>
-          </summary>
-          <p class="mt-2 text-sm text-slate-300 leading-relaxed">
-            Not happy with current output? Create a new attempt and reuse the same payment screenshot.
-            Once the new link is created, the old one is removed automatically.
-          </p>
-        </details>
-
-        <!-- MAIN FORM -->
-        
-        <div class="glass-effect p-8 md:p-10 rounded-3xl shadow-2xl">
-            <br>
-            <p class="text-emerald-500 text-lg mb-2">All created links will be shown in your profile.</p>         
-
-          <% if( !isTemporary ){ %>
-            <div id="paymentVerificationNote" class="mt-4 mb-4 inline-flex items-center gap-2 px-4 py-2 <%= initialPaymentMode === 'coins' ? 'hidden' : '' %>
-            bg-amber-500/5 text-amber-600 
-            rounded-xl text-xs font-medium 
-            tracking-wide border border-amber-500/10">
-              The created link will appear on your profile within 24&ndash;48 hours after payment verification.
+          <!-- Basic Info Group -->
+          <div class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Template</label>
+                <input name="purchase[webName]" class="w-full px-4 py-3 rounded-xl input-glass text-white text-sm font-medium focus:outline-none" value="<%= JSON.stringify(selectedWeb.webName).slice(1, -1) %>" readonly>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Receiver Name</label>
+                <input name="purchase[receiver]" type="text" placeholder="e.g., Natasha" class="w-full px-4 py-3 rounded-xl input-glass text-white text-sm focus:outline-none placeholder:text-slate-600" required>
+              </div>
             </div>
-          <% } %>
 
-            <hr style="opacity: 0.4;">
-              <br>
-              <form id="BuyForm" action="/web/purchase/<%= isTemporary ? 'temporary' : 'permanent' %>/<%= id %>" method="POST" class="space-y-5" enctype="multipart/form-data">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Sender Name</label>
+                <input name="purchase[sender]" type="text" placeholder="e.g., Tom" class="w-full px-4 py-3 rounded-xl input-glass text-white text-sm focus:outline-none placeholder:text-slate-600" required>
+              </div>
+              <% if(selectedWeb.imageNeeded != 0){ %>
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 ml-1 flex justify-between items-center">
+                  <span>Images</span>
+                  <span class="theme-chip text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-500/30">Req: <%= selectedWeb.imageNeeded %></span>
+                </label>
+                <input name="images" id="images" type="file" multiple accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" data-required="<%= selectedWeb.imageNeeded %>" class="w-full px-4 py-2.5 rounded-xl input-glass text-slate-300 text-sm file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-indigo-500/20 file:text-indigo-300 hover:file:bg-indigo-500/30 transition focus:outline-none" required>
+              </div>
+              <% } %>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Special Message</label>
+              <textarea name="purchase[specialMsg]" maxlength="350" rows="3" placeholder="Write a beautiful message..." class="w-full px-4 py-3 rounded-xl input-glass text-white text-sm focus:outline-none placeholder:text-slate-600 resize-none" required></textarea>
+            </div>
+          </div>
+
+          <!-- Divider -->
+          <div class="h-px w-full bg-gradient-to-r from-transparent via-slate-700/50 to-transparent my-6"></div>
+
+          <!-- Payment Section -->
+          <div class="space-y-4">
+            <% if (canUseCoins) { %>
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 text-center">Payment Method</label>
+                <div class="segmented-control max-w-sm mx-auto">
+                  <input type="radio" id="mode-upi" name="purchase[paymentMode]" value="upi" class="segment-input hidden" <%= initialPaymentMode === "upi" ? "checked" : "" %>>
+                  <label for="mode-upi" class="segment-label text-sm text-slate-300 font-medium">UPI / Scan</label>
+
+                  <input type="radio" id="mode-coins" name="purchase[paymentMode]" value="coins" class="segment-input hidden" <%= initialPaymentMode === "coins" ? "checked" : "" %> <%= hasEnoughCoins ? "" : "disabled" %>>
+                  <label for="mode-coins" class="segment-label text-sm text-slate-300 font-medium">
+                    🪙 Coins
+                  </label>
+                </div>
+                <% if (!hasEnoughCoins) { %>
+                  <p id="coinInsufficientMessage" class="mt-2 text-xs text-center text-rose-400/80">Low coin balance. Please use UPI.</p>
+                <% } %>
+              </div>
+
+              <!-- Coins Info -->
+              <div id="coinPaymentSection" class="p-3 rounded-xl bg-amber-500/5 border border-amber-500/10 text-center max-w-sm mx-auto <%= initialPaymentMode === 'coins' ? '' : 'hidden' %>">
+                <p class="text-xs text-amber-200/90 font-medium">Cost: <span class="text-amber-400"><%= templateCoinPrice %> coins</span></p>
+                <p class="text-[11px] text-amber-200/60 mt-1">Balance: <%= currentUserCoins %> | Link validity: <%= coinValidityMonths %> months</p>
+              </div>
+            <% } %>
+
+            <!-- UPI Info -->
+            <% if(requiresPayment){ %>
+              <div id="upiPaymentSection" class="space-y-4 <%= initialPaymentMode === 'coins' ? 'hidden' : '' %>">
+                <div class="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10 flex flex-col md:flex-row items-center justify-between gap-4 max-w-md mx-auto">
+                  <div class="text-center md:text-left">
+                    <p class="text-2xl font-bold text-emerald-400">&#8377;<%= displayPaymentAmount %></p>
+                    <p class="text-[11px] text-emerald-400/70">Secure UPI Payment</p>
+                  </div>
                   
-                  <div>
-                    <label class="block text-sm font-medium mb-2 text-slate-400">Website name</label>
-                    <input name="purchase[webName]" class="w-full px-4 py-3 rounded-xl form-input text-white"
-                      value= "<%= JSON.stringify(selectedWeb.webName).slice(1, -1) %>" readonly >
-                  </div>
-
-                  <% if( !isTemporary ){ %>
-                    <input type="hidden" name="purchase[isTemporary]" value="false">
+                  <% if(hasAutoPayment) { %>
+                    <a href="<%= universalUpiLink %>" id="upiPayBtn" data-intent-link="<%= intentUpiLink %>" class="flex-shrink-0 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 px-5 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2">
+                       <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15l-4-4 1.41-1.41L11 14.17l6.59-6.59L19 9l-8 8z"/></svg> Pay Now
+                    </a>
                   <% } %>
-
-                  <% if( isTemporary ){ %>
-                    <input type="hidden" name="purchase[isTemporary]" value="true">
-                  <% } %>
-
-                  <% if (canUseCoins) { %>
-                    <div class="col-span-1 md:col-span-2">
-                      <label class="block text-sm font-semibold mb-2 text-slate-300">Payment Method</label>
-                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <label class="cursor-pointer rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3">
-                          <input
-                            type="radio"
-                            name="purchase[paymentMode]"
-                            value="upi"
-                            class="mr-2 align-middle"
-                            <%= initialPaymentMode === "upi" ? "checked" : "" %>>
-                          <span class="align-middle text-sm font-semibold text-emerald-200">UPI / Screenshot</span>
-                          <p class="mt-1 text-xs text-emerald-100/80">Your link goes live after manual verification.</p>
-                        </label>
-                        <label class="cursor-pointer rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 <%= hasEnoughCoins ? '' : 'opacity-70' %>">
-                          <input
-                            type="radio"
-                            name="purchase[paymentMode]"
-                            value="coins"
-                            class="mr-2 align-middle"
-                            <%= initialPaymentMode === "coins" ? "checked" : "" %>
-                            <%= hasEnoughCoins ? "" : "disabled" %>>
-                          <span class="align-middle text-sm font-semibold text-amber-200">Coins</span>
-                          <p class="mt-1 text-xs text-amber-100/90">
-                            <strong><%= templateCoinPrice %> coins</strong> | Balance: <%= currentUserCoins %>
-                          </p>
-                          <p class="mt-1 text-xs text-amber-100/80">Instant unlock, expiry <%= coinValidityMonths %> months.</p>
-                        </label>
-                      </div>
-                      <% if (!hasEnoughCoins) { %>
-                        <p id="coinInsufficientMessage" class="mt-2 text-xs text-rose-300">
-                          Your coin balance is too low. Use UPI mode or collect more coins from daily rewards.
-                        </p>
-                      <% } %>
-                    </div>
-                  <% } else { %>
-                    <input type="hidden" name="purchase[paymentMode]" value="upi">
-                  <% } %>
-
-                  <div>
-                    <label class="block text-sm font-medium mb-2 text-slate-400">Receiver</label>
-                    <input name="purchase[receiver]" type="text" placeholder="ex. Natasha"
-                      class="w-full px-4 py-3 rounded-xl form-input text-white" required>
-                  </div>
-
-                  <div>
-                    <label class="block text-sm font-medium mb-2 text-slate-400">Sender</label>
-                    <input name="purchase[sender]" type="text" placeholder="ex. Tom"
-                      class="w-full px-4 py-3 rounded-xl form-input text-white" required>
-                  </div>
-
-                  <% if(selectedWeb.imageNeeded != 0){ %>
-                  <div class="col-span-1 md:col-span-2">
-                      <label class="block text-sm font-semibold mb-2 text-slate-300 ml-1 flex justify-between">
-                        <span>Upload Images</span>
-                        <span class="text-indigo-400 text-xs bg-indigo-500/10 px-2 py-0.5 rounded">Required: <%= selectedWeb.imageNeeded %></span>
-                      </label>
-                      <p class="text-xs text-amber-500/80 mb-2 ml-1">Please upload exactly <%= selectedWeb.imageNeeded %> images for the best result.</p>
-                      <input name="images" id="images" type="file" multiple accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" data-required="<%= selectedWeb.imageNeeded %>"
-                        class="w-full px-4 py-3 rounded-xl form-input text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-500/10 file:text-indigo-400 hover:file:bg-indigo-500/20" required >
-                  </div>
-                  <% } %>
-
-                    <div class="col-span-1 md:col-span-2">
-                      <label class="block text-sm font-medium mb-2 text-slate-400">Special message</label>
-                      <textarea name="purchase[specialMsg]" maxlength="350" rows="5"
-                        placeholder="Wishing you endless happiness, good health, and success in everything you do..."
-                        class="w-full px-4 py-3 rounded-xl form-input text-white" required></textarea>
-                    </div>
-
-                  <% if (canUseCoins) { %>
-                    <div id="coinPaymentSection" class="col-span-1 md:col-span-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 <%= initialPaymentMode === 'coins' ? '' : 'hidden' %>">
-                      <h3 class="text-sm font-semibold text-amber-200">Coins Checkout</h3>
-                      <p class="mt-2 text-sm text-amber-100/90">
-                        This template requires <strong><%= templateCoinPrice %> coins</strong>.
-                      </p>
-                      <p class="mt-1 text-xs text-amber-100/80">Current balance: <%= currentUserCoins %> coins.</p>
-                      <p class="mt-1 text-xs text-amber-100/80">After coin purchase, this link stays valid for <%= coinValidityMonths %> months.</p>
-                    </div>
-                  <% } %>
-
-                  <% if(requiresPayment){ %>
-                    <div id="upiPaymentSection" class="col-span-1 md:col-span-2 <%= initialPaymentMode === 'coins' ? 'hidden' : '' %>">
-                      <details class="purchase-accordion rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
-                        <summary class="cursor-pointer flex items-center justify-between text-emerald-300 font-semibold text-sm" style="list-style:none;">
-                          <span>Price - &#8377;<%= displayPaymentAmount %></span>
-                          <span class="inline-flex items-center gap-2 ml-auto">
-                            <span class="text-xs text-emerald-200">&#9662;</span>
-                            <% if(hasAutoPayment) { %>
-                              <a
-                                href="<%= universalUpiLink %>"
-                                id="upiPayBtn"
-                                data-intent-link="<%= intentUpiLink %>"
-                                class="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-3 py-1.5 text-xs text-white font-semibold hover:bg-emerald-500 transition">
-                                Pay
-                              </a>
-                            <% } %>
-                          </span>
-                        </summary>
-
-                        <div class="mt-4 flex flex-col items-center space-y-4">
-                          <% if(hasManualQr) { %>
-                            <div class="flex flex-col items-center gap-3 rounded-xl border border-slate-700/60 bg-slate-900/35 p-3">
-                              <div class="QRcodeBox">
-                                <img src="<%= getOptimizedCloudinaryUrl(paymentQrImageUrl, 'payment') %>" srcset="<%= getResponsiveCloudinarySrcSet(paymentQrImageUrl, 'payment') %>" sizes="160px" alt="Payment QR Code" loading="lazy" decoding="async">
-                              </div>
-                            </div>
-                          <% } %>
-
-                          <% if(!hasAutoPayment) { %>
-                            <p class="text-xs text-amber-300">UPI payment button not configured.</p>
-                          <% } %>
-                        </div>
-                      </details>
-                    </div>
-                  <% } %>
-
-                  <% if(requiresPayment){ %>
-                    <div id="upiProofSection" class="col-span-1 md:col-span-2 <%= initialPaymentMode === 'coins' ? 'hidden' : '' %>">
-                      <label class="block text-sm font-semibold mb-2 text-slate-300">Payment Screenshot</label>
-                      <input id="paymentImageInput" name="paymentImage" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
-                          class="w-full px-4 py-3 rounded-xl form-input text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-500/10 file:text-emerald-400 hover:file:bg-emerald-500/20" <%= initialPaymentMode === 'coins' ? '' : 'required' %>>
-                    </div>
-                  <% } %>
-
                 </div>
 
-                <button type="submit" id="submitBtn"
-                  class="w-full gradient-bg py-4 rounded-xl font-bold text-white shadow-lg shadow-indigo-500/30 hover:opacity-90 transition transform hover:-translate-y-1">
-                  <%= initialPaymentMode === "coins" ? "Unlock With Coins" : "Create Link" %>
-                </button>
-              </form>
-        </div>
-        <details class="purchase-accordion w-full mt-2 bg-slate-900/20 border border-slate-800/30 p-4 rounded-2xl">
-          <summary class="cursor-pointer flex items-center justify-between text-slate-300 font-semibold text-sm md:text-base" style="list-style:none;">
-            <span>Need help or support?</span>
-            <span class="text-xs text-slate-400">&#9662;</span>
-          </summary>
-          <p class="mt-3 text-sm text-slate-400 leading-relaxed">
-            Need quick help? Connect with us on
-            <a class="text-indigo-400 hover:text-indigo-300" href="/chat">Chat Support</a>
-            or message us on
-            <a class="text-pink-400 hover:text-pink-300" href="https://www.instagram.com/vish_link18/#" target="_blank" rel="noopener noreferrer">Instagram</a>.
-            <br>
-            If you want any customizations or need a special template, just talk to Chat Support and we will help you set it up.
-          </p>
-        </details>
+                <% if(hasManualQr) { %>
+                  <div class="flex justify-center">
+                    <div class="p-2 rounded-2xl bg-white/5 border border-white/10 relative group">
+                        <img src="<%= getOptimizedCloudinaryUrl(paymentQrImageUrl, 'payment') %>" srcset="<%= getResponsiveCloudinarySrcSet(paymentQrImageUrl, 'payment') %>" sizes="120px" class="w-32 h-32 rounded-xl object-contain" alt="QR">
+                    </div>
+                  </div>
+                <% } %>
+              </div>
+              
+              <div id="upiProofSection" class="max-w-md mx-auto <%= initialPaymentMode === 'coins' ? 'hidden' : '' %>">
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 text-center">Upload Screenshot</label>
+                <input id="paymentImageInput" name="paymentImage" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" class="w-full px-4 py-2.5 rounded-xl input-glass text-slate-300 text-sm file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-emerald-500/20 file:text-emerald-300 hover:file:bg-emerald-500/30 transition focus:outline-none" <%= initialPaymentMode === 'coins' ? '' : 'required' %>>
+              </div>
+            <% } %>
+          </div>
 
-        <% if(selectedWeb.articleTitle){ %>
-        <article class="bg-slate-900/30 border border-slate-800/50 p-6 md:p-10 rounded-3xl">
-          <h2 class="text-2xl md:text-3xl font-bold text-white mb-6 flex items-center gap-4">
-            <span class="w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400 shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 0 20 20" fill="currentColor"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10.392A7.969 7.969 0 015.5 14c1.255 0 2.443.29 3.5.804V4.804zM11 4.804A7.968 7.968 0 0114.5 4c1.255 0 2.443.29 3.5.804v10.392a7.969 7.969 0 00-3.5-.804c-1.255 0-2.443.29-3.5.804V4.804z" /></svg>
-            </span>
-            <%= selectedWeb.articleTitle %>
-          </h2>
-          <p class="text-slate-400 leading-relaxed text-base md:text-lg">
-            <%- selectedWeb.articleContent %>
-          </p>
-        </article>
-        <% } %>
+          <!-- Submit -->
+          <div class="pt-4 mt-4 border-t border-slate-700/50">
+            <button type="submit" id="submitBtn" class="theme-btn-primary w-full py-4 rounded-xl font-bold text-white text-sm tracking-wide bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 shadow-lg shadow-indigo-500/25 transition-all transform flex justify-center items-center gap-2">
+              <span><%= initialPaymentMode === "coins" ? "Unlock With Coins" : "Create Link" %></span>
+              <svg class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            </button>
+            <% if( !isTemporary ){ %>
+              <p id="paymentVerificationNote" class="text-center text-[11px] text-slate-500 mt-3 <%= initialPaymentMode === 'coins' ? 'hidden' : '' %>">
+                Link goes live within 24-48 hours after verification.
+              </p>
+            <% } %>
+          </div>
+        </form>
       </div>
-    </main>
+
+      <!-- Compact Footer Features (Info, Feedback, Article) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+        <!-- Compact Info -->
+        <div class="premium-glass p-4 rounded-2xl flex flex-col justify-center text-center backdrop-blur-md">
+          <div class="flex justify-center gap-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
+            <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Secure</span>
+            <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> <%= canUseCoins ? `${coinValidityMonths}M / ` : '' %><%= upiValidityMonths %>M Valid</span>
+            <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span> Retry</span>
+          </div>
+          <p class="text-[11px] text-slate-500">Need help? <a href="/chat" class="text-indigo-400 hover:underline">Chat</a> or <a href="https://www.instagram.com/vish_link18/#" target="_blank" class="text-pink-400 hover:underline">Insta</a></p>
+        </div>
+
+        <!-- Compact Feedback -->
+        <div class="premium-glass p-4 rounded-2xl flex flex-col justify-center backdrop-blur-md">
+          <form action="/feedback/add" method="POST" class="flex items-center gap-2">
+            <input type="text" name="feedback[message]" placeholder="Leave quick feedback..." maxlength="500" required class="input-glass flex-grow bg-slate-900/50 border border-slate-700/50 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 transition">
+            <button type="submit" class="theme-icon-btn bg-indigo-500/20 text-indigo-300 p-2 rounded-lg hover:bg-indigo-500/30 transition shadow-sm" title="Send Feedback">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+            </button>
+          </form>
+        </div>
+      </div>
+
+       <% if(selectedWeb.articleTitle){ %>
+        <details class="premium-glass p-4 rounded-2xl cursor-pointer group mb-8 transition-all duration-300 backdrop-blur-md">
+          <summary class="text-[11px] uppercase tracking-wider font-semibold text-slate-400 flex justify-center items-center gap-2" style="list-style: none;">
+            <span>Details: <%= selectedWeb.articleTitle %></span>
+            <svg class="w-3.5 h-3.5 transition-transform duration-300 group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </summary>
+          <article class="mt-4 text-[13px] text-slate-300 leading-relaxed border-t border-slate-700/50 pt-4">
+            <%- selectedWeb.articleContent %>
+          </article>
+        </details>
+      <% } %>
+
+    </div>
+  </main>
+  
     
 
     <script>
@@ -368,9 +428,9 @@
       const paymentImageInput = document.getElementById("paymentImageInput");
       const coinPaymentSection = document.getElementById("coinPaymentSection");
       const verificationNote = document.getElementById("paymentVerificationNote");
-      const coinOptionEnabled = <%= canUseCoins ? "true" : "false" %>;
-      const hasEnoughCoinsForPurchase = <%= hasEnoughCoins ? "true" : "false" %>;
-      const upiProofRequired = <%= requiresPayment ? "true" : "false" %>;
+      const coinOptionEnabled = "<%= canUseCoins ? 'true' : 'false' %>" === "true";
+      const hasEnoughCoinsForPurchase = "<%= hasEnoughCoins ? 'true' : 'false' %>" === "true";
+      const upiProofRequired = "<%= requiresPayment ? 'true' : 'false' %>" === "true";
 
       function getSelectedPaymentMode() {
         if (!paymentModeInputs.length) return "upi";
@@ -397,20 +457,21 @@
         }
 
         if (!btn) return;
+        const btnSpan = btn.querySelector('span') || btn;
 
         if (usingCoins) {
           if (!hasEnoughCoinsForPurchase) {
             btn.disabled = true;
-            btn.innerText = "Not Enough Coins";
+            btnSpan.innerText = "Not Enough Coins";
             return;
           }
           btn.disabled = false;
-          btn.innerText = "Unlock With Coins";
+          btnSpan.innerText = "Unlock With Coins";
           return;
         }
 
         btn.disabled = false;
-        btn.innerText = "Create Link";
+        btnSpan.innerText = "Create Link";
       }
 
       paymentModeInputs.forEach((input) => {
@@ -461,7 +522,8 @@
         }
 
         btn.disabled = true;
-        btn.innerText = "Optimizing images...";
+        const btnSpan = btn.querySelector('span') || btn;
+        btnSpan.innerText = "Hold on...";
 
         try {
           await optimizeInputFiles(form.querySelector('input[name="images"]'));
@@ -473,9 +535,9 @@
         }
 
         form.dataset.optimizedSubmit = "true";
-        btn.innerText = "Please wait...";
+        btnSpan.innerText = "Uploading...";
         form.submit();
       });
 
     </script>
-</body>
+</div>
