@@ -2,42 +2,67 @@
 
   <style>
     /* Custom Scrollbar */
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .snap-x { scroll-snap-type: x mandatory; }
+    .snap-start { scroll-snap-align: start; }
 
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
+    /* Premium Glass Effect */
+    .premium-glass {
+      background: rgba(15, 23, 42, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     }
-
-    /* Smooth snap scrolling */
-    .snap-x {
-      scroll-snap-type: x mandatory;
+    
+    /* Dynamic Light Theme Overrides */
+    html[data-theme="light"] .premium-glass {
+      background: var(--sky-surface) !important;
+      border-color: var(--sky-border) !important;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05) !important;
     }
-
-    .snap-start {
-      scroll-snap-align: start;
+    html[data-theme="light"] .aurora-bg-1 { background-color: rgba(var(--sky-glow-a-rgb), 0.3) !important; }
+    html[data-theme="light"] .aurora-bg-2 { background-color: rgba(var(--sky-glow-b-rgb), 0.25) !important; }
+    
+    html[data-theme="light"]  .theme-btn-primary {
+      background: var(--sky-accent) !important;
+      color: #ffffff !important;
+      border: none !important;
+    }
+    html[data-theme="light"] .theme-btn-primary:hover {
+      background: var(--sky-accent-hover) !important;
+      transform: scale(1.02);
+    }
+    html[data-theme="light"] .theme-btn-outline {
+      background: transparent !important;
+      border: 1px solid var(--sky-accent-border) !important;
+      color: var(--sky-accent) !important;
+    }
+    html[data-theme="light"] .theme-btn-outline:hover {
+      background: var(--sky-accent-soft) !important;
+    }
+    html[data-theme="light"] .theme-text { color: var(--sky-text) !important; }
+    html[data-theme="light"] .theme-text-muted { color: var(--sky-muted) !important; }
+    html[data-theme="light"] .theme-text-accent { color: var(--sky-accent) !important; }
+    html[data-theme="light"] .theme-chip {
+      background: var(--sky-accent-soft) !important;
+      color: var(--sky-accent) !important;
+      border-color: var(--sky-accent-border) !important;
     }
   </style>
 
-  <div class="home-page bg-[#0B1120] text-slate-200 antialiased relative min-h-screen w-full selection:bg-indigo-500/30">
+  <div class="home-page bg-[#0B1120] text-slate-200 antialiased relative min-h-screen w-full selection:bg-indigo-500/30 overflow-x-hidden">
 
     <!-- Background Glows -->
-    <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-      <div
-        class="absolute top-[-10%] left-[-10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-indigo-600/15 rounded-full blur-[100px] animate-pulse">
-      </div>
-      <div
-        class="absolute bottom-[-10%] right-[-10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-emerald-500/10 rounded-full blur-[100px]">
-      </div>
+    <div class="fixed inset-0 overflow-hidden -z-10 pointer-events-none opacity-50">
+      <div class="aurora-bg-1 absolute top-[5%] left-[-10%] w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-indigo-600/20 rounded-full blur-[130px]"></div>
+      <div class="aurora-bg-2 absolute bottom-[10%] right-[-10%] w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-emerald-600/15 rounded-full blur-[130px]"></div>
     </div>
 
     <!-- Header Section -->
-    <header class="relative max-w-7xl mx-auto px-4 md:px-6 pt-8 pb-10 text-center flex flex-col items-center">
-      <!-- 2. Optimized Slidable Image Banner -->
+    <header class="relative max-w-7xl mx-auto px-4 md:px-6 pt-8 pb-10 text-center flex flex-col items-center animate-fade-in">
       <%- include("includes/bannerSlider", { bannerSlides }) %>
-
     </header>
 
     <!-- Main Content -->
@@ -46,46 +71,35 @@
       <% const homeTopPhotoFrameTemplates = Array.isArray(topPhotoFrameTemplates) ? topPhotoFrameTemplates.slice(0, 4) : []; %>
       <% const templateCoinIconPath = `/assets/icons/coin.svg?v=${assetVersion}`; %>
 
-      <div class="flex items-center justify-between mb-2 border-b border-slate-800/60 pb-6">
+      <div class="flex items-center justify-between mb-4 border-b border-slate-700/40 pb-4">
         <div>
-          <h2 class="text-2xl md:text-3xl font-bold text-white">Top Website Templates</h2>
-          <p class="text-slate-500 text-sm mt-1">Scroll or swipe to see more</p>
+          <h2 class="theme-text text-2xl md:text-3xl font-black text-white tracking-tight">Top Website Templates</h2>
+          <p class="theme-text-muted text-slate-400 text-sm mt-1">Scroll or swipe to explore our best designs</p>
         </div>
 
         <!-- Desktop Nav Controls -->
         <div class="hidden md:flex gap-3">
-          <button id="prevBtn"
-            type="button"
-            aria-label="Scroll templates to previous cards"
-            class="p-3 min-w-[44px] min-h-[44px] rounded-full bg-slate-900 border border-slate-700 text-slate-200 hover:text-white hover:border-indigo-500 transition-all active:scale-90">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
+          <button id="prevBtn" type="button" aria-label="Previous"
+            class="premium-glass p-3 rounded-full text-slate-300 hover:text-white transition-all transform hover:scale-105 active:scale-95">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
           </button>
-          <button id="nextBtn"
-            type="button"
-            aria-label="Scroll templates to next cards"
-            class="p-3 min-w-[44px] min-h-[44px] rounded-full bg-slate-900 border border-slate-700 text-slate-200 hover:text-white hover:border-indigo-500 transition-all active:scale-90">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
+          <button id="nextBtn" type="button" aria-label="Next"
+            class="premium-glass p-3 rounded-full text-slate-300 hover:text-white transition-all transform hover:scale-105 active:scale-95">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
           </button>
         </div>
       </div>
 
-      <section class="mb-6">
-        
-        <div class="w-full max-w-5xl mx-auto overflow-hidden">
+      <section class="mb-8">
+        <div class="w-full mx-auto overflow-hidden">
           <div class="overflow-x-auto no-scrollbar py-2">
-            <div class="flex flex-nowrap gap-2 px-4 w-max mx-auto">
-              <% const categories=["All","Free", "Birthday" , "Valentine's" , "Sorry" , "Family" , "Couple"
-                , "Anniversary" , "Wedding" , "Best Friend" , "Festival" , "New Year" ]; %>
-                <% categories.forEach(tag=> { %>
-                  <a href="/category/<%= tag.toLowerCase() %>"
-                    class="px-4 py-2.5 min-h-[44px] rounded-full bg-slate-900/40 border border-slate-700 text-slate-300 text-[11px] md:text-xs font-medium hover:border-indigo-500/40 hover:text-indigo-300 transition-all whitespace-nowrap inline-flex items-center">
-                    <%= tag %>
-                  </a>
-                <% }) %>
+            <div class="flex flex-nowrap gap-3 pb-2 w-max">
+              <% const categories=["All", "Free", "Birthday", "Valentine's", "Sorry", "Family", "Couple", "Anniversary", "Wedding", "Best Friend", "Festival", "New Year"]; %>
+              <% categories.forEach(tag=> { %>
+                <a href="/category/<%= tag.toLowerCase() %>" class="premium-glass px-5 py-2.5 rounded-full theme-text-muted text-slate-300 text-xs font-semibold hover:border-indigo-500/50 hover:text-indigo-400 transition-all inline-flex items-center hover:scale-105">
+                  <%= tag %>
+                </a>
+              <% }) %>
             </div>
           </div>
         </div>
@@ -99,85 +113,72 @@
       <!-- HORIZONTAL SCROLL CONTAINER -->
       <div class="relative scroll-container">
         <!-- Gradient Fades (Desktop only) -->
-        <div
-          class="hidden lg:block absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-[#0B1120] to-transparent z-10 pointer-events-none">
-        </div>
-        <div
-          class="hidden lg:block absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-[#0B1120] to-transparent z-10 pointer-events-none">
-        </div>
+        <div class="hidden lg:block absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-[rgba(11,17,32,0.8)] to-transparent z-10 pointer-events-none"></div>
+        <div class="hidden lg:block absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-[rgba(11,17,32,0.8)] to-transparent z-10 pointer-events-none"></div>
 
         <div id="templateScroller" class="flex overflow-x-auto no-scrollbar gap-4 md:gap-6 pb-10 snap-x snap-mandatory"
           style="-webkit-overflow-scrolling: touch;">
 
           <% websiteTopTemplates.forEach((sample, sampleIndex) => { %>
             <div class="flex-none w-[85vw] sm:w-[45vw] md:w-[40vw] lg:w-[30vw] xl:w-[24vw] snap-start group">
-              <div
-                class="bg-slate-900/50 border border-slate-800 rounded-3xl overflow-hidden transition-all duration-500 hover:border-indigo-500/50 hover:shadow-[0_0_30px_rgba(99,102,241,0.1)] flex flex-col h-full backdrop-blur-sm">
-
+              <div class="premium-glass rounded-3xl overflow-hidden transition-all duration-500 hover:border-indigo-500/40 hover:shadow-xl hover:shadow-indigo-500/10 flex flex-col h-full group-hover:translate-y-[-4px]">
+                
                 <!-- Image -->
                 <div class="relative h-48 md:h-56 overflow-hidden">
-                  <div
-                    class="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent  opacity-60">
-                  </div>
-                  <a href="<%= sample.webUrl %>"
-                    class="block w-full h-full"
-                    <%= sampleIndex < 3 ? 'data-top-template-preview-link="true"' : '' %>>
-                    <img src="<%= getOptimizedCloudinaryUrl(sample.imageUrl.url, "card") %>"
+                  <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-60 z-10 pointer-events-none"></div>
+                  <a href="<%= sample.webUrl %>" class="block w-full h-full relative z-0" <%= sampleIndex < 3 ? 'data-top-template-preview-link="true"' : '' %>>
+                    <img src="<%= getOptimizedCloudinaryUrl(sample.imageUrl.url, 'card') %>"
                       srcset="<%= getResponsiveCloudinarySrcSet(sample.imageUrl.url, 'card') %>"
                       sizes="(max-width: 640px) 85vw, (max-width: 1024px) 45vw, 30vw"
                       alt="<%= sample.webName %>"
                       loading="lazy" decoding="async" fetchpriority="low"
-                      class="w-full h-full object-cover transform group-hover:scale-105 transition duration-700 ease-in-out">
+                      class="w-full h-full object-cover transform group-hover:scale-[1.03] transition duration-700 ease-out">
                   </a>
-                  <div class="absolute bottom-4 left-1 right-4 w-full flex items-center justify-between ">
-                    <a
-                      href="<%= sample.webUrl %>"
-                      aria-label="Open live preview for <%= sample.webName %>"
-                      class="ml-1 px-3 py-1 bg-white/10 backdrop-blur-md border border-white/20 text-white text-[10px] font-bold rounded-lg uppercase tracking-wider">
+                  <% const rawCoinPrice = Number(sample.purchaseCredits); %>
+                  <% const coinPrice = Number.isFinite(rawCoinPrice) && rawCoinPrice > 0 ? Math.floor(rawCoinPrice) : 25; %>
+                  <div class="absolute bottom-4 inset-x-4 flex items-center justify-between z-20">
+                    <a href="<%= sample.webUrl %>" class="theme-chip ml-1 px-3 py-1.5 bg-black/40 backdrop-blur-md border border-white/20 text-white text-[9px] font-bold rounded-lg uppercase tracking-wider hover:bg-black/60 transition">
                       Live Preview
                     </a>
-
-                    <% if(sample.priceForPermanent && sample.priceForTemporary===0 ) { %>
-                      <span
-                        class="mr-2 px-3 py-1 bg-emerald-500 text-white-400 border border-emerald-500/20 text-[10px] font-medium rounded-md tracking-wide">
-                        Free
-                      </span>
+                    <div class="flex items-center gap-2">
+                      <% if(sample.priceForPermanent && sample.priceForTemporary===0 ) { %>
+                        <span class="px-3 py-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold rounded-lg tracking-wide uppercase shadow-sm">
+                          Free
+                        </span>
                       <% } %>
+                      <% if (coinPrice > 0) { %>
+                      <div style="display:inline-flex;align-items:center;gap:4px;background:rgba(0,0,0,0.75);border:1px solid rgba(251,191,36,0.4);border-radius:8px;padding:4px 10px;box-shadow:0 2px 8px rgba(0,0,0,0.4);">
+                        <img src="<%= templateCoinIconPath %>" alt="coin" width="14" height="14" style="width:14px;height:14px;display:block;">
+                        <span style="font-size:11px;font-weight:800;color:#fcd34d;letter-spacing:0.3px;line-height:1;"><%= coinPrice %></span>
+                      </div>
+                      <% } %>
+                    </div>
                   </div>
                 </div>
 
                 <!-- Info -->
-                <div class="p-5 md:p-6 flex flex-col flex-grow">
-                  <h3 class="text-xl font-bold text-white mb-2 group-hover:text-indigo-400 transition-colors">
+                <div class="p-5 flex flex-col flex-grow">
+                  <h3 class="theme-text text-lg md:text-xl font-bold text-white mb-2 group-hover:text-indigo-400 transition-colors">
                     <%= sample.webName %>
                   </h3>
                   <% if(currUser && currUser.isAdmin) { %>
-                    <p class="text-xs text-indigo-300 mb-2">Priority: <%= Number.isFinite(sample.priority) ? sample.priority : 0 %></p>
+                    <p class="text-[10px] uppercase font-bold text-indigo-400 mb-2">Priority: <%= Number.isFinite(sample.priority) ? sample.priority : 0 %></p>
                   <% } %>
-                  <p class="text-slate-400 text-sm line-clamp-2 mb-6 h-10">
+                  <p class="theme-text-muted text-slate-400 text-xs leading-relaxed line-clamp-2 h-8 mb-5">
                     <%= sample.description %>
                   </p>
-                  <% const rawCoinPrice = Number(sample.purchaseCredits); %>
-                  <% const coinPrice = Number.isFinite(rawCoinPrice) && rawCoinPrice > 0 ? Math.floor(rawCoinPrice) : 25; %>
-                  <% if (coinPrice > 0) { %>
-                  <p class="mb-5 inline-flex items-center gap-1.5 rounded-xl border border-amber-400/30 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-200 w-fit">
-                    <img src="<%= templateCoinIconPath %>" alt="coin" width="14" height="14" loading="lazy" decoding="async" class="h-3.5 w-3.5">
-                    <span><%= coinPrice %> Coins</span>
-                  </p>
-                  <% } %>
+                  
+
 
                   <div class="grid grid-cols-2 gap-3 mt-auto">
-                    <a href="/web/purchase/permanent/<%= sample.id %>"
-                      class="flex items-center justify-center py-2.5 rounded-xl border border-slate-700 text-slate-300 font-semibold text-xs hover:bg-slate-800 transition">
-                      Permanent link
+                    <a href="/web/purchase/permanent/<%= sample.id %>" class="theme-btn-outline flex items-center justify-center py-2.5 rounded-xl border border-slate-700 text-slate-300 font-bold text-[11px] uppercase tracking-wide hover:bg-slate-800 transition">
+                      Permanent
                     </a>
-                    <a href="/web/purchase/temporary/<%= sample.id %>"
-                      class="submitBtnLink flex items-center justify-center py-2.5 rounded-xl bg-indigo-600 text-white font-semibold text-xs hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 transition">
+                    <a href="/web/purchase/temporary/<%= sample.id %>" class="theme-btn-primary submitBtnLink flex items-center justify-center py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-[11px] uppercase tracking-wide hover:bg-indigo-500 shadow-md transition">
                       Make Link
                     </a>
                     <% if(currUser && currUser.isAdmin) { %>
-                      <a href="/web/template/<%= sample.id %>/edit"
-                        class="col-span-2 flex items-center justify-center py-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-200 font-semibold text-xs hover:bg-amber-500/20 transition">
+                      <a href="/web/template/<%= sample.id %>/edit" class="col-span-2 flex items-center justify-center py-2.5 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-300 font-bold text-[11px] uppercase tracking-wide transition">
                         Edit Template
                       </a>
                     <% } %>
@@ -185,42 +186,33 @@
                 </div>
               </div>
             </div>
-            <% }) %>
+          <% }) %>
         </div>
       </div>
 
       <section class="mt-8 mb-10">
-        <div class="flex items-center justify-between mb-4 border-b border-slate-800/60 pb-4">
+        <div class="flex items-center justify-between mb-6 border-b border-slate-700/40 pb-4">
           <div>
-            <h2 class="text-xl md:text-2xl font-bold text-white">Top Photo Frame Templates</h2>
-            <p class="text-slate-500 text-sm mt-1">For Insta Story and WhatsApp Status</p>
+            <h2 class="theme-text text-xl md:text-2xl font-black text-white tracking-tight">Top Photo Frames</h2>
+            <p class="theme-text-muted text-slate-400 text-xs md:text-sm mt-1">For Insta Story and WhatsApp Status</p>
           </div>
-          <a href="/photo-frames"
-            class="p-4 inline-flex items-center justify-center rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-3.5 py-2 text-xs font-semibold text-indigo-300 hover:bg-indigo-500/20 transition">
+          <a href="/photo-frames" class="theme-chip px-4 py-2 rounded-xl text-xs font-bold text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 hover:scale-105 transition">
             View All
           </a>
         </div>
 
         <% if (!homeTopPhotoFrameTemplates.length) { %>
-          <p class="text-sm text-slate-400">Photo frame templates abhi available nahi hain.</p>
+          <p class="theme-text-muted text-sm text-slate-400">Photo frame templates abhi available nahi hain.</p>
         <% } else { %>
-          <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             <% homeTopPhotoFrameTemplates.forEach((frameTemplate) => { %>
-              <article class="group rounded-xl border border-slate-800 bg-slate-900/50 overflow-hidden hover:border-indigo-500/50 transition">
-                <a href="/photo-frames/<%= encodeURIComponent(frameTemplate.slug) %>" class="block">
-                  <div class="aspect-[4/3] bg-slate-900 overflow-hidden">
-                    <img
-                      src="<%= frameTemplate.frameImage.previewUrl %>"
-                      alt="<%= frameTemplate.name %> preview"
-                      loading="lazy"
-                      decoding="async"
-                      fetchpriority="low"
-                      width="<%= Number((frameTemplate.canvas && frameTemplate.canvas.width) || 1080) %>"
-                      height="<%= Number((frameTemplate.canvas && frameTemplate.canvas.height) || 1080) %>"
-                      class="h-full w-full object-contain group-hover:scale-[1.03] transition duration-300">
+              <article class="premium-glass group rounded-2xl overflow-hidden hover:border-indigo-500/50 hover:shadow-lg hover:-translate-y-1 transition duration-300">
+                <a href="/photo-frames/<%= encodeURIComponent(frameTemplate.slug) %>" class="block h-full flex flex-col">
+                  <div class="aspect-[4/3] bg-black/20 overflow-hidden relative border-b border-white/5">
+                    <img src="<%= frameTemplate.frameImage.previewUrl %>" alt="<%= frameTemplate.name %> preview" loading="lazy" decoding="async" fetchpriority="low" class="h-full w-full object-contain p-2 group-hover:scale-105 transition duration-500 ease-out">
                   </div>
-                  <div class="px-2.5 py-2.5">
-                    <h3 class="text-xs md:text-sm font-semibold text-white line-clamp-2"><%= frameTemplate.name %></h3>
+                  <div class="p-3 text-center flex-grow flex items-center justify-center">
+                    <h3 class="theme-text text-[11px] md:text-xs font-bold text-slate-200 line-clamp-2 uppercase tracking-wide"><%= frameTemplate.name %></h3>
                   </div>
                 </a>
               </article>
@@ -230,53 +222,41 @@
       </section>
   
     </main>
-    <section class="max-w-5xl mx-auto mt-4 p-6 md:p-8 mb-6 rounded-3xl border border-slate-800/70 bg-slate-900/35"
-      style="content-visibility:auto;contain-intrinsic-size:560px;">
-      <h2 class="text-2xl md:text-3xl font-bold text-white">Why Digital Wishes Work Better</h2>
-      <p class="mt-3 text-sm md:text-base text-slate-300 leading-relaxed">
-        VishLink makes gifting simple: choose a template, personalize your message, and share one beautiful link.
-        No delivery delays, no printing, and your memory stays accessible anytime.
+
+    <section class="premium-glass max-w-5xl mx-auto mt-4 p-8 md:p-10 mb-8 z-[5] relative rounded-[2rem] text-center w-[90%] md:w-full" style="content-visibility:auto;">
+      <h2 class="theme-text text-2xl md:text-3xl font-black text-white">Why Digital Wishes Work Better</h2>
+      <p class="theme-text-muted mt-3 text-sm md:text-base text-slate-400 max-w-2xl mx-auto leading-relaxed">
+        VishLink makes gifting simple: choose a template, personalize your message, and share one beautiful link. No delivery delays, and memories stay accessible forever.
       </p>
-      <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div class="rounded-xl border border-slate-700/70 bg-slate-900/50 p-3">
-          <p class="text-sm font-semibold text-indigo-300">Fast</p>
-          <p class="mt-1 text-sm text-slate-300">Ready in minutes and easy to share.</p>
+      <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-black/20 backdrop-blur-sm rounded-2xl border border-white/5 p-5 hover:border-indigo-500/30 transition">
+          <p class="text-lg font-black text-indigo-400 uppercase tracking-widest">Fast</p>
+          <p class="mt-2 text-xs text-slate-300 theme-text-muted">Ready in minutes, easy to share instantly.</p>
         </div>
-        <div class="rounded-xl border border-slate-700/70 bg-slate-900/50 p-3">
-          <p class="text-sm font-semibold text-emerald-300">Personal</p>
-          <p class="mt-1 text-sm text-slate-300">Add your photos, message, and style.</p>
+        <div class="bg-black/20 backdrop-blur-sm rounded-2xl border border-white/5 p-5 hover:border-emerald-500/30 transition">
+          <p class="text-lg font-black text-emerald-400 uppercase tracking-widest">Personal</p>
+          <p class="mt-2 text-xs text-slate-300 theme-text-muted">Add your photos, message, and unique style.</p>
         </div>
-        <div class="rounded-xl border border-slate-700/70 bg-slate-900/50 p-3">
-          <p class="text-sm font-semibold text-amber-300">Reusable</p>
-          <p class="mt-1 text-sm text-slate-300">Open and relive moments anytime.</p>
+        <div class="bg-black/20 backdrop-blur-sm rounded-2xl border border-white/5 p-5 hover:border-amber-500/30 transition">
+          <p class="text-lg font-black text-amber-400 uppercase tracking-widest">Reusable</p>
+          <p class="mt-2 text-xs text-slate-300 theme-text-muted">Open and relive beautiful moments anytime.</p>
         </div>
       </div>
     </section>
-    <section class="mx-4 sm:mx-6 lg:mx-auto max-w-5xl mt-2 mb-10">
-      <div class="rounded-3xl border border-slate-800/80 bg-gradient-to-br from-slate-900/80 via-slate-900/65 to-indigo-950/35 p-5 md:p-7">
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 md:gap-6">
-          <div class="text-center lg:text-left lg:max-w-2xl">
-            <p class="text-[11px] uppercase tracking-[0.16em] text-indigo-300 font-semibold">Quick Explore</p>
-            <h2 class="mt-2 text-xl md:text-2xl font-bold text-white leading-tight">Create Personalized Wishing Websites Online</h2>
-            <p class="mt-2 text-sm md:text-base text-slate-300">
-              Explore birthday, anniversary, and digital gift website ideas with ready templates on VishLink.
-            </p>
-          </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full lg:w-auto lg:min-w-[420px]">
-            <a href="/birthday-gift-website" class="inline-flex items-center justify-center rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3.5 py-2.5 text-sm font-semibold text-indigo-100 hover:bg-indigo-500/20 hover:border-indigo-400/40 transition">
-              Birthday Gift Website
-            </a>
-            <a href="/anniversary-gift-website" class="inline-flex items-center justify-center rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3.5 py-2.5 text-sm font-semibold text-indigo-100 hover:bg-indigo-500/20 hover:border-indigo-400/40 transition">
-              Anniversary Website
-            </a>
-            <a href="/online-wishing-website-maker" class="inline-flex items-center justify-center rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3.5 py-2.5 text-sm font-semibold text-indigo-100 hover:bg-indigo-500/20 hover:border-indigo-400/40 transition">
-              Wishing Website Maker
-            </a>
-            <a href="/digital-gift-ideas" class="inline-flex items-center justify-center rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3.5 py-2.5 text-sm font-semibold text-indigo-100 hover:bg-indigo-500/20 hover:border-indigo-400/40 transition">
-              Digital Gift Ideas
-            </a>
-          </div>
+    <!-- SEO & Footer Links -->
+    <section class="max-w-5xl mx-auto mb-12 w-[90%] md:w-full relative z-[5]">
+      <div class="premium-glass rounded-[2rem] p-6 md:p-8 flex flex-col lg:flex-row items-center justify-between gap-6">
+        <div class="text-center lg:text-left max-w-lg">
+          <p class="theme-text-accent text-[10px] uppercase tracking-[0.2em] text-indigo-400 font-bold">Quick Explore</p>
+          <h2 class="theme-text mt-2 text-xl font-black text-white leading-tight">Create Personalized Wishing Websites Online</h2>
+          <p class="theme-text-muted mt-2 text-xs text-slate-400">Discover birthday, anniversary, and digital gift ideas with our ready-to-use templates.</p>
+        </div>
+        <div class="flex flex-wrap justify-center lg:justify-end gap-2 shrink-0">
+          <a href="/birthday-gift-website" class="theme-chip px-3 py-2 rounded-xl text-[10.5px] font-bold border border-indigo-500/20 bg-indigo-500/10 text-indigo-300 uppercase hover:bg-indigo-500/20 transition">Birthday Gift</a>
+          <a href="/anniversary-gift-website" class="theme-chip px-3 py-2 rounded-xl text-[10.5px] font-bold border border-indigo-500/20 bg-indigo-500/10 text-indigo-300 uppercase hover:bg-indigo-500/20 transition">Anniversary</a>
+          <a href="/online-wishing-website-maker" class="theme-chip px-3 py-2 rounded-xl text-[10.5px] font-bold border border-indigo-500/20 bg-indigo-500/10 text-indigo-300 uppercase hover:bg-indigo-500/20 transition">Website Maker</a>
+          <a href="/digital-gift-ideas" class="theme-chip px-3 py-2 rounded-xl text-[10.5px] font-bold border border-indigo-500/20 bg-indigo-500/10 text-indigo-300 uppercase hover:bg-indigo-500/20 transition">Gift Ideas</a>
         </div>
       </div>
     </section>
@@ -284,4 +264,3 @@
     <script defer src="/homeCollection.js?v=<%= assetVersion %>"></script>
 
   </div>
-

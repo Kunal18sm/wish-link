@@ -1,7 +1,5 @@
 <% layout("/layouts/boilerplate") %>
 
-
-
   <style>
     /* Smooth scroll behavior */
     html {
@@ -9,25 +7,6 @@
     }
 
     /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: #0f172a;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: #334155;
-      border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: #475569;
-    }
-
-    /* Hide scrollbar for category list but keep functionality */
     .no-scrollbar::-webkit-scrollbar {
       display: none;
     }
@@ -36,51 +15,118 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
+
+    .snap-x {
+      scroll-snap-type: x mandatory;
+    }
+
+    .snap-start {
+      scroll-snap-align: start;
+    }
+
+    /* Premium Glass Effect */
+    .premium-glass {
+      background: rgba(15, 23, 42, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Dynamic Light Theme Overrides */
+    html[data-theme="light"] .premium-glass {
+      background: var(--sky-surface) !important;
+      border-color: var(--sky-border) !important;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05) !important;
+    }
+
+    html[data-theme="light"] .aurora-bg-1 {
+      background-color: rgba(var(--sky-glow-a-rgb), 0.3) !important;
+    }
+
+    html[data-theme="light"] .aurora-bg-2 {
+      background-color: rgba(var(--sky-glow-b-rgb), 0.25) !important;
+    }
+
+    html[data-theme="light"] .theme-btn-primary {
+      background: var(--sky-accent) !important;
+      color: #ffffff !important;
+      border: none !important;
+    }
+
+    html[data-theme="light"] .theme-btn-primary:hover {
+      background: var(--sky-accent-hover) !important;
+      transform: scale(1.02);
+    }
+
+    html[data-theme="light"] .theme-btn-outline {
+      background: transparent !important;
+      border: 1px solid var(--sky-accent-border) !important;
+      color: var(--sky-accent) !important;
+    }
+
+    html[data-theme="light"] .theme-btn-outline:hover {
+      background: var(--sky-accent-soft) !important;
+    }
+
+    html[data-theme="light"] .theme-text {
+      color: var(--sky-text) !important;
+    }
+
+    html[data-theme="light"] .theme-text-muted {
+      color: var(--sky-muted) !important;
+    }
+
+    html[data-theme="light"] .theme-text-accent {
+      color: var(--sky-accent) !important;
+    }
+
+    html[data-theme="light"] .theme-chip {
+      background: var(--sky-accent-soft) !important;
+      color: var(--sky-accent) !important;
+      border-color: var(--sky-accent-border) !important;
+    }
   </style>
 
-  <!-- Main Wrapper (Changed from body to div for better responsiveness in layouts) -->
+  <!-- Main Wrapper -->
   <div
-    class="collection-page bg-[#0B1120] text-slate-200 antialiased relative min-h-screen w-full overflow-x-hidden selection:bg-indigo-500/30"
-    >
+    class="collection-page bg-[#0B1120] text-slate-200 antialiased relative min-h-screen w-full overflow-x-hidden selection:bg-indigo-500/30">
 
     <!-- Background Ambient Glow Effects -->
-    <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+    <div class="fixed inset-0 overflow-hidden -z-10 pointer-events-none opacity-50">
       <div
-        class="absolute top-[-10%] left-[-10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-indigo-600/20 rounded-full blur-[80px] md:blur-[120px] mix-blend-screen animate-pulse">
+        class="aurora-bg-1 absolute top-[5%] left-[-10%] w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-indigo-600/20 rounded-full blur-[130px] mix-blend-screen">
       </div>
       <div
-        class="absolute bottom-[-10%] right-[-10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-emerald-500/10 rounded-full blur-[80px] md:blur-[120px] mix-blend-screen">
+        class="aurora-bg-2 absolute bottom-[10%] right-[-10%] w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-emerald-600/15 rounded-full blur-[130px] mix-blend-screen">
       </div>
     </div>
 
     <!-- Header Section -->
-    <header class="relative max-w-7xl mx-auto px-4 md:px-6 pt-8 pb-10 text-center flex flex-col items-center">
-      <!-- 2. Optimized Slidable Image Banner -->
+    <header
+      class="relative max-w-7xl mx-auto px-4 md:px-6 pt-8 pb-8 text-center flex flex-col items-center animate-fade-in">
       <%- include("includes/bannerSlider", { bannerSlides }) %>
 
-      <!-- 4. Feedback Form -->
-      
-      <!-- 5. User Feedback Link (More subtle) -->
-      
-      <!-- 6. Category Scroller -->
-      <div class="mt-2 mb-2">
-        <span class="text-slate-300 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] opacity-80">Browse
-          Categories</span>
-      </div>
-      <div class="w-full max-w-5xl overflow-hidden">
-        <div class="overflow-x-auto no-scrollbar py-2">
-          <div class="flex flex-nowrap gap-2 px-4 w-max mx-auto">
-            <% const categories=["All", "Birthday" , "Valentine's" , "Sorry" , "Family" , "Couple"
-              , "Anniversary" , "Wedding" , "Best Friend" , "Festival" , "New Year" ]; %>
-              <% categories.forEach(tag=> { %>
-                <a href="/category/<%= tag.toLowerCase() %>"
-                  class="px-4 py-2.5 min-h-[44px] rounded-full bg-slate-900/40 border border-slate-700 text-slate-300 text-[11px] md:text-xs font-medium hover:border-indigo-500/40 hover:text-indigo-300 transition-all whitespace-nowrap inline-flex items-center">
-                  <%= tag %>
-                </a>
-                <% }) %>
+        <!-- Category Scroller -->
+        <div class="mt-4 mb-2">
+          <span
+            class="theme-text-accent text-indigo-400 text-[10px] md:text-xs font-extrabold uppercase tracking-[0.25em]">Browse
+            Categories</span>
+        </div>
+        <div class="w-full max-w-5xl mx-auto overflow-hidden">
+          <div class="overflow-x-auto no-scrollbar py-2">
+            <div class="flex flex-nowrap gap-3 px-4 pb-2 w-max mx-auto">
+              <% const categories=["All", "Birthday" , "Valentine's" , "Sorry" , "Family" , "Couple" , "Anniversary"
+                , "Wedding" , "Best Friend" , "Festival" , "New Year" ]; %>
+                <% categories.forEach(tag=> { %>
+                  <a href="/category/<%= tag.toLowerCase() %>"
+                    class="premium-glass px-5 py-2.5 rounded-full theme-text-muted text-slate-300 text-xs font-semibold hover:border-indigo-500/50 hover:text-indigo-400 transition-all inline-flex items-center hover:scale-105 <%= activeTag === tag.toLowerCase() ? 'border-indigo-500/50 bg-indigo-500/10 text-white' : '' %>">
+                    <%= tag %>
+                  </a>
+                  <% }) %>
+            </div>
           </div>
         </div>
-      </div>
     </header>
 
 
@@ -89,10 +135,13 @@
 
       <!-- Section Header -->
       <div
-        class="flex flex-col md:flex-row justify-between items-start mb-8 md:mb-12 gap-4 border-b border-slate-800 pb-6">
+        class="flex flex-col md:flex-row justify-between items-start mb-6 md:mb-8 gap-4 border-b border-slate-700/40 pb-6">
         <div>
-          <h2 class="text-2xl md:text-3xl font-bold text-slate-100">Featured <%= activeTag %> Collections</h2>
-          <p class="text-slate-400 mt-2 text-sm md:text-base">Handpicked designs trending this week</p>
+          <h2 class="theme-text text-2xl md:text-3xl font-black text-white tracking-tight">Featured <span
+              class="text-indigo-400 capitalize">
+              <%= activeTag %>
+            </span> Collections</h2>
+          <p class="theme-text-muted text-slate-400 mt-1 text-sm md:text-base">Handpicked designs trending this week</p>
         </div>
       </div>
 
@@ -100,76 +149,89 @@
         <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
         <p class="text-emerald-500">Tap on the image to see the template preview.</p>
       </div>
+
       <!-- Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+        <% const templateCoinIconPath=`/assets/icons/coin.svg?v=${assetVersion}`; %>
 
-        <!-- Cards Loop -->
-        <% allSamples.forEach((sample, sampleIndex) => { %>
-          <!-- Card Container -->
-          <div
-            class="group relative bg-slate-900 border border-slate-800 rounded-2xl md:rounded-3xl overflow-hidden hover:border-slate-600 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 flex flex-col h-full">
+          <!-- Cards Loop -->
+          <% allSamples.forEach((sample, sampleIndex)=> { %>
+            <div
+              class="premium-glass rounded-3xl overflow-hidden transition-all duration-500 hover:border-indigo-500/40 hover:shadow-xl hover:shadow-indigo-500/10 flex flex-col h-full group hover:-translate-y-1">
 
-            <!-- Image Section -->
-            <div class="relative h-48 md:h-56 overflow-hidden">
-              <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent  opacity-60">
-              </div>
-              <a href="<%= sample.webUrl %>"
-                class="block w-full h-full"
-                <%= sampleIndex < 3 ? 'data-top-template-preview-link="true"' : '' %>>
-                <img src="<%= getOptimizedCloudinaryUrl(sample.imageUrl.url, "card") %>"
-                  srcset="<%= getResponsiveCloudinarySrcSet(sample.imageUrl.url, 'card') %>"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                  alt="<%= sample.webName %>"
-                  loading="lazy" decoding="async" fetchpriority="low"
-                  class="w-full h-full object-cover transform group-hover:scale-105 transition duration-700 ease-in-out">
-              </a>
-              <div class="absolute bottom-4 left-1 right-4 w-full flex items-center justify-between ">
-                <a
-                  href="<%= sample.webUrl %>"
-                  aria-label="Open live preview for <%= sample.webName %>"
-                  class="ml-1 px-3 py-1 bg-white/10 backdrop-blur-md border border-white/20 text-white text-[10px] font-bold rounded-lg uppercase tracking-wider">
-                  Live Preview
+              <!-- Image Section -->
+              <div class="relative h-48 md:h-56 overflow-hidden">
+                <div
+                  class="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-60 z-10 pointer-events-none">
+                </div>
+                <a href="<%= sample.webUrl %>" class="block w-full h-full relative z-0" <%=sampleIndex < 3
+                  ? 'data-top-template-preview-link="true"' : '' %>>
+                  <img src="<%= getOptimizedCloudinaryUrl(sample.imageUrl.url, 'card') %>"
+                    srcset="<%= getResponsiveCloudinarySrcSet(sample.imageUrl.url, 'card') %>"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw" alt="<%= sample.webName %>"
+                    loading="lazy" decoding="async" fetchpriority="low"
+                    class="w-full h-full object-cover transform group-hover:scale-[1.03] transition duration-700 ease-out">
                 </a>
-
+                <% const rawCoinPrice=Number(sample.purchaseCredits); %>
+                  <% const coinPrice=Number.isFinite(rawCoinPrice) && rawCoinPrice> 0 ? Math.floor(rawCoinPrice) : 25; %>
+                        <div class="absolute bottom-4 inset-x-4 flex items-center justify-between z-20">
+                          <a href="<%= sample.webUrl %>"
+                            class="theme-chip ml-1 px-3 py-1.5 bg-black/40 backdrop-blur-md border border-white/20 text-white text-[9px] font-bold rounded-lg uppercase tracking-wider hover:bg-black/60 transition">
+                            Live Preview
+                          </a>
+                          <div class="flex items-center gap-2">
+                            <% if(sample.priceForPermanent && sample.priceForTemporary===0 ) { %>
+                              <span
+                                class="px-3 py-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold rounded-lg tracking-wide uppercase shadow-sm">
+                                Free
+                              </span>
+                            <% } %>
+                            <% if (coinPrice> 0) { %>
+                            <div style="display:inline-flex;align-items:center;gap:4px;background:rgba(0,0,0,0.75);border:1px solid rgba(251,191,36,0.4);border-radius:8px;padding:4px 10px;box-shadow:0 2px 8px rgba(0,0,0,0.4);">
+                              <img src="<%= templateCoinIconPath %>" alt="coin" width="14" height="14" style="width:14px;height:14px;display:block;">
+                              <span style="font-size:11px;font-weight:800;color:#fcd34d;letter-spacing:0.3px;line-height:1;"><%= coinPrice %></span>
+                            </div>
+                            <% } %>
+                          </div>
+                        </div>
               </div>
-            </div>
 
-            <!-- Content Section -->
-            <div class="p-4 md:p-6 flex flex-col flex-grow">
-              <div class="flex justify-between items-start mb-2">
-                <h3 class="text-lg md:text-xl font-bold text-slate-100 group-hover:text-indigo-400 transition-colors">
+              <!-- Content Section -->
+              <div class="p-5 flex flex-col flex-grow">
+                <h3 class="theme-text text-xl font-bold text-white mb-2 group-hover:text-indigo-400 transition-colors">
                   <%= sample.webName %>
                 </h3>
-              </div>
-              <% if(currUser && currUser.isAdmin) { %>
-                <p class="text-xs text-indigo-300 mb-2">Priority: <%= Number.isFinite(sample.priority) ? sample.priority : 0 %></p>
-              <% } %>
-              <p class="text-slate-400 text-xs md:text-sm mb-4 md:mb-6 line-clamp-2 flex-grow">
-                <%= sample.description %>
-              </p>
-              <!-- Action Buttons -->
-              <div class="grid grid-cols-2 gap-3 mt-auto">
-                <!-- Preview Button -->
-                <a href="/web/purchase/permanent/<%= sample.id %>" target="_blank" rel="noopener noreferrer"
-                  class="flex items-center justify-center px-4 py-2 md:py-2.5 rounded-xl border border-slate-700 text-slate-300 font-semibold text-xs md:text-sm hover:bg-slate-800 hover:text-white transition active:scale-95">
-                  Permanent link
-                </a>
-
-                <!-- Purchase Button -->
-                <a href="/web/purchase/temporary/<%= sample.id %>"
-                  class="submitBtnLink flex items-center justify-center px-4 py-2 md:py-2.5 rounded-xl bg-indigo-600 text-white font-semibold text-xs md:text-sm hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 transition active:scale-95">
-                  Make Link
-                </a>
                 <% if(currUser && currUser.isAdmin) { %>
-                  <a href="/web/template/<%= sample.id %>/edit"
-                    class="col-span-2 flex items-center justify-center px-4 py-2 md:py-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-200 font-semibold text-xs md:text-sm hover:bg-amber-500/20 transition active:scale-95">
-                    Edit Template
-                  </a>
-                <% } %>
+                  <p class="text-[10px] uppercase font-bold text-indigo-400 mb-2">Priority: <%=
+                      Number.isFinite(sample.priority) ? sample.priority : 0 %>
+                  </p>
+                  <% } %>
+                    <p class="theme-text-muted text-slate-400 text-xs leading-relaxed line-clamp-2 h-8 mb-5">
+                      <%= sample.description %>
+                    </p>
+
+
+
+                    <!-- Action Buttons -->
+                    <div class="grid grid-cols-2 gap-3 mt-auto">
+                      <a href="/web/purchase/permanent/<%= sample.id %>"
+                        class="theme-btn-outline flex items-center justify-center py-2.5 rounded-xl border border-slate-700 text-slate-300 font-bold text-[11px] uppercase tracking-wide hover:bg-slate-800 transition">
+                        Permanent link
+                      </a>
+                      <a href="/web/purchase/temporary/<%= sample.id %>"
+                        class="theme-btn-primary submitBtnLink flex items-center justify-center py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-[11px] uppercase tracking-wide hover:bg-indigo-500 shadow-md transition">
+                        Make Link
+                      </a>
+                      <% if(currUser && currUser.isAdmin) { %>
+                        <a href="/web/template/<%= sample.id %>/edit"
+                          class="col-span-2 flex items-center justify-center py-2.5 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-300 font-bold text-[11px] uppercase tracking-wide transition">
+                          Edit Template
+                        </a>
+                        <% } %>
+                    </div>
               </div>
             </div>
-          </div>
-          <% }) %>
+            <% }) %>
       </div>
     </main>
 
