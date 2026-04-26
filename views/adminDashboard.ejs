@@ -2,6 +2,7 @@
 <% const cards = Array.isArray(adminCards) ? adminCards : []; %>
 <% const notifications = Array.isArray(adminNotifications) ? adminNotifications : []; %>
 <% const unreadCount = Number(unreadNotificationCount || 0); %>
+<% const isCoinPriceVisible = showTemplateCoinPrice !== false; %>
 
 <section class="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-10 space-y-7">
   <div class="rounded-3xl mb-8 p-4 border border-slate-800 bg-slate-900/70 px-6 py-6 md:px-8 md:py-7 shadow-xl">
@@ -10,24 +11,33 @@
         <p class="text-xs uppercase tracking-[0.22em] text-indigo-300/80 font-semibold">Admin Control Center</p>
         <h1 class="mt-2 text-2xl md:text-3xl font-bold text-white">Admin Dashboard</h1>
       </div>
+      <form action="/requests/settings/template-coins/toggle" method="POST">
+        <input type="hidden" name="showTemplateCoinPrice" value="<%= isCoinPriceVisible ? 'false' : 'true' %>">
+        <button
+          type="submit"
+          class="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-xs font-semibold transition <%= isCoinPriceVisible ? 'border-amber-500/35 bg-amber-500/10 text-amber-200 hover:bg-amber-500/20' : 'border-emerald-500/35 bg-emerald-500/10 text-emerald-200 hover:bg-emerald-500/20' %>">
+          <span class="inline-block w-2 h-2 rounded-full <%= isCoinPriceVisible ? 'bg-amber-300' : 'bg-emerald-300' %>"></span>
+          <%= isCoinPriceVisible ? 'Hide Coin Price' : 'Show Coin Price' %>
+        </button>
+      </form>
     </div>
   </div>
 
   <section id="adminNotifications" class="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6 shadow-xl">
     <div class="flex flex-wrap items-start justify-between gap-4 border-b border-slate-800 pb-4">
       <div>
-        <h2 class="text-xl md:text-2xl font-bold text-white">Admin Notifications</h2>
-        <p class="text-slate-400 text-sm mt-1">Template, request, aur chat activity yahan live show hogi.</p>
+        <h2 class="text-xl md:text-2xl font-bold text-white">Notifications</h2>
+        <p class="text-slate-400 text-sm mt-1">Simple live updates.</p>
       </div>
       <div class="flex items-center gap-3">
         <span id="adminPushStatus" class="hidden inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border border-indigo-500/25 bg-indigo-500/10 text-indigo-200">
-          Push: Checking...
+          Push: checking...
         </span>
         <button
           id="adminEnablePushBtn"
           type="button"
           class="hidden px-3.5 py-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-200 text-xs font-semibold hover:bg-emerald-500/20 transition">
-          Enable Mobile Push
+          Enable Push
         </button>
         <button
           id="adminDisablePushBtn"
@@ -39,7 +49,7 @@
           id="adminTestPushBtn"
           type="button"
           class="hidden px-3.5 py-2 rounded-xl border border-sky-500/30 bg-sky-500/10 text-sky-200 text-xs font-semibold hover:bg-sky-500/20 transition">
-          Test Notification
+          Test Push
         </button>
         <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border border-rose-500/30 bg-rose-500/15 text-rose-300">
           Unread: <span id="adminUnreadCount" class="ml-1.5"><%= unreadCount %></span>
@@ -48,13 +58,13 @@
           id="markAllNotificationsReadBtn"
           type="button"
           class="px-3.5 py-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 text-indigo-200 text-xs font-semibold hover:bg-indigo-500/20 transition <%= unreadCount > 0 ? '' : 'hidden' %>">
-          Mark All Read
+          Mark All
         </button>
       </div>
     </div>
 
     <div id="adminNotificationEmpty" class="<%= notifications.length ? 'hidden' : '' %> mt-5 rounded-2xl border border-dashed border-slate-700 bg-slate-950/40 p-6 text-center">
-      <p class="text-slate-400 text-sm">Abhi koi notification nahi hai.</p>
+      <p class="text-slate-400 text-sm">No notifications.</p>
     </div>
 
     <ul id="adminNotificationList" class="mt-5 space-y-3 <%= notifications.length ? '' : 'hidden' %>">
@@ -72,7 +82,7 @@
                   <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border border-rose-500/30 bg-rose-500/15 text-rose-300">NEW</span>
                 <% } %>
               </div>
-              <p class="mt-1 text-sm text-slate-300 break-words"><%= notification.message %></p>
+              <p class="mt-1 text-xs text-slate-300 break-words line-clamp-2"><%= notification.message %></p>
               <p class="mt-2 text-xs text-slate-500" data-role="metaLine">
                 <%= notification.actorName ? notification.actorName : 'System' %>
                 <% if (notification.updatedAt) { %>
@@ -274,13 +284,13 @@
       const config = options || {};
 
       if (!("Notification" in window) || !("PushManager" in window) || !("serviceWorker" in navigator)) {
-        setPushStatus("Push is not supported in this browser.", "warn");
+        setPushStatus("Push not supported.", "warn");
         renderPushButtons({ showEnable: false, showDisable: false, showTest: false });
         return false;
       }
 
       if (!window.isSecureContext) {
-        setPushStatus("Notification ke liye HTTPS required hai.", "warn");
+        setPushStatus("HTTPS required.", "warn");
         renderPushButtons({ showEnable: false, showDisable: false, showTest: false });
         return false;
       }
@@ -292,17 +302,17 @@
 
       if (permission !== "granted") {
         if (permission === "denied") {
-          setPushStatus("Push blocked. Browser settings me allow karein.", "error");
+          setPushStatus("Push blocked.", "error");
           renderPushButtons({ showEnable: false, showDisable: false, showTest: false });
         } else {
-          setPushStatus("Enable button dabake push permission allow karein.", "info");
+          setPushStatus("Tap Enable Push.", "info");
           renderPushButtons({ showEnable: true, showDisable: false, showTest: false });
         }
         return false;
       }
 
       if (!pushServerEnabled || !pushPublicKey) {
-        setPushStatus("Permission mil gayi, but VAPID keys missing hain.", "warn");
+        setPushStatus("Push key missing.", "warn");
         renderPushButtons({ showEnable: false, showDisable: false, showTest: true });
         return true;
       }
@@ -319,19 +329,19 @@
 
       const serializedSubscription = subscription.toJSON ? subscription.toJSON() : subscription;
       await saveSubscriptionOnServer(serializedSubscription);
-      setPushStatus("Push enabled. Ab website band hone par bhi notification ayegi.", "success");
+      setPushStatus("Push enabled.", "success");
       renderPushButtons({ showEnable: false, showDisable: true, showTest: true });
       return true;
     }
 
     async function showTestBrowserNotification() {
       if (!("Notification" in window)) {
-        setPushStatus("Notification API browser me supported nahi hai.", "warn");
+        setPushStatus("Notification API unavailable.", "warn");
         return;
       }
 
       if (Notification.permission !== "granted") {
-        setPushStatus("Pehle notification permission allow karo.", "warn");
+        setPushStatus("Allow notification permission.", "warn");
         return;
       }
 
@@ -353,9 +363,9 @@
           });
         }
 
-        setPushStatus("Test notification bhej di gayi.", "success");
+        setPushStatus("Test sent.", "success");
       } catch (_err) {
-        setPushStatus("Test notification bhejne me issue aa gaya.", "error");
+        setPushStatus("Test failed.", "error");
       }
     }
 
@@ -408,26 +418,26 @@
           try {
             await ensurePushSubscribed({ requestPermission: false });
           } catch (_err) {
-            setPushStatus("Push setup failed. Retry karo.", "error");
+            setPushStatus("Push setup failed.", "error");
             renderPushButtons({ showEnable: true, showDisable: false, showTest: true });
           }
         } else {
-          setPushStatus("Permission granted hai, but VAPID keys missing hain.", "warn");
+          setPushStatus("Push key missing.", "warn");
           renderPushButtons({ showEnable: false, showDisable: false, showTest: true });
         }
         return;
       }
 
       if (Notification.permission === "denied") {
-        setPushStatus("Push blocked. Browser settings me notifications allow karo.", "error");
+        setPushStatus("Push blocked.", "error");
         renderPushButtons({ showEnable: false, showDisable: false, showTest: false });
         return;
       }
 
       if (pushServerEnabled && pushPublicKey) {
-        setPushStatus("Enable button dabao to mobile push start ho jayega.", "info");
+        setPushStatus("Tap Enable Push.", "info");
       } else {
-        setPushStatus("Permission mang sakte ho, par VAPID keys abhi missing hain.", "warn");
+        setPushStatus("Push key missing.", "warn");
       }
       renderPushButtons({ showEnable: true, showDisable: false, showTest: false });
     }
@@ -540,7 +550,7 @@
               <h3 class="text-sm md:text-base font-semibold text-white break-words">${safeTitle}</h3>
               ${isRead ? "" : '<span data-role="new-badge" class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border border-rose-500/30 bg-rose-500/15 text-rose-300">NEW</span>'}
             </div>
-            <p class="mt-1 text-sm text-slate-300 break-words">${safeMessage}</p>
+            <p class="mt-1 text-xs text-slate-300 break-words line-clamp-2">${safeMessage}</p>
             <p class="mt-2 text-xs text-slate-500" data-role="metaLine">
               ${safeActor}
               ${safeTime ? `<span class="mx-1">|</span><span data-role="time">${safeTime}</span>` : ""}
@@ -698,7 +708,7 @@
         try {
           await ensurePushSubscribed({ requestPermission: true });
         } catch (_err) {
-          setPushStatus("Push enable failed. Dobara try karo.", "error");
+          setPushStatus("Enable failed.", "error");
           renderPushButtons({
             showEnable: Notification.permission !== "denied",
             showDisable: false,
@@ -716,7 +726,7 @@
         try {
           await disablePushSubscription();
         } catch (_err) {
-          setPushStatus("Push disable failed. Dobara try karo.", "error");
+          setPushStatus("Disable failed.", "error");
         } finally {
           disablePushBtn.disabled = false;
         }

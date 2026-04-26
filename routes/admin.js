@@ -34,6 +34,10 @@ const {
   getAdminUsersCacheKey,
   invalidateAdminUsersCache,
 } = require("../utils/runtimeCaches.js");
+const {
+  getSiteConfig,
+  setTemplateCoinPriceVisibility,
+} = require("../utils/siteConfigCache.js");
 
 const router = express.Router({ mergeParams: true });
 
@@ -59,84 +63,84 @@ const FRAME_TEXT_MAX_Z_INDEX = 2000;
 const ADMIN_DASHBOARD_CARDS = [
   {
     title: "Add Template",
-    description: "Add a new website template.",
+    description: "Add template.",
     href: "/web/new",
     icon: "\u2728",
     toneClass: "from-fuchsia-500/20 to-indigo-500/20 border-fuchsia-500/30",
   },
   {
     title: "Requests",
-    description: "Manage pending temporary requests.",
+    description: "Pending requests.",
     href: "/requests",
     icon: "\uD83D\uDCE5",
     toneClass: "from-indigo-500/20 to-sky-500/20 border-indigo-500/30",
   },
   {
     title: "Permanent Requests",
-    description: "Review permanent link requests.",
+    description: "Permanent queue.",
     href: "/requests/permanent",
     icon: "\uD83E\uDDFE",
     toneClass: "from-violet-500/20 to-blue-500/20 border-violet-500/30",
   },
   {
     title: "Expired Requests",
-    description: "View expired template links.",
+    description: "Expired links.",
     href: "/requests/expired",
     icon: "\u23F3",
     toneClass: "from-amber-500/20 to-orange-500/20 border-amber-500/30",
   },
   {
     title: "All Live",
-    description: "Check live template link status.",
+    description: "Live links.",
     href: "/requests/allLive",
     icon: "\uD83D\uDFE2",
     toneClass: "from-emerald-500/20 to-teal-500/20 border-emerald-500/30",
   },
   {
     title: "Permanent Live",
-    description: "View all live permanent links.",
+    description: "Live permanent.",
     href: "/requests/allLive?scope=permanent",
     icon: "\uD83D\uDC8E",
     toneClass: "from-cyan-500/20 to-indigo-500/20 border-cyan-500/30",
   },
   {
     title: "Users",
-    description: "Manage users, credits, and profiles.",
+    description: "Users & credits.",
     href: "/requests/users",
     icon: "\uD83D\uDC65",
     toneClass: "from-blue-500/20 to-slate-500/20 border-blue-500/30",
   },
   {
     title: "Banners",
-    description: "Edit Home and Collection banners.",
+    description: "Edit banners.",
     href: "/requests/banner",
     icon: "\uD83D\uDDBC\uFE0F",
     toneClass: "from-rose-500/20 to-pink-500/20 border-rose-500/30",
   },
   {
     title: "Frame Templates",
-    description: "Create and update photo frame templates.",
+    description: "Frame templates.",
     href: "/requests/frame-templates",
     icon: "\uD83E\uDDE9",
     toneClass: "from-indigo-500/20 to-purple-500/20 border-indigo-500/30",
   },
   {
     title: "Feedbacks",
-    description: "Read user feedback and suggestions.",
+    description: "User feedback.",
     href: "/feedback/feedbackpage",
     icon: "\uD83D\uDCAC",
     toneClass: "from-sky-500/20 to-cyan-500/20 border-sky-500/30",
   },
   {
     title: "LeaderBoard",
-    description: "View leaderboard and winners.",
+    description: "Winners list.",
     href: "/game/leaderboard",
     icon: "\uD83C\uDFC6",
     toneClass: "from-yellow-500/20 to-amber-500/20 border-yellow-500/30",
   },
   {
     title: "Chat Inbox",
-    description: "Handle user support chats.",
+    description: "Support chats.",
     href: "/chat/admin",
     icon: "\uD83D\uDCE8",
     toneClass: "from-emerald-500/20 to-cyan-500/20 border-emerald-500/30",
@@ -937,14 +941,36 @@ router.get(
   isLoggedIn,
   isAdmin,
   wrapAsync(async (_req, res) => {
+    const siteConfig = await getSiteConfig();
     return res.render("adminDashboard", {
       adminCards: ADMIN_DASHBOARD_CARDS,
       adminNotifications: [],
       unreadNotificationCount: 0,
+      showTemplateCoinPrice: siteConfig.showTemplateCoinPrice !== false,
       title: "Admin Dashboard - VishLink",
       description: "Quick access dashboard for all admin tools and routes.",
       robots: "noindex, nofollow",
     });
+  })
+);
+
+router.post(
+  "/settings/template-coins/toggle",
+  isLoggedIn,
+  isAdmin,
+  wrapAsync(async (req, res) => {
+    const currentConfig = await getSiteConfig();
+    const requestedValue = String(req.body?.showTemplateCoinPrice || "").trim().toLowerCase();
+    const shouldShow =
+      requestedValue === "true" || requestedValue === "1"
+        ? true
+        : requestedValue === "false" || requestedValue === "0"
+          ? false
+          : !Boolean(currentConfig.showTemplateCoinPrice);
+
+    await setTemplateCoinPriceVisibility(shouldShow, req.user?._id || null);
+    req.flash("success", shouldShow ? "Template coin prices enabled." : "Template coin prices hidden.");
+    return res.redirect("/requests/dashboard");
   })
 );
 
@@ -1128,8 +1154,8 @@ router.post(
       try {
         await createAdminNotification(req.app, {
           type: "frame_template_created",
-          title: "New Frame Template Added",
-          message: `${req.user?.username || "Admin"} added ${savedTemplate?.name || "a frame template"}.`,
+          title: "Frame Added",
+          message: `${req.user?.username || "Admin"} | ${savedTemplate?.name || "Frame"}`,
           link: `/requests/frame-templates/${savedTemplate?._id}/edit`,
           entityType: "frame-template",
           entityId: String(savedTemplate?._id || ""),
@@ -1831,7 +1857,7 @@ router.get(
       },
       {
         new: true,
-        projection: { webName: 1 },
+        projection: { webName: 1, webUrl: 1, author: 1 },
       }
     );
 
@@ -1846,7 +1872,7 @@ router.get(
         },
         {
           new: true,
-          projection: { webName: 1 },
+          projection: { webName: 1, webUrl: 1, author: 1 },
         }
       );
 
@@ -1861,6 +1887,24 @@ router.get(
     if (!web) {
       req.flash("error", "Request not found.");
       return res.redirect(redirectPath);
+    }
+
+    if (
+      requestScope === REQUEST_SCOPE.PERMANENT &&
+      mongoose.Types.ObjectId.isValid(String(web.author || "")) &&
+      mongoose.Types.ObjectId.isValid(id)
+    ) {
+      await user.updateOne(
+        {
+          _id: web.author,
+          "webCollection.purchasedId": new mongoose.Types.ObjectId(id),
+        },
+        {
+          $set: {
+            "webCollection.$.permanentLink": String(web.webUrl || ""),
+          },
+        }
+      );
     }
 
     await WebSample.findOneAndUpdate({ webName: web.webName }, { $inc: { soldOut: 1 } });

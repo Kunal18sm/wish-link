@@ -22,6 +22,9 @@
   const upiValidityMonths = Number.isFinite(Number(moneyPurchaseValidityMonths))
     ? Math.max(1, Number(moneyPurchaseValidityMonths))
     : 6;
+  const purchaseTypeLabel = isTemporary ? "Temporary Link" : "Permanent Link";
+  const initialModeLabel = initialPaymentMode === "coins" ? "Coins" : "UPI";
+  const initialValidityMonths = initialPaymentMode === "coins" ? coinValidityMonths : upiValidityMonths;
   const resolvedUpiLinks = upiLinks || {};
   const universalUpiLink = autoPaymentLink || resolvedUpiLinks.upi || "";
   const intentUpiLink = resolvedUpiLinks.intent || "";
@@ -34,6 +37,18 @@
   /* Base & Animations */
   @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+  @keyframes payPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.35); transform: translateY(0); }
+    50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); transform: translateY(-1px); }
+  }
+  @keyframes payShine {
+    0% { transform: translateX(-120%) skewX(-20deg); }
+    100% { transform: translateX(180%) skewX(-20deg); }
+  }
+  @keyframes payIconBob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-2px); }
+  }
   
   /* Glassmorphism & premium UI */
   .premium-glass {
@@ -81,6 +96,66 @@
   .segment-input:disabled + .segment-label {
     opacity: 0.4;
     cursor: not-allowed;
+  }
+
+  .pay-now-btn {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.24), rgba(20, 184, 166, 0.2));
+    animation: payPulse 2.1s ease-in-out infinite;
+  }
+  .pay-now-btn::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      100deg,
+      rgba(255, 255, 255, 0) 20%,
+      rgba(255, 255, 255, 0.4) 48%,
+      rgba(255, 255, 255, 0) 75%
+    );
+    pointer-events: none;
+    animation: payShine 2.2s linear infinite;
+  }
+  .pay-now-btn:hover {
+    transform: translateY(-1px) scale(1.02);
+  }
+  .pay-now-btn .pay-now-icon {
+    animation: payIconBob 1.2s ease-in-out infinite;
+  }
+
+  .qr-pay-btn {
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+  .qr-pay-btn:hover {
+    transform: translateY(-2px) scale(1.02);
+    border-color: rgba(16, 185, 129, 0.55);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.18);
+  }
+
+  .expiry-accordion summary {
+    list-style: none;
+    cursor: pointer;
+  }
+  .expiry-accordion summary::-webkit-details-marker {
+    display: none;
+  }
+  .expiry-accordion .expiry-content {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.28s ease, opacity 0.2s ease;
+  }
+  .expiry-accordion[open] .expiry-content {
+    max-height: 180px;
+    opacity: 1;
+  }
+  .expiry-accordion .expiry-chevron {
+    transition: transform 0.22s ease;
+  }
+  .expiry-accordion[open] .expiry-chevron {
+    transform: rotate(180deg);
   }
   
   /* Dynamic Light Theme Overrides (Supports Pink & Blue Palettes) */
@@ -130,6 +205,7 @@
   html[data-theme="light"] .title-gradient {
     background: linear-gradient(to right, var(--sky-accent), var(--sky-accent-hover)) !important;
     -webkit-background-clip: text !important;
+    background-clip: text !important;
     color: transparent !important;
   }
 
@@ -270,27 +346,52 @@
                   </div>
                   
                   <% if(hasAutoPayment) { %>
-                    <a href="<%= universalUpiLink %>" id="upiPayBtn" data-intent-link="<%= intentUpiLink %>" class="flex-shrink-0 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 px-5 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2">
-                       <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15l-4-4 1.41-1.41L11 14.17l6.59-6.59L19 9l-8 8z"/></svg> Pay Now
+                    <a href="<%= universalUpiLink %>" id="upiPayBtn" data-intent-link="<%= intentUpiLink %>" class="pay-now-btn flex-shrink-0 text-emerald-100 border border-emerald-400/40 px-5 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2">
+                       <svg class="w-4 h-4 pay-now-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15l-4-4 1.41-1.41L11 14.17l6.59-6.59L19 9l-8 8z"/></svg> Pay Now
                     </a>
                   <% } %>
                 </div>
 
                 <% if(hasManualQr) { %>
                   <div class="flex justify-center">
-                    <div class="p-2 rounded-2xl bg-white/5 border border-white/10 relative group">
-                        <img src="<%= getOptimizedCloudinaryUrl(paymentQrImageUrl, 'payment') %>" srcset="<%= getResponsiveCloudinarySrcSet(paymentQrImageUrl, 'payment') %>" sizes="120px" class="w-32 h-32 rounded-xl object-contain" alt="QR">
-                    </div>
+                    <button
+                      type="button"
+                      id="qrPayBtn"
+                      data-upi-link="<%= universalUpiLink %>"
+                      data-intent-link="<%= intentUpiLink %>"
+                      class="qr-pay-btn p-2 rounded-2xl bg-white/5 relative group"
+                      aria-label="Tap QR to pay with UPI app">
+                      <img src="<%= getOptimizedCloudinaryUrl(paymentQrImageUrl, 'payment') %>" srcset="<%= getResponsiveCloudinarySrcSet(paymentQrImageUrl, 'payment') %>" sizes="120px" class="w-32 h-32 rounded-xl object-contain" alt="QR">
+                    </button>
                   </div>
                 <% } %>
               </div>
               
               <div id="upiProofSection" class="max-w-md mx-auto <%= initialPaymentMode === 'coins' ? 'hidden' : '' %>">
-                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 text-center">Upload Screenshot</label>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 text-center">Upload Payment Screenshot</label>
                 <input id="paymentImageInput" name="paymentImage" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" class="w-full px-4 py-2.5 rounded-xl input-glass text-slate-300 text-sm file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-emerald-500/20 file:text-emerald-300 hover:file:bg-emerald-500/30 transition focus:outline-none" <%= initialPaymentMode === 'coins' ? '' : 'required' %>>
               </div>
             <% } %>
           </div>
+
+          <details id="expiryInfoSection" class="expiry-accordion max-w-md mx-auto rounded-xl border border-indigo-500/20 bg-indigo-500/5 px-4 py-3">
+            <summary class="flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <p class="text-[11px] uppercase tracking-wider text-indigo-300/80 font-semibold">Expiry Timeline</p>
+                <p id="expiryCompactText" class="text-[11px] text-slate-300 truncate mt-0.5">
+                  <%= initialValidityMonths %> month<%= initialValidityMonths === 1 ? "" : "s" %> via <%= initialModeLabel %> (tap to expand)
+                </p>
+              </div>
+              <svg class="expiry-chevron w-4 h-4 text-indigo-300/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </summary>
+            <div class="expiry-content mt-2 border-t border-indigo-500/20 pt-2">
+              <p id="expiryInfoText" class="text-xs text-slate-200">
+                <%= selectedWeb.webName %> (<%= purchaseTypeLabel %>) stays active for
+                <%= initialValidityMonths %> month<%= initialValidityMonths === 1 ? "" : "s" %> via <%= initialModeLabel %>.
+              </p>
+              <p id="expiryInfoHint" class="text-[11px] text-slate-400 mt-1">If you need a permanent active link, go back to templates and select the Permanent Link option.</p>
+            </div>
+          </details>
 
           <!-- Submit -->
           <div class="pt-4 mt-4 border-t border-slate-700/50">
@@ -420,6 +521,7 @@
       const form = document.getElementById("BuyForm");
       const btn = document.getElementById("submitBtn");
       const upiPayBtn = document.getElementById("upiPayBtn");
+      const qrPayBtn = document.getElementById("qrPayBtn");
       const paymentModeInputs = Array.from(
         document.querySelectorAll('input[name="purchase[paymentMode]"]')
       );
@@ -428,9 +530,23 @@
       const paymentImageInput = document.getElementById("paymentImageInput");
       const coinPaymentSection = document.getElementById("coinPaymentSection");
       const verificationNote = document.getElementById("paymentVerificationNote");
+      const expiryCompactText = document.getElementById("expiryCompactText");
+      const expiryInfoText = document.getElementById("expiryInfoText");
+      const expiryInfoHint = document.getElementById("expiryInfoHint");
       const coinOptionEnabled = "<%= canUseCoins ? 'true' : 'false' %>" === "true";
       const hasEnoughCoinsForPurchase = "<%= hasEnoughCoins ? 'true' : 'false' %>" === "true";
       const upiProofRequired = "<%= requiresPayment ? 'true' : 'false' %>" === "true";
+      const templateNameInput = document.querySelector('input[name="purchase[webName]"]');
+      const templateNameForExpiry = templateNameInput
+        ? String(templateNameInput.value || "Selected template")
+        : "Selected template";
+      const purchaseTypeForExpiry = "<%= purchaseTypeLabel %>";
+      const coinValidityMonthsValue = Number("<%= coinValidityMonths %>") || 3;
+      const upiValidityMonthsValue = Number("<%= upiValidityMonths %>") || 6;
+
+      function formatMonthsLabel(months) {
+        return `${months} month${months === 1 ? "" : "s"}`;
+      }
 
       function getSelectedPaymentMode() {
         if (!paymentModeInputs.length) return "upi";
@@ -446,11 +562,25 @@
       function syncPaymentModeUi() {
         const mode = getSelectedPaymentMode();
         const usingCoins = coinOptionEnabled && mode === "coins";
+        const modeLabel = usingCoins ? "Coins" : "UPI";
+        const activeValidityMonths = usingCoins ? coinValidityMonthsValue : upiValidityMonthsValue;
 
         setVisibility(coinPaymentSection, usingCoins);
         setVisibility(upiPaymentSection, !usingCoins && upiProofRequired);
         setVisibility(upiProofSection, !usingCoins && upiProofRequired);
         setVisibility(verificationNote, !usingCoins && Boolean(verificationNote));
+
+        if (expiryInfoText) {
+          expiryInfoText.textContent =
+            `${templateNameForExpiry} (${purchaseTypeForExpiry}) stays active for ${formatMonthsLabel(activeValidityMonths)} via ${modeLabel}.`;
+        }
+        if (expiryCompactText) {
+          expiryCompactText.textContent =
+            `${formatMonthsLabel(activeValidityMonths)} via ${modeLabel} (tap to expand)`;
+        }
+        if (expiryInfoHint) {
+          expiryInfoHint.textContent = "If you need a permanent active link, go back to templates and select the Permanent Link option.";
+        }
 
         if (paymentImageInput) {
           paymentImageInput.required = !usingCoins && upiProofRequired;
@@ -479,34 +609,54 @@
       });
       syncPaymentModeUi();
 
+      function triggerUpiPayment(event, upiLinkRaw, intentLinkRaw) {
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+
+        const upiLink = String(upiLinkRaw || "").trim();
+        const intentLink = String(intentLinkRaw || "").trim();
+        const userAgent = String(window.navigator.userAgent || "");
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(userAgent);
+        const isAndroid = /Android/i.test(userAgent);
+
+        if (!upiLink) {
+          alert("UPI link is not configured yet.");
+          return;
+        }
+
+        if (!isMobile) {
+          alert("UPI apps open only on mobile. Please scan QR or open this page on your phone.");
+          return;
+        }
+
+        window.location.href = upiLink;
+
+        if (isAndroid && intentLink) {
+          window.setTimeout(() => {
+            window.location.href = intentLink;
+          }, 900);
+        }
+      }
+
       if (upiPayBtn) {
         upiPayBtn.addEventListener("click", (event) => {
-          event.stopPropagation();
-          const upiLink = String(upiPayBtn.getAttribute("href") || "").trim();
-          const intentLink = String(upiPayBtn.dataset.intentLink || "").trim();
-          const userAgent = String(window.navigator.userAgent || "");
-          const isMobile = /Android|iPhone|iPad|iPod/i.test(userAgent);
-          const isAndroid = /Android/i.test(userAgent);
+          triggerUpiPayment(
+            event,
+            upiPayBtn.getAttribute("href"),
+            upiPayBtn.dataset.intentLink
+          );
+        });
+      }
 
-          if (!upiLink) {
-            alert("UPI link is not configured yet.");
-            return;
-          }
-
-          if (!isMobile) {
-            alert("UPI apps open only on mobile. Please scan QR or open this page on your phone.");
-            event.preventDefault();
-            return;
-          }
-
-          event.preventDefault();
-          window.location.href = upiLink;
-
-          if (isAndroid && intentLink) {
-            window.setTimeout(() => {
-              window.location.href = intentLink;
-            }, 900);
-          }
+      if (qrPayBtn) {
+        qrPayBtn.addEventListener("click", (event) => {
+          triggerUpiPayment(
+            event,
+            qrPayBtn.dataset.upiLink,
+            qrPayBtn.dataset.intentLink
+          );
         });
       }
 

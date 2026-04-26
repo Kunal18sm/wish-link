@@ -382,7 +382,8 @@ const createPurchaseHandler = (expectedIsTemporary) =>
 
       const purchaseId = uuidv4();
       const finalWebUrl = buildPurchasedWebUrl(selectedWeb.webUrl, purchaseId, isTemporary);
-      const isLive = isCoinPurchase ? true : price <= 15;
+      const isLive = isTemporary;
+      const isAdminInterected = false;
 
       const savedPurchase = await new PurchaseModel({
         purchaseId,
@@ -397,36 +398,34 @@ const createPurchaseHandler = (expectedIsTemporary) =>
         webName: buyinfo.webName || selectedWeb.webName,
         isLive,
         isTemporary,
-        adminInterected: isCoinPurchase,
+        adminInterected: isAdminInterected,
         purchaseMode,
         paidCredits,
         expiresAt,
       }).save();
       purchaseSaved = true;
 
-      if (!isCoinPurchase) {
-        try {
-          await createAdminNotification(req.app, {
-            type: "purchase_request",
-            title: isTemporary ? "New Temporary Request" : "New Permanent Request",
-            message: `${sender} requested ${selectedWeb.webName} for ${receiver || "a recipient"}.`,
-            link: isTemporary ? "/requests" : "/requests/permanent",
-            entityType: "purchase",
-            entityId: String(savedPurchase._id),
-            actor: req.user,
-            meta: {
-              requestScope: isTemporary ? "default" : "permanent",
-              templateName: selectedWeb.webName,
-              sender,
-              receiver,
-              price,
-              isTemporary,
-              purchaseMode,
-            },
-          });
-        } catch (notifyErr) {
-          console.log("Admin purchase notification warning:", notifyErr?.message || notifyErr);
-        }
+      try {
+        await createAdminNotification(req.app, {
+          type: "purchase_request",
+          title: isTemporary ? "Temp Request" : "Perm Request",
+          message: `${sender} | ${selectedWeb.webName} | ${receiver || "-"}`,
+          link: isTemporary ? "/requests" : "/requests/permanent",
+          entityType: "purchase",
+          entityId: String(savedPurchase._id),
+          actor: req.user,
+          meta: {
+            requestScope: isTemporary ? "default" : "permanent",
+            templateName: selectedWeb.webName,
+            sender,
+            receiver,
+            price,
+            isTemporary,
+            purchaseMode,
+          },
+        });
+      } catch (notifyErr) {
+        console.log("Admin purchase notification warning:", notifyErr?.message || notifyErr);
       }
 
       // Non-critical updates should not block a successful purchase document save.
@@ -443,7 +442,7 @@ const createPurchaseHandler = (expectedIsTemporary) =>
               expiresAt,
               paymentProofUrl: paymentImg,
               purchasedId: savedPurchase._id,
-              permanentLink: isTemporary ? "" : finalWebUrl,
+              permanentLink: !isTemporary && isLive ? finalWebUrl : "",
             },
           },
         });
@@ -458,8 +457,16 @@ const createPurchaseHandler = (expectedIsTemporary) =>
           "success",
           `Template unlocked with ${paidCredits} coins. Valid till ${formatDateIndia(expiresAt)}.`
         );
+      } else if (isTemporary) {
+        req.flash(
+          "success",
+          `Purchase Success. Temporary link is live now and valid till ${formatDateIndia(expiresAt)}.`
+        );
       } else {
-        req.flash("success", `Purchase Success. Link valid till ${formatDateIndia(expiresAt)}.`);
+        req.flash(
+          "success",
+          `Purchase submitted. Permanent link will go live after admin approval. Valid till ${formatDateIndia(expiresAt)}.`
+        );
       }
       return res.redirect("/profile");
     } catch (err) {
@@ -554,8 +561,8 @@ router.post(
     try {
       await createAdminNotification(req.app, {
         type: "template_created",
-        title: "New Website Template Added",
-        message: `${req.user?.username || "Admin"} added ${newSample.webName}.`,
+        title: "Template Added",
+        message: `${req.user?.username || "Admin"} | ${newSample.webName}`,
         link: `/web/template/${newSample._id}/edit`,
         entityType: "template",
         entityId: String(newSample._id),

@@ -140,8 +140,8 @@ router.post(
         req.app,
         {
           type: "chat_message",
-          title: "New Chat Message",
-          message: `${req.user?.username || "A user"} sent: ${message}`,
+          title: "New Chat",
+          message: `${req.user?.username || "User"}: ${message}`,
           link: `/chat/admin/${chat._id}`,
           entityType: "chat",
           entityId: String(chat._id),

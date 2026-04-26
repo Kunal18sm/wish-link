@@ -27,6 +27,9 @@ const {
   DAILY_REWARD_BY_DAY,
 } = require("./utils/creditUtils.js");
 const {
+  getSiteConfig,
+} = require("./utils/siteConfigCache.js");
+const {
   AUTH_COOKIE_NAME,
   extractTokenFromRequest,
   verifyAuthToken,
@@ -578,6 +581,7 @@ app.use(async (req, res, next) => {
   const hasClaimedDailyCredit =
     String(req.user?.dailyCreditClaim?.dateKey || "") === todayCreditDateKey;
   const adminUnreadNotificationCount = 0;
+  const siteConfig = await getSiteConfig().catch(() => ({ showTemplateCoinPrice: true }));
 
   res.locals.success = req.flash("success");
   res.locals.error = req.flash("error");
@@ -586,6 +590,7 @@ app.use(async (req, res, next) => {
   res.locals.userLightPalette = req.user?.lightPalette === "pink" ? "pink" : "blue";
   res.locals.adminUnreadNotificationCount = Number(adminUnreadNotificationCount || 0);
   res.locals.userCredits = Number(req.user?.winnerCount || 0);
+  res.locals.showTemplateCoinPrice = siteConfig.showTemplateCoinPrice !== false;
   res.locals.hideFooter = false;
   res.locals.chatLayout = false;
   res.locals.showInstallPrompt = req.path === "/" || req.path.startsWith("/category/");
@@ -896,8 +901,8 @@ io.on("connection", (socket) => {
           app,
           {
             type: "chat_message",
-            title: "New Chat Message",
-            message: `${socket.user?.username || "A user"} sent: ${messageText}`,
+            title: "New Chat",
+            message: `${socket.user?.username || "User"}: ${messageText}`,
             link: `/chat/admin/${chat._id}`,
             entityType: "chat",
             entityId: String(chat._id),
