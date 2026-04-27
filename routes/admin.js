@@ -2039,22 +2039,75 @@ router.delete(
 
     if (isFakePaymentDelete) {
       const ownerId = String(toDelete.author || "").trim();
+      const fakePaymentNote =
+        "Fake payment proof submitted. Template request/link was deleted by admin.";
+
       if (mongoose.Types.ObjectId.isValid(ownerId)) {
-        await user.updateOne(
-          {
-            _id: new mongoose.Types.ObjectId(ownerId),
-            "webCollection.purchasedId": new mongoose.Types.ObjectId(toDelete._id),
-          },
-          {
-            $set: {
-              "webCollection.$.isFakePaymentProof": true,
-              "webCollection.$.adminFakePaymentNote":
-                "Fake payment proof submitted. Template request/link was deleted by admin.",
-              "webCollection.$.adminActionAt": new Date(),
-              "webCollection.$.permanentLink": "",
+        const ownerObjectId = new mongoose.Types.ObjectId(ownerId);
+        const purchaseIdValue = String(toDelete._id || "").trim();
+        const purchaseObjectId = mongoose.Types.ObjectId.isValid(purchaseIdValue)
+          ? new mongoose.Types.ObjectId(purchaseIdValue)
+          : null;
+        const adminActionAt = new Date();
+        const fakePaymentUpdatePayload = {
+          "webCollection.$.isFakePaymentProof": true,
+          "webCollection.$.adminFakePaymentNote": fakePaymentNote,
+          "webCollection.$.adminActionAt": adminActionAt,
+          "webCollection.$.permanentLink": "",
+        };
+        let hasMarkedExistingHistory = false;
+
+        if (purchaseObjectId) {
+          const markExistingHistoryResult = await user.updateOne(
+            {
+              _id: ownerObjectId,
+              "webCollection.purchasedId": purchaseObjectId,
             },
-          }
-        );
+            {
+              $set: fakePaymentUpdatePayload,
+            }
+          );
+
+          const matchedCount = Number(
+            markExistingHistoryResult?.matchedCount ?? markExistingHistoryResult?.n ?? 0
+          );
+          hasMarkedExistingHistory = matchedCount > 0;
+        }
+
+        // Legacy purchases may not have purchasedId synced in webCollection.
+        // In that case, add a history row so fake-payment notice is still visible.
+        if (!hasMarkedExistingHistory) {
+          const fallbackHistoryEntry = {
+            webName: String(toDelete.webName || "Deleted Request"),
+            dateOfBuy: toDelete.date || adminActionAt,
+            receiver: String(toDelete.receiver || ""),
+            price: Number(toDelete.price || 0),
+            purchaseMode:
+              String(toDelete.purchaseMode || "upi").toLowerCase() === "coins" ? "coins" : "upi",
+            paidCredits: Number(toDelete.paidCredits || 0),
+            expiresAt: toDelete.expiresAt || null,
+            isFakePaymentProof: true,
+            adminFakePaymentNote: fakePaymentNote,
+            adminActionAt,
+            permanentLink: "",
+            purchasedId: purchaseObjectId || undefined,
+            paymentProofUrl: toDelete.paymentProofUrl
+              ? {
+                  url: String(toDelete.paymentProofUrl?.url || ""),
+                  filename: String(toDelete.paymentProofUrl?.filename || ""),
+                }
+              : undefined,
+          };
+
+          await user.updateOne(
+            { _id: ownerObjectId },
+            {
+              $push: {
+                webCollection: fallbackHistoryEntry,
+              },
+            }
+          );
+        }
       }
     }
 

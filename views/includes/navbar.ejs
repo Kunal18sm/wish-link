@@ -127,7 +127,6 @@
 </nav>
 
 <% if(navUser && navUser.isAdmin) {%>
-  <script src="/socket.io/socket.io.js"></script>
   <script>
     (function () {
       if (window.__VISH_ADMIN_NOTIFY_BADGE_READY__) return;
@@ -164,22 +163,22 @@
         ? Number(navRoot.getAttribute("data-admin-unread-count") || 0)
         : 0;
       renderNotificationCount(initialUnreadCount);
-
-      if (typeof io === "function") {
-        var socket = window.__VISH_ADMIN_SOCKET__;
-        if (!socket) {
-          socket = io();
-          window.__VISH_ADMIN_SOCKET__ = socket;
-        }
-        socket.on("adminNotificationCreated", function (payload) {
-          renderNotificationCount(payload && payload.unreadCount);
-        });
-        socket.on("adminNotificationCountUpdated", function (payload) {
-          renderNotificationCount(payload && payload.unreadCount);
-        });
+      function scheduleSync() {
+        window.setTimeout(function () {
+          if (!document.hidden) {
+            syncNotificationCount();
+          }
+          scheduleSync();
+        }, 30000);
       }
 
-      setInterval(syncNotificationCount, 15000);
+      document.addEventListener("visibilitychange", function () {
+        if (!document.hidden) {
+          syncNotificationCount();
+        }
+      });
+
+      scheduleSync();
     })();
   </script>
 <% } %>
