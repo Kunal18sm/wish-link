@@ -20,6 +20,7 @@ const {
 const {
   createAdminNotification,
 } = require("./utils/adminNotifications.js");
+const { generateReply, isBotAvailable } = require("./utils/geminiBot.js");
 const {
   getCreditDateKey,
   getDailyRewardCredits,
@@ -918,6 +919,54 @@ io.on("connection", (socket) => {
         ).catch((notifyErr) => {
           console.log("Admin chat notification warning:", notifyErr?.message || notifyErr);
         });
+
+        // AI Bot auto-reply via Socket.IO
+        if (isBotAvailable() && !chat.adminTakeover) {
+          generateReply(messageText, chat.messages)
+            .then(async (botReplyText) => {
+              if (!botReplyText) return;
+              try {
+                chat.messages.push({
+                  sender: socket.user._id,
+                  senderRole: "bot",
+                  text: botReplyText,
+                });
+                chat.lastMessage = botReplyText;
+                chat.lastMessageAt = new Date();
+                chat.userUnreadCount += 1;
+                await chat.save();
+                invalidateChatInboxCache();
+
+                const botMsg = chat.messages[chat.messages.length - 1];
+                const botChatId = String(chat._id);
+
+                io.to(`chat:${botChatId}`).emit("newChatMessage", {
+                  chatId: botChatId,
+                  message: {
+                    _id: String(botMsg._id),
+                    text: botMsg.text,
+                    senderRole: botMsg.senderRole,
+                    senderName: "VishLink AI",
+                  },
+                });
+
+                const botChatOwner = await user.findById(chat.user).select("username email").lean();
+                io.to("admins").emit("chatThreadUpdated", {
+                  chatId: botChatId,
+                  userName: botChatOwner?.username || "Unknown User",
+                  userEmail: botChatOwner?.email || "No email",
+                  lastMessage: chat.lastMessage || "",
+                  lastMessageAt: chat.lastMessageAt,
+                  adminUnreadCount: chat.adminUnreadCount || 0,
+                });
+              } catch (botSaveErr) {
+                console.log("Bot socket reply save error:", botSaveErr?.message || botSaveErr);
+              }
+            })
+            .catch((botGenErr) => {
+              console.log("Bot socket reply gen error:", botGenErr?.message || botGenErr);
+            });
+        }
       }
 
       if (typeof cb === "function") cb({ ok: true, chatId: String(chat._id) });

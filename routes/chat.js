@@ -4,6 +4,7 @@ const router = express.Router({ mergeParams: true });
 const wrapAsync = require("../utils/wrapAsync.js");
 const Chat = require("../models/chat.js");
 const user = require("../models/user.js");
+const { generateReply, isBotAvailable } = require("../utils/geminiBot.js");
 const {
   createAdminNotification,
   markAdminNotificationsAsRead,
@@ -16,7 +17,7 @@ const {
 } = require("../utils/runtimeCaches.js");
 
 const MAX_MESSAGE_LENGTH = 1500;
-const CHAT_INBOX_SELECT = "user lastMessage lastMessageAt adminUnreadCount";
+const CHAT_INBOX_SELECT = "user lastMessage lastMessageAt adminUnreadCount adminTakeover";
 
 function parseMessage(req) {
   const raw = req.body?.chat?.message ?? req.body?.message ?? "";
@@ -183,6 +184,50 @@ router.post(
       });
     }
 
+    // AI Bot auto-reply (if bot is available and admin hasn't taken over)
+    if (isBotAvailable() && !chat.adminTakeover) {
+      try {
+        const botReplyText = await generateReply(message, chat.messages);
+        if (botReplyText) {
+          chat.messages.push({
+            sender: req.user._id,
+            senderRole: "bot",
+            text: botReplyText,
+          });
+          chat.lastMessage = botReplyText;
+          chat.lastMessageAt = new Date();
+          chat.userUnreadCount += 1;
+          await chat.save();
+          invalidateChatInboxCache();
+
+          const botMessage = chat.messages[chat.messages.length - 1];
+          if (io) {
+            const chatId = String(chat._id);
+            io.to(`chat:${chatId}`).emit("newChatMessage", {
+              chatId,
+              message: {
+                _id: String(botMessage._id),
+                text: botMessage.text,
+                senderRole: botMessage.senderRole,
+                senderName: "VishLink AI",
+              },
+            });
+
+            io.to("admins").emit("chatThreadUpdated", {
+              chatId,
+              userName: req.user.username || "Unknown User",
+              userEmail: req.user.email || "No email",
+              lastMessage: chat.lastMessage || "",
+              lastMessageAt: chat.lastMessageAt,
+              adminUnreadCount: chat.adminUnreadCount || 0,
+            });
+          }
+        }
+      } catch (botErr) {
+        console.log("Bot auto-reply error:", botErr?.message || botErr);
+      }
+    }
+
     if (wantsJson(req)) {
       return res.json({
         ok: true,
@@ -228,7 +273,7 @@ router.get(
     }
 
     const chat = await Chat.findById(chatId)
-      .select("user messages adminUnreadCount")
+      .select("user messages adminUnreadCount adminTakeover")
       .populate({
         path: "user",
         select: "username email",
@@ -347,6 +392,80 @@ router.post(
   })
 );
 
+// Admin takeover - pause AI bot for this chat
+router.post(
+  "/admin/:chatId/takeover",
+  isLoggedIn,
+  isAdmin,
+  wrapAsync(async (req, res) => {
+    const { chatId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(chatId)) {
+      return res.status(400).json({ ok: false, error: "Invalid chat id." });
+    }
+
+    const chat = await Chat.findByIdAndUpdate(
+      chatId,
+      { $set: { adminTakeover: true } },
+      { new: true }
+    );
+    if (!chat) {
+      return res.status(404).json({ ok: false, error: "Chat not found." });
+    }
+
+    invalidateChatInboxCache();
+
+    const io = req.app.get("io");
+    if (io) {
+      io.to(`chat:${chatId}`).emit("botStatusChanged", {
+        chatId: String(chatId),
+        adminTakeover: true,
+      });
+    }
+
+    if (wantsJson(req)) {
+      return res.json({ ok: true, adminTakeover: true });
+    }
+    res.redirect(`/chat/admin/${chatId}`);
+  })
+);
+
+// Admin re-enable AI bot for this chat
+router.post(
+  "/admin/:chatId/enable-bot",
+  isLoggedIn,
+  isAdmin,
+  wrapAsync(async (req, res) => {
+    const { chatId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(chatId)) {
+      return res.status(400).json({ ok: false, error: "Invalid chat id." });
+    }
+
+    const chat = await Chat.findByIdAndUpdate(
+      chatId,
+      { $set: { adminTakeover: false } },
+      { new: true }
+    );
+    if (!chat) {
+      return res.status(404).json({ ok: false, error: "Chat not found." });
+    }
+
+    invalidateChatInboxCache();
+
+    const io = req.app.get("io");
+    if (io) {
+      io.to(`chat:${chatId}`).emit("botStatusChanged", {
+        chatId: String(chatId),
+        adminTakeover: false,
+      });
+    }
+
+    if (wantsJson(req)) {
+      return res.json({ ok: true, adminTakeover: false });
+    }
+    res.redirect(`/chat/admin/${chatId}`);
+  })
+);
+
 router.delete(
   "/admin/:chatId",
   isLoggedIn,
@@ -451,6 +570,7 @@ router.get(
         lastMessage: chat.lastMessage || "",
         lastMessageAt: chat.lastMessageAt,
         adminUnreadCount: chat.adminUnreadCount || 0,
+        adminTakeover: Boolean(chat.adminTakeover),
       })),
     });
   })

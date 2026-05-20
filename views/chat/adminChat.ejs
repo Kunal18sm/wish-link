@@ -11,13 +11,45 @@
           <h1 class="text-lg md:text-2xl font-bold text-white truncate">Chat: <%= chat.user?.username || "Unknown User" %></h1>
           <p class="text-slate-400 text-xs md:text-sm truncate"><%= chat.user?.email || "No email" %></p>
         </div>
-        <button
-          type="button"
-          id="openDeleteModalBtn"
-          class="px-3 md:px-4 py-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-600 hover:text-white transition text-xs md:text-sm font-semibold shrink-0"
-        >
-          Delete Thread
-        </button>
+        <div class="flex flex-col gap-2 shrink-0 items-end">
+          <!-- Bot Status Toggle -->
+          <div id="botToggleContainer">
+            <% if (chat.adminTakeover) { %>
+              <button
+                type="button"
+                id="enableBotBtn"
+                class="px-3 md:px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600 hover:text-white transition text-xs md:text-sm font-semibold flex items-center gap-1.5"
+              >
+                🤖 Enable Bot
+              </button>
+            <% } else { %>
+              <button
+                type="button"
+                id="takeoverBtn"
+                class="px-3 md:px-4 py-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-600 hover:text-white transition text-xs md:text-sm font-semibold flex items-center gap-1.5"
+              >
+                👨‍💼 Take Over
+              </button>
+            <% } %>
+          </div>
+          <!-- Bot Status Indicator -->
+          <div id="botStatusIndicator" class="flex items-center gap-1.5">
+            <% if (chat.adminTakeover) { %>
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+              <span class="text-[10px] text-amber-400 font-semibold uppercase tracking-wider">Admin Mode</span>
+            <% } else { %>
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">AI Bot Active</span>
+            <% } %>
+          </div>
+          <button
+            type="button"
+            id="openDeleteModalBtn"
+            class="px-3 md:px-4 py-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-600 hover:text-white transition text-xs md:text-sm font-semibold shrink-0"
+          >
+            Delete Thread
+          </button>
+        </div>
       </div>
 
       <div id="chatScrollBox" class="mb-32 flex-1 min-h-0 overflow-y-auto px-3 md:px-5 py-4">
@@ -34,8 +66,22 @@
           <% if (chat.messages.length) { %>
             <% for (let msg of chat.messages) { %>
               <% const isAdminMessage = msg.senderRole === "admin"; %>
+              <% const isBotMessage = msg.senderRole === "bot"; %>
               <div data-message-id="<%= msg._id %>" class="mb-1 flex <%= isAdminMessage ? 'justify-end' : 'justify-start' %>">
-                <div class="<%= isAdminMessage ? 'bg-indigo-600/90 border-indigo-500/60 text-white' : 'bg-slate-800 border-slate-700 text-slate-100' %> max-w-[85%] md:max-w-[72%] px-4 py-3 rounded-2xl border shadow-lg">
+                <div class="<%= isAdminMessage ? 'bg-indigo-600/90 border-indigo-500/60 text-white' : isBotMessage ? 'bg-emerald-900/50 border-emerald-500/30 text-emerald-50' : 'bg-slate-800 border-slate-700 text-slate-100' %> max-w-[85%] md:max-w-[72%] px-4 py-3 rounded-2xl border shadow-lg">
+                  <% if (isBotMessage) { %>
+                    <div class="flex items-center gap-1.5 mb-1.5">
+                      <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">🤖 AI Bot</span>
+                    </div>
+                  <% } else if (isAdminMessage) { %>
+                    <div class="flex items-center gap-1.5 mb-1.5">
+                      <span class="text-[10px] font-bold text-indigo-200 uppercase tracking-wider">👨‍💼 You (Admin)</span>
+                    </div>
+                  <% } else { %>
+                    <div class="flex items-center gap-1.5 mb-1.5">
+                      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">👤 User</span>
+                    </div>
+                  <% } %>
                   <p class="text-sm break-words whitespace-pre-wrap"><%= msg.text %></p>
                 </div>
               </div>
@@ -113,6 +159,10 @@
     const openDeleteModalBtn = document.getElementById("openDeleteModalBtn");
     const closeDeleteModalBtn = document.getElementById("closeDeleteModalBtn");
 
+    const botToggleContainer = document.getElementById("botToggleContainer");
+    const botStatusIndicator = document.getElementById("botStatusIndicator");
+    let isAdminTakeover = <%= chat.adminTakeover ? 'true' : 'false' %>;
+
     const knownMessageIds = new Set();
     let lastSeenMessageId = "";
     let pollingInFlight = false;
@@ -138,6 +188,63 @@
       });
     }
 
+    function updateBotToggleUI(adminTakeover) {
+      isAdminTakeover = adminTakeover;
+      if (botToggleContainer) {
+        if (adminTakeover) {
+          botToggleContainer.innerHTML = `
+            <button type="button" id="enableBotBtn"
+              class="px-3 md:px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600 hover:text-white transition text-xs md:text-sm font-semibold flex items-center gap-1.5">
+              🤖 Enable Bot
+            </button>`;
+          attachBotToggleListeners();
+        } else {
+          botToggleContainer.innerHTML = `
+            <button type="button" id="takeoverBtn"
+              class="px-3 md:px-4 py-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-600 hover:text-white transition text-xs md:text-sm font-semibold flex items-center gap-1.5">
+              👨‍💼 Take Over
+            </button>`;
+          attachBotToggleListeners();
+        }
+      }
+      if (botStatusIndicator) {
+        if (adminTakeover) {
+          botStatusIndicator.innerHTML = `
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+            <span class="text-[10px] text-amber-400 font-semibold uppercase tracking-wider">Admin Mode</span>`;
+        } else {
+          botStatusIndicator.innerHTML = `
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">AI Bot Active</span>`;
+        }
+      }
+    }
+
+    async function toggleBotStatus(enable) {
+      const url = enable
+        ? `/chat/admin/${activeChatId}/enable-bot`
+        : `/chat/admin/${activeChatId}/takeover`;
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Accept": "application/json" },
+        });
+        const data = await response.json();
+        if (data.ok) {
+          updateBotToggleUI(data.adminTakeover);
+        }
+      } catch (err) {
+        console.log("Toggle bot error:", err);
+      }
+    }
+
+    function attachBotToggleListeners() {
+      const takeoverBtn = document.getElementById("takeoverBtn");
+      const enableBotBtn = document.getElementById("enableBotBtn");
+      if (takeoverBtn) takeoverBtn.addEventListener("click", () => toggleBotStatus(false));
+      if (enableBotBtn) enableBotBtn.addEventListener("click", () => toggleBotStatus(true));
+    }
+
     function appendMessage(message) {
       if (!messageList || !message) return;
       const msgId = message._id ? String(message._id) : "";
@@ -146,12 +253,37 @@
       hideEmptyState();
 
       const isAdminMessage = message.senderRole === "admin";
+      const isBotMessage = message.senderRole === "bot";
       const row = document.createElement("div");
       row.className = `mb-1 flex ${isAdminMessage ? "justify-end" : "justify-start"}`;
       row.setAttribute("data-message-id", msgId);
 
       const bubble = document.createElement("div");
-      bubble.className = `${isAdminMessage ? "bg-indigo-600/90 border-indigo-500/60 text-white" : "bg-slate-800 border-slate-700 text-slate-100"} max-w-[85%] md:max-w-[72%] px-4 py-3 rounded-2xl border shadow-lg`;
+      if (isAdminMessage) {
+        bubble.className = "bg-indigo-600/90 border-indigo-500/60 text-white max-w-[85%] md:max-w-[72%] px-4 py-3 rounded-2xl border shadow-lg";
+      } else if (isBotMessage) {
+        bubble.className = "bg-emerald-900/50 border-emerald-500/30 text-emerald-50 max-w-[85%] md:max-w-[72%] px-4 py-3 rounded-2xl border shadow-lg";
+      } else {
+        bubble.className = "bg-slate-800 border-slate-700 text-slate-100 max-w-[85%] md:max-w-[72%] px-4 py-3 rounded-2xl border shadow-lg";
+      }
+
+      // Role label
+      const label = document.createElement("div");
+      label.className = "flex items-center gap-1.5 mb-1.5";
+      const labelSpan = document.createElement("span");
+      labelSpan.className = "text-[10px] font-bold uppercase tracking-wider";
+      if (isBotMessage) {
+        labelSpan.classList.add("text-emerald-400");
+        labelSpan.textContent = "🤖 AI Bot";
+      } else if (isAdminMessage) {
+        labelSpan.classList.add("text-indigo-200");
+        labelSpan.textContent = "👨‍💼 You (Admin)";
+      } else {
+        labelSpan.classList.add("text-slate-400");
+        labelSpan.textContent = "👤 User";
+      }
+      label.appendChild(labelSpan);
+      bubble.appendChild(label);
 
       const p = document.createElement("p");
       p.className = "text-sm break-words whitespace-pre-wrap";
@@ -215,6 +347,7 @@
       });
     }
 
+    attachBotToggleListeners();
     seedExistingMessages();
     scrollToBottom();
 
@@ -245,6 +378,11 @@
         if (!payload || !payload.chatId) return;
         if (String(payload.chatId) !== String(activeChatId)) return;
         window.location.href = "/chat/admin";
+      });
+
+      socket.on("botStatusChanged", function (payload) {
+        if (!payload || String(payload.chatId) !== String(activeChatId)) return;
+        updateBotToggleUI(payload.adminTakeover);
       });
     }
 

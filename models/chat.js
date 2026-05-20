@@ -11,7 +11,7 @@ const messageSchema = new Schema(
     },
     senderRole: {
       type: String,
-      enum: ["user", "admin"],
+      enum: ["user", "admin", "bot"],
       required: true,
     },
     text: {
@@ -53,6 +53,10 @@ const chatSchema = new Schema(
       type: Number,
       default: 0,
       min: 0,
+    },
+    adminTakeover: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }

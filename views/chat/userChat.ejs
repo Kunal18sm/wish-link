@@ -10,15 +10,22 @@
           <h1 class="text-xl md:text-2xl font-bold text-white leading-tight">Chat With Admin</h1>
           <p class="text-slate-400 text-xs md:text-sm mt-1">Support conversation</p>
         </div>
-        <span class="text-[11px] md:text-xs px-3 py-1 rounded-full border border-emerald-500/30 text-emerald-400 bg-emerald-500/10">Live</span>
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] md:text-xs px-2.5 py-1 rounded-full border border-emerald-500/30 text-emerald-400 bg-emerald-500/10 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            AI Powered
+          </span>
+          <span class="text-[11px] md:text-xs px-3 py-1 rounded-full border border-emerald-500/30 text-emerald-400 bg-emerald-500/10">Live</span>
+        </div>
       </div>
 
       <div id="chatScrollBox" class="flex-1 min-h-0 overflow-y-auto px-3 md:px-5 py-4">
         <% if(!chat || !chat.messages.length) { %>
           <div id="emptyState" class="h-full flex items-center justify-center text-center border border-dashed border-slate-700 rounded-2xl bg-slate-800/30 p-8">
             <div>
-              <h3 class="text-lg font-bold text-slate-200">No messages yet</h3>
-              <p class="text-slate-500 text-sm mt-2">Send your first message. Admin will reply here.</p>
+              <div class="text-4xl mb-3">🤖</div>
+              <h3 class="text-lg font-bold text-slate-200">VishLink AI Assistant</h3>
+              <p class="text-slate-500 text-sm mt-2">Hi! Mujhse poochho VishLink ke baare mein kuch bhi. Main turant reply dunga!</p>
             </div>
           </div>
         <% } %>
@@ -27,8 +34,18 @@
           <% if(chat && chat.messages.length) { %>
             <% for (let msg of chat.messages) { %>
               <% const isMine = msg.senderRole === "user"; %>
+              <% const isBot = msg.senderRole === "bot"; %>
               <div data-message-id="<%= msg._id %>" class="mb-1 flex <%= isMine ? 'justify-end' : 'justify-start' %>">
-                <div class="<%= isMine ? 'bg-indigo-600/90 border-indigo-500/60 text-white' : 'bg-slate-800 border-slate-700 text-slate-100' %> max-w-[85%] md:max-w-[70%] px-4 py-3 rounded-2xl border shadow-lg">
+                <div class="<%= isMine ? 'bg-indigo-600/90 border-indigo-500/60 text-white' : isBot ? 'bg-emerald-900/50 border-emerald-500/30 text-emerald-50' : 'bg-slate-800 border-slate-700 text-slate-100' %> max-w-[85%] md:max-w-[70%] px-4 py-3 rounded-2xl border shadow-lg">
+                  <% if (isBot) { %>
+                    <div class="flex items-center gap-1.5 mb-1.5">
+                      <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">🤖 AI Assistant</span>
+                    </div>
+                  <% } else if (!isMine) { %>
+                    <div class="flex items-center gap-1.5 mb-1.5">
+                      <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">👨‍💼 Admin</span>
+                    </div>
+                  <% } %>
                   <p class="text-sm break-words whitespace-pre-wrap"><%= msg.text %></p>
                 </div>
               </div>
@@ -109,12 +126,30 @@
       hideEmptyState();
 
       const isMine = message.senderRole === "user";
+      const isBot = message.senderRole === "bot";
       const row = document.createElement("div");
       row.className = `mb-1 flex ${isMine ? "justify-end" : "justify-start"}`;
       row.setAttribute("data-message-id", msgId);
 
       const bubble = document.createElement("div");
-      bubble.className = `${isMine ? "bg-indigo-600/90 border-indigo-500/60 text-white" : "bg-slate-800 border-slate-700 text-slate-100"} max-w-[85%] md:max-w-[70%] px-4 py-3 rounded-2xl border shadow-lg`;
+      if (isMine) {
+        bubble.className = "bg-indigo-600/90 border-indigo-500/60 text-white max-w-[85%] md:max-w-[70%] px-4 py-3 rounded-2xl border shadow-lg";
+      } else if (isBot) {
+        bubble.className = "bg-emerald-900/50 border-emerald-500/30 text-emerald-50 max-w-[85%] md:max-w-[70%] px-4 py-3 rounded-2xl border shadow-lg";
+      } else {
+        bubble.className = "bg-slate-800 border-slate-700 text-slate-100 max-w-[85%] md:max-w-[70%] px-4 py-3 rounded-2xl border shadow-lg";
+      }
+
+      // Add role label for bot/admin messages
+      if (!isMine) {
+        const label = document.createElement("div");
+        label.className = "flex items-center gap-1.5 mb-1.5";
+        const labelSpan = document.createElement("span");
+        labelSpan.className = `text-[10px] font-bold uppercase tracking-wider ${isBot ? "text-emerald-400" : "text-indigo-400"}`;
+        labelSpan.textContent = isBot ? "🤖 AI Assistant" : "👨‍💼 Admin";
+        label.appendChild(labelSpan);
+        bubble.appendChild(label);
+      }
 
       const p = document.createElement("p");
       p.className = "text-sm break-words whitespace-pre-wrap";

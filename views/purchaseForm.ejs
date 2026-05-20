@@ -319,13 +319,13 @@
                   <input type="radio" id="mode-upi" name="purchase[paymentMode]" value="upi" class="segment-input hidden" <%= initialPaymentMode === "upi" ? "checked" : "" %>>
                   <label for="mode-upi" class="segment-label text-sm text-slate-300 font-medium">UPI / Scan</label>
 
-                  <input type="radio" id="mode-coins" name="purchase[paymentMode]" value="coins" class="segment-input hidden" <%= initialPaymentMode === "coins" ? "checked" : "" %> <%= hasEnoughCoins ? "" : "disabled" %>>
+                  <input type="radio" id="mode-coins" name="purchase[paymentMode]" value="coins" class="segment-input hidden" <%= initialPaymentMode === "coins" ? "checked" : "" %>>
                   <label for="mode-coins" class="segment-label text-sm text-slate-300 font-medium">
                     🪙 Coins
                   </label>
                 </div>
                 <% if (!hasEnoughCoins) { %>
-                  <p id="coinInsufficientMessage" class="mt-2 text-xs text-center text-rose-400/80">Low coin balance. Please use UPI.</p>
+                  <p id="coinInsufficientMessage" class="mt-2 text-xs text-center text-rose-400/80">Low coin balance. Click to view cost.</p>
                 <% } %>
               </div>
 
@@ -569,6 +569,7 @@
         setVisibility(upiPaymentSection, !usingCoins && upiProofRequired);
         setVisibility(upiProofSection, !usingCoins && upiProofRequired);
         setVisibility(verificationNote, !usingCoins && Boolean(verificationNote));
+        setVisibility(document.getElementById("coinInsufficientMessage"), !usingCoins && !hasEnoughCoinsForPurchase);
 
         if (expiryInfoText) {
           expiryInfoText.textContent =
