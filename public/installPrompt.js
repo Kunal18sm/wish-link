@@ -8,7 +8,7 @@
   const installPromptInstallBtn = document.getElementById("installPromptInstallBtn");
   const installPromptLaterBtn = document.getElementById("installPromptLaterBtn");
   const installPromptCloseBtn = document.getElementById("installPromptCloseBtn");
-  const firstVisitStorageKey = "vishlinkInstallPromptSeen";
+  const dismissStorageKey = "vishlinkInstallPromptDismissedAt";
 
   if (!installPromptBackdrop || !installPromptModal) return;
 
@@ -31,33 +31,28 @@
     return /iphone|ipad|ipod/i.test(window.navigator.userAgent || "");
   }
 
-  function getManualInstallMessage() {
-    if (isIosDevice()) {
-      return "Install VishLink in one click.";
-    }
-
-    return "Install VishLink in one click.";
-  }
-
-  function isFirstVisit() {
+  function isRecentlyDismissed() {
     try {
-      return localStorage.getItem(firstVisitStorageKey) !== "1";
+      const dismissedAt = Number(localStorage.getItem(dismissStorageKey) || 0);
+      if (!dismissedAt) return false;
+      // Don't auto-popup if dismissed within last 24 hours
+      return Date.now() - dismissedAt < 24 * 60 * 60 * 1000;
     } catch (_err) {
-      return true;
+      return false;
     }
   }
 
-  function markInstallPromptSeen() {
+  function markDismissed() {
     try {
-      localStorage.setItem(firstVisitStorageKey, "1");
+      localStorage.setItem(dismissStorageKey, String(Date.now()));
     } catch (_err) {
-      // Ignore storage access issues.
+      // Ignore storage errors
     }
   }
 
-  function showInstallPrompt(message) {
+  function showInstallPrompt(message, force = false) {
     if (isStandaloneMode()) return;
-    if (!isFirstVisit()) return;
+    if (!force && isRecentlyDismissed()) return;
     if (hasShownOnThisPage) return;
 
     if (installPromptText && message) {
@@ -65,35 +60,38 @@
     }
 
     hasShownOnThisPage = true;
-    markInstallPromptSeen();
     installPromptBackdrop.classList.remove("hidden");
     installPromptModal.classList.remove("hidden");
   }
 
-  function hideInstallPrompt() {
+  function hideInstallPrompt(userDismissed = false) {
+    if (userDismissed) {
+      markDismissed();
+    }
     installPromptBackdrop.classList.add("hidden");
     installPromptModal.classList.add("hidden");
   }
 
   if (installPromptCloseBtn) {
-    installPromptCloseBtn.addEventListener("click", hideInstallPrompt);
+    installPromptCloseBtn.addEventListener("click", () => hideInstallPrompt(true));
   }
 
   if (installPromptLaterBtn) {
-    installPromptLaterBtn.addEventListener("click", hideInstallPrompt);
+    installPromptLaterBtn.addEventListener("click", () => hideInstallPrompt(true));
   }
 
-  installPromptBackdrop.addEventListener("click", hideInstallPrompt);
+  installPromptBackdrop.addEventListener("click", () => hideInstallPrompt(true));
 
   window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
     deferredInstallPromptEvent = event;
-    showInstallPrompt("Install VishLink in one click.");
+    // Show prompt when browser fires beforeinstallprompt
+    showInstallPrompt("Install VishLink in one click.", true);
   });
 
   window.addEventListener("appinstalled", () => {
     deferredInstallPromptEvent = null;
-    hideInstallPrompt();
+    hideInstallPrompt(false);
   });
 
   if (installPromptInstallBtn) {
@@ -103,7 +101,7 @@
         try {
           const result = await deferredInstallPromptEvent.userChoice;
           if (result?.outcome === "accepted") {
-            hideInstallPrompt();
+            hideInstallPrompt(false);
           }
         } catch (_err) {
           // Keep popup available for retry.
@@ -111,7 +109,11 @@
         return;
       }
 
-      showInstallPrompt(getManualInstallMessage());
+      if (isIosDevice()) {
+        alert("To install on iOS: tap the Share button in Safari and select 'Add to Home Screen'.");
+      } else {
+        alert("To install VishLink: tap your browser menu (3 dots) and select 'Install app' or 'Add to Home Screen'.");
+      }
     });
   }
 
@@ -128,9 +130,9 @@
         });
     }
 
-    if (!isStandaloneMode() && isFirstVisit()) {
+    if (!isStandaloneMode() && !isRecentlyDismissed()) {
       setTimeout(() => {
-        showInstallPrompt(getManualInstallMessage());
+        showInstallPrompt("Install VishLink in one click.");
       }, 1200);
     }
   }
@@ -141,3 +143,4 @@
     window.addEventListener("load", initInstallPromptLifecycle, { once: true });
   }
 })();
+
