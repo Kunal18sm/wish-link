@@ -408,7 +408,7 @@ const createPurchaseHandler = (expectedIsTemporary) =>
       try {
         await createAdminNotification(req.app, {
           type: "purchase_request",
-          title: isTemporary ? "Temp Request" : "Perm Request",
+          title: isTemporary ? "🛒 [Wishlink] Temp Link Created" : "🛒 [Wishlink] Perm Link Created",
           message: `${sender} | ${selectedWeb.webName} | ${receiver || "-"}`,
           link: isTemporary ? "/requests" : "/requests/permanent",
           entityType: "purchase",

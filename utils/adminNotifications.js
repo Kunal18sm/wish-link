@@ -1,3 +1,4 @@
+const AdminNotification = require("../models/adminNotification.js");
 const { sendAdminPushNotification } = require("./pushNotifications.js");
 
 const DEFAULT_LINK = "/requests/dashboard";
@@ -26,15 +27,31 @@ function normalizeActor(actor = {}) {
   };
 }
 
+async function getUnreadCountFromDb() {
+  try {
+    return await AdminNotification.countDocuments({
+      $and: [
+        { read: { $ne: true } },
+        { isRead: { $ne: true } },
+      ],
+    });
+  } catch (_err) {
+    return 0;
+  }
+}
+
 async function emitAdminNotificationCount(app, unreadCount = null) {
   const io = app?.get?.("io");
-  if (!io) return Number(unreadCount || 0);
+  let nextUnreadCount = Number(unreadCount);
+  if (Number.isNaN(nextUnreadCount) || unreadCount === null) {
+    nextUnreadCount = await getUnreadCountFromDb();
+  }
 
-  const nextUnreadCount = Number(unreadCount) || 0;
-
-  io.to("admins").emit("adminNotificationCountUpdated", {
-    unreadCount: nextUnreadCount,
-  });
+  if (io) {
+    io.to("admins").emit("adminNotificationCountUpdated", {
+      unreadCount: nextUnreadCount,
+    });
+  }
 
   return nextUnreadCount;
 }
@@ -49,7 +66,7 @@ function buildNotificationPayload(payload = {}) {
     entityId: toTrimmedText(payload.entityId, "", 80),
     dedupeKey: toTrimmedText(payload.dedupeKey, "", 120),
     actor: normalizeActor(payload.actor),
-    meta: payload.meta || null,
+    meta: payload.meta || payload.details || null,
     isRead: false,
     readAt: null,
   };
@@ -58,33 +75,77 @@ function buildNotificationPayload(payload = {}) {
 async function createAdminNotification(app, payload = {}, options = {}) {
   const normalizedPayload = buildNotificationPayload(payload);
   void options;
-  await emitAdminNotificationCount(app, 0);
+
+  let savedDoc = null;
+  try {
+    const doc = new AdminNotification({
+      type: normalizedPayload.type,
+      title: normalizedPayload.title,
+      message: normalizedPayload.message,
+      link: normalizedPayload.link,
+      entityType: normalizedPayload.entityType,
+      entityId: normalizedPayload.entityId,
+      dedupeKey: normalizedPayload.dedupeKey,
+      actor: normalizedPayload.actor,
+      details: normalizedPayload.meta || {},
+      meta: normalizedPayload.meta || {},
+      read: false,
+      isRead: false,
+    });
+    savedDoc = await doc.save();
+  } catch (err) {
+    console.error("Failed to save Admin notification to DB:", err?.message || err);
+  }
+
+  const unreadCount = await getUnreadCountFromDb();
+  await emitAdminNotificationCount(app, unreadCount);
+
   sendAdminPushNotification({
     title: normalizedPayload.title,
     body: normalizedPayload.message,
     link: normalizedPayload.link,
-    tag: normalizedPayload.dedupeKey || `admin:ephemeral:${Date.now()}`,
+    tag: normalizedPayload.dedupeKey || `admin:${savedDoc?._id || Date.now()}`,
   }).catch((pushErr) => {
-    // eslint-disable-next-line no-console
     console.log("Admin push notification warning:", pushErr?.message || pushErr);
   });
 
-  return {
-    ...normalizedPayload,
-    _id: null,
-    isRead: false,
-    createdAt: null,
-    updatedAt: null,
-  };
+  return savedDoc
+    ? {
+        ...normalizedPayload,
+        _id: savedDoc._id,
+        createdAt: savedDoc.createdAt,
+        updatedAt: savedDoc.updatedAt,
+      }
+    : {
+        ...normalizedPayload,
+        _id: null,
+        createdAt: null,
+        updatedAt: null,
+      };
 }
 
 async function markAdminNotificationsAsRead(app, filter = {}) {
-  void filter;
-  await emitAdminNotificationCount(app, 0);
-  return 0;
+  try {
+    const updateFilter = filter.id
+      ? { _id: filter.id }
+      : { $and: [{ read: { $ne: true } }, { isRead: { $ne: true } }] };
+
+    const result = await AdminNotification.updateMany(updateFilter, {
+      $set: { read: true, isRead: true, readAt: new Date() },
+    });
+
+    const unreadCount = await getUnreadCountFromDb();
+    await emitAdminNotificationCount(app, unreadCount);
+
+    return Number(result?.modifiedCount || 0);
+  } catch (err) {
+    console.error("Failed to mark admin notifications as read:", err?.message || err);
+    return 0;
+  }
 }
 
 module.exports = {
   createAdminNotification,
   markAdminNotificationsAsRead,
+  getUnreadCountFromDb,
 };

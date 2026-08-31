@@ -582,7 +582,17 @@ app.use(async (req, res, next) => {
   const todayCreditDateKey = getCreditDateKey();
   const hasClaimedDailyCredit =
     String(req.user?.dailyCreditClaim?.dateKey || "") === todayCreditDateKey;
-  const adminUnreadNotificationCount = 0;
+  let adminUnreadNotificationCount = 0;
+  if (req.user?.isAdmin) {
+    try {
+      const AdminNotification = require("./models/adminNotification.js");
+      adminUnreadNotificationCount = await AdminNotification.countDocuments({
+        $and: [{ read: { $ne: true } }, { isRead: { $ne: true } }],
+      });
+    } catch (_err) {
+      adminUnreadNotificationCount = 0;
+    }
+  }
   const siteConfig = await getSiteConfig().catch(() => ({ showTemplateCoinPrice: true }));
 
   res.locals.success = req.flash("success");

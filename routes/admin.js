@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const multer = require("multer");
 
+const AdminNotification = require("../models/adminNotification.js");
 const purchasedWeb = require("../models/purchasedWeb.js");
 const WebSample = require("../models/WebSample.js");
 const BannerConfig = require("../models/bannerConfig.js");
@@ -971,11 +972,33 @@ router.get(
   "/api/notifications",
   isLoggedIn,
   isAdmin,
-  wrapAsync(async (_req, res) => {
+  wrapAsync(async (req, res) => {
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 30));
+    const notifications = await AdminNotification.find({})
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean();
+
+    const unreadCount = await AdminNotification.countDocuments({
+      $and: [{ read: { $ne: true } }, { isRead: { $ne: true } }],
+    });
+
+    const formatted = notifications.map((doc) => ({
+      id: String(doc._id),
+      _id: String(doc._id),
+      type: doc.type || "general",
+      title: doc.title || "Notification",
+      message: doc.message || "",
+      link: doc.link || "/requests/dashboard",
+      isRead: Boolean(doc.read || doc.isRead),
+      createdAt: doc.createdAt,
+      details: doc.details || doc.meta || {},
+    }));
+
     return res.json({
       ok: true,
-      unreadCount: 0,
-      notifications: [],
+      unreadCount,
+      notifications: formatted,
     });
   })
 );
@@ -985,9 +1008,12 @@ router.get(
   isLoggedIn,
   isAdmin,
   wrapAsync(async (_req, res) => {
+    const unreadCount = await AdminNotification.countDocuments({
+      $and: [{ read: { $ne: true } }, { isRead: { $ne: true } }],
+    });
     return res.json({
       ok: true,
-      unreadCount: 0,
+      unreadCount,
     });
   })
 );
@@ -1009,10 +1035,12 @@ router.post(
   "/api/notifications/:id/read",
   isLoggedIn,
   isAdmin,
-  wrapAsync(async (_req, res) => {
+  wrapAsync(async (req, res) => {
+    const { id } = req.params;
+    const modifiedCount = await markAdminNotificationsAsRead(req.app, { id });
     return res.json({
       ok: true,
-      modifiedCount: 0,
+      modifiedCount: Number(modifiedCount || 0),
     });
   })
 );
