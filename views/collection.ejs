@@ -179,12 +179,7 @@
                             class="absolute bottom-4 z-20 theme-chip px-3 py-1.5 bg-black/40 backdrop-blur-md border border-white/20 text-white text-[9px] font-bold rounded-lg uppercase tracking-wider hover:bg-black/60 transition max-w-[52%] truncate whitespace-nowrap overflow-hidden" style="left:24px;">
                             Live Preview
                         </a>
-                        <% if(sample.priceForPermanent && sample.priceForTemporary===0 ) { %>
-                          <span
-                            class="absolute bottom-4 z-20 px-3 py-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold rounded-lg tracking-wide uppercase shadow-sm <%= shouldShowCoinPrice ? 'right-[78px]' : 'right-4' %>">
-                            Free
-                          </span>
-                        <% } %>
+
                         <% if (shouldShowCoinPrice) { %>
                         <div
                           class="inline-flex items-center gap-1 rounded-lg border border-amber-300/40 px-2.5 py-1 shadow-md shadow-black/60"
