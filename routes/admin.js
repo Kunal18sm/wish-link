@@ -1,4 +1,4 @@
-﻿const express = require("express");
+const express = require("express");
 const mongoose = require("mongoose");
 const multer = require("multer");
 
@@ -130,13 +130,6 @@ const ADMIN_DASHBOARD_CARDS = [
     href: "/feedback/feedbackpage",
     icon: "\uD83D\uDCAC",
     toneClass: "from-sky-500/20 to-cyan-500/20 border-sky-500/30",
-  },
-  {
-    title: "LeaderBoard",
-    description: "Winners list.",
-    href: "/game/leaderboard",
-    icon: "\uD83C\uDFC6",
-    toneClass: "from-yellow-500/20 to-amber-500/20 border-yellow-500/30",
   },
   {
     title: "Chat Inbox",

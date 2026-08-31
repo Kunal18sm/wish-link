@@ -595,7 +595,7 @@ app.use(async (req, res, next) => {
   res.locals.showTemplateCoinPrice = siteConfig.showTemplateCoinPrice !== false;
   res.locals.hideFooter = false;
   res.locals.chatLayout = false;
-  res.locals.showInstallPrompt = req.path === "/" || req.path.startsWith("/category/");
+  res.locals.showInstallPrompt = !req.path.startsWith("/requests") && !req.path.startsWith("/admin");
   res.locals.showDailyRewardModal = req.path === "/" || req.path.startsWith("/category/");
   res.locals.todayCreditDateKey = todayCreditDateKey;
   res.locals.dailyRewardByDay = DAILY_REWARD_BY_DAY;
@@ -694,7 +694,9 @@ app.use("/", routes);
 app.use("/requests", adminRoutes);
 app.use("/web", webRoutes);
 app.use("/feedback", feedbackRouted);
-app.use("/game", gameRoutes);
+app.use("/game", (_req, res) => {
+  return res.redirect(301, "/");
+});
 app.use("/chat", chatRoutes);
 
 app.use((req, res) => {
