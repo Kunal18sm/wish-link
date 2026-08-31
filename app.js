@@ -326,26 +326,6 @@ app.get("/ping", (_req, res) => {
   return res.status(200).type("text/plain").send("OK");
 });
 
-// Redirect regular traffic to the new Vercel site while keeping the Admin Panel active on Wishlink
-app.use((req, res, next) => {
-  const requestPath = String(req.path || "").toLowerCase();
-
-  // Keep admin panel, authentication, and system endpoints on this server
-  const isExcluded =
-    requestPath.startsWith("/requests") ||
-    requestPath.startsWith("/admin") ||
-    requestPath.startsWith("/login") ||
-    requestPath.startsWith("/loginform") ||
-    requestPath.startsWith("/signupform") ||
-    requestPath.startsWith("/logout") ||
-    requestPath.startsWith("/socket.io");
-
-  if (isExcluded) {
-    return next();
-  }
-
-  return res.redirect(301, `https://vishlink.vercel.app${req.originalUrl}`);
-});
 
 app.get("/cdn/image", async (req, res) => {
   if (!ENABLE_CLOUDINARY_IMAGE_PROXY) {
