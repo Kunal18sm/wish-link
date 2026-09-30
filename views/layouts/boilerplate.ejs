@@ -1001,6 +1001,7 @@
                     <% if (dailyCreditReward && showDailyRewardModal) { %>
                         <script defer src="/dailyReward.js?v=<%= assetVersion %>"></script>
                     <% } %>
+                    <%- include("../includes/migrationModal.ejs") %>
 </body>
 
 </html>
