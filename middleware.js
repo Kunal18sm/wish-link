@@ -33,8 +33,16 @@ function getPurchaseValidationMessage(error) {
   return "Please check your form details and try again.";
 }
 
+function wantsJson(req) {
+  const accept = req.headers?.accept || "";
+  return req.xhr || accept.includes("application/json");
+}
+
 module.exports.isLoggedIn = (req,res,next)=>{
   if(!req.user){   
+    if (wantsJson(req)) {
+      return res.status(401).json({ ok: false, error: "Session expired. You must log in again." });
+    }
     req.flash("error","You must be Logged in to continue.");
     return res.redirect("/logInForm");
   }
@@ -43,6 +51,9 @@ module.exports.isLoggedIn = (req,res,next)=>{
 
 module.exports.isAdmin = (req,res,next)=>{
   if(!req.user || !req.user.isAdmin){   
+    if (wantsJson(req)) {
+      return res.status(403).json({ ok: false, error: "Admin access required. Please log in as admin." });
+    }
     req.flash("error","You must be admin to continue.");
     return res.redirect("/");
   }

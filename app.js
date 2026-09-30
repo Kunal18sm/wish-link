@@ -822,6 +822,11 @@ io.on("connection", (socket) => {
 
   socket.on("sendChatMessage", async (payload = {}, cb) => {
     try {
+      if (!socket.user) {
+        if (typeof cb === "function") cb({ ok: false, error: "Authentication required. Please refresh page and log in." });
+        return;
+      }
+
       const socketRateState = socket.user?.isAdmin ? null : getSocketRateState(socket.user?._id);
       if (socketRateState && socketRateState.count > MUTATING_REQUEST_LIMIT) {
         if (typeof cb === "function") {

@@ -114,6 +114,23 @@
   </div>
 </div>
 
+<div id="errorModal" class="fixed inset-0 bg-black/75 hidden items-center justify-center z-[90] p-4">
+  <div class="bg-slate-900 border border-rose-500/50 rounded-2xl p-6 w-[90%] max-w-sm text-center shadow-2xl space-y-4">
+    <div class="w-12 h-12 rounded-full bg-rose-500/20 text-rose-400 mx-auto flex items-center justify-center text-xl font-bold">
+      ⚠️
+    </div>
+    <h3 class="text-lg font-bold text-white">Message Failed</h3>
+    <p id="errorModalText" class="text-rose-300 text-xs md:text-sm bg-rose-950/40 p-3 rounded-xl border border-rose-900/50 break-words leading-relaxed"></p>
+    <button
+      type="button"
+      id="closeErrorModalBtn"
+      class="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold transition text-sm cursor-pointer"
+    >
+      Close
+    </button>
+  </div>
+</div>
+
 <script src="/socket.io/socket.io.js"></script>
 <script>
   (function () {
@@ -123,6 +140,28 @@
     const chatForm = document.getElementById("chatForm");
     const chatMessage = document.getElementById("chatMessage");
     const sendBtn = document.getElementById("sendBtn");
+    const errorModal = document.getElementById("errorModal");
+    const errorModalText = document.getElementById("errorModalText");
+    const closeErrorModalBtn = document.getElementById("closeErrorModalBtn");
+
+    function showError(message) {
+      if (errorModal && errorModalText) {
+        errorModalText.textContent = message || "Failed to send message.";
+        errorModal.classList.remove("hidden");
+        errorModal.classList.add("flex");
+      } else {
+        alert(message || "Failed to send message.");
+      }
+    }
+
+    if (closeErrorModalBtn) {
+      closeErrorModalBtn.addEventListener("click", function () {
+        if (errorModal) {
+          errorModal.classList.add("hidden");
+          errorModal.classList.remove("flex");
+        }
+      });
+    }
     const activeChatId = "<%= chat._id %>";
 
     const deleteModal = document.getElementById("deleteModal");
@@ -394,10 +433,10 @@
             chatMessage.focus();
             updateBotToggleUI(true);
           } catch (sockErr) {
-            alert(sockErr.message || "Failed to send message.");
+            showError(sockErr.message || err.message || "Failed to send message.");
           }
         } else {
-          alert(err.message || "Failed to send message.");
+          showError(err.message || "Failed to send message.");
         }
       } finally {
         sendBtn.disabled = false;

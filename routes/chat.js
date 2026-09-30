@@ -322,92 +322,100 @@ router.post(
   "/admin/:chatId/message",
   isLoggedIn,
   isAdmin,
-  wrapAsync(async (req, res) => {
-    const { chatId } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(chatId)) {
-      if (wantsJson(req)) {
-        return res.status(400).json({ ok: false, error: "Invalid chat id." });
+  wrapAsync(async (req, res, next) => {
+    try {
+      const { chatId } = req.params;
+      if (!mongoose.Types.ObjectId.isValid(chatId)) {
+        if (wantsJson(req)) {
+          return res.status(400).json({ ok: false, error: "Invalid chat id." });
+        }
+        req.flash("error", "Invalid chat id.");
+        return res.redirect("/chat/admin");
       }
-      req.flash("error", "Invalid chat id.");
-      return res.redirect("/chat/admin");
-    }
 
-    const message = parseMessage(req);
-    if (!message) {
-      if (wantsJson(req)) {
-        return res.status(400).json({ ok: false, error: "Message cannot be empty." });
+      const message = parseMessage(req);
+      if (!message) {
+        if (wantsJson(req)) {
+          return res.status(400).json({ ok: false, error: "Message cannot be empty." });
+        }
+        req.flash("error", "Message cannot be empty.");
+        return res.redirect(`/chat/admin/${chatId}`);
       }
-      req.flash("error", "Message cannot be empty.");
-      return res.redirect(`/chat/admin/${chatId}`);
-    }
-    if (message.length > MAX_MESSAGE_LENGTH) {
-      if (wantsJson(req)) {
-        return res.status(400).json({ ok: false, error: `Message is too long. Max ${MAX_MESSAGE_LENGTH} characters.` });
+      if (message.length > MAX_MESSAGE_LENGTH) {
+        if (wantsJson(req)) {
+          return res.status(400).json({ ok: false, error: `Message is too long. Max ${MAX_MESSAGE_LENGTH} characters.` });
+        }
+        req.flash("error", `Message is too long. Max ${MAX_MESSAGE_LENGTH} characters.`);
+        return res.redirect(`/chat/admin/${chatId}`);
       }
-      req.flash("error", `Message is too long. Max ${MAX_MESSAGE_LENGTH} characters.`);
-      return res.redirect(`/chat/admin/${chatId}`);
-    }
 
-    const chat = await Chat.findById(chatId).select(
-      "user messages lastMessage lastMessageAt userUnreadCount adminUnreadCount adminTakeover"
-    );
-    if (!chat) {
-      if (wantsJson(req)) {
-        return res.status(404).json({ ok: false, error: "Chat not found." });
+      const chat = await Chat.findById(chatId).select(
+        "user messages lastMessage lastMessageAt userUnreadCount adminUnreadCount adminTakeover"
+      );
+      if (!chat) {
+        if (wantsJson(req)) {
+          return res.status(404).json({ ok: false, error: "Chat not found." });
+        }
+        req.flash("error", "Chat not found.");
+        return res.redirect("/chat/admin");
       }
-      req.flash("error", "Chat not found.");
-      return res.redirect("/chat/admin");
-    }
 
-    chat.messages.push({
-      sender: req.user._id,
-      senderRole: "admin",
-      text: message,
-    });
-    chat.adminTakeover = true;
-    chat.lastMessage = message;
-    chat.lastMessageAt = new Date();
-    chat.userUnreadCount = (chat.userUnreadCount || 0) + 1;
-    chat.adminUnreadCount = 0;
-
-    await chat.save();
-    invalidateChatInboxCache();
-    const latestMessage = chat.messages[chat.messages.length - 1];
-    const chatOwner = await user.findById(chat.user).select("username email").lean();
-
-    const io = req.app.get("io");
-    if (io) {
-      const currentChatId = String(chat._id);
-
-      io.to(`chat:${currentChatId}`).emit("newChatMessage", {
-        chatId: currentChatId,
-        message: {
-          _id: String(latestMessage._id),
-          text: latestMessage.text,
-          senderRole: latestMessage.senderRole,
-          senderName: req.user.username,
-        },
+      chat.messages.push({
+        sender: req.user._id,
+        senderRole: "admin",
+        text: message,
       });
+      chat.adminTakeover = true;
+      chat.lastMessage = message;
+      chat.lastMessageAt = new Date();
+      chat.userUnreadCount = (chat.userUnreadCount || 0) + 1;
+      chat.adminUnreadCount = 0;
 
-      io.to("admins").emit("chatThreadUpdated", {
-        chatId: currentChatId,
-        userName: chatOwner?.username || "Unknown User",
-        userEmail: chatOwner?.email || "No email",
-        lastMessage: chat.lastMessage || "",
-        lastMessageAt: chat.lastMessageAt,
-        adminUnreadCount: chat.adminUnreadCount || 0,
-      });
+      await chat.save();
+      invalidateChatInboxCache();
+      const latestMessage = chat.messages[chat.messages.length - 1];
+      const chatOwner = await user.findById(chat.user).select("username email").lean();
+
+      const io = req.app.get("io");
+      if (io) {
+        const currentChatId = String(chat._id);
+
+        io.to(`chat:${currentChatId}`).emit("newChatMessage", {
+          chatId: currentChatId,
+          message: {
+            _id: String(latestMessage._id),
+            text: latestMessage.text,
+            senderRole: latestMessage.senderRole,
+            senderName: req.user.username,
+          },
+        });
+
+        io.to("admins").emit("chatThreadUpdated", {
+          chatId: currentChatId,
+          userName: chatOwner?.username || "Unknown User",
+          userEmail: chatOwner?.email || "No email",
+          lastMessage: chat.lastMessage || "",
+          lastMessageAt: chat.lastMessageAt,
+          adminUnreadCount: chat.adminUnreadCount || 0,
+        });
+      }
+
+      if (wantsJson(req)) {
+        return res.json({
+          ok: true,
+          chatId: String(chat._id),
+          message: serializeMessage(latestMessage),
+        });
+      }
+
+      res.redirect(`/chat/admin/${chatId}`);
+    } catch (err) {
+      console.error("Error in admin chat message send:", err);
+      if (wantsJson(req)) {
+        return res.status(500).json({ ok: false, error: err.message || "Failed to send message." });
+      }
+      next(err);
     }
-
-    if (wantsJson(req)) {
-      return res.json({
-        ok: true,
-        chatId: String(chat._id),
-        message: serializeMessage(latestMessage),
-      });
-    }
-
-    res.redirect(`/chat/admin/${chatId}`);
   })
 );
 
