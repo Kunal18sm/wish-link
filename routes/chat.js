@@ -347,9 +347,11 @@ router.post(
       senderRole: "admin",
       text: message,
     });
+    chat.adminTakeover = true;
     chat.lastMessage = message;
     chat.lastMessageAt = new Date();
     chat.userUnreadCount += 1;
+    chat.adminUnreadCount = 0;
 
     await chat.save();
     invalidateChatInboxCache();

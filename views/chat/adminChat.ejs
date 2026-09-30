@@ -398,21 +398,29 @@
       sendBtn.classList.add("opacity-70", "scale-95");
 
       try {
-        if (socket && socket.connected) {
-          await new Promise((resolve, reject) => {
-            socket.emit("sendChatMessage", { chatId: activeChatId, text }, function (response) {
-              if (!response || !response.ok) return reject(new Error((response && response.error) || "Failed to send message."));
-              resolve();
-            });
-          });
-        } else {
-          await sendThroughHttp(text);
-        }
-
+        await sendThroughHttp(text);
         chatMessage.value = "";
         chatMessage.focus();
+        updateBotToggleUI(true);
       } catch (err) {
-        alert(err.message || "Failed to send message.");
+        if (socket && socket.connected) {
+          try {
+            await new Promise((resolve, reject) => {
+              socket.emit("sendChatMessage", { chatId: activeChatId, text }, function (response) {
+                if (!response || !response.ok) return reject(new Error((response && response.error) || "Failed to send message."));
+                resolve();
+              });
+            });
+            appendMessage({ text: text, senderRole: "admin", createdAt: new Date() });
+            chatMessage.value = "";
+            chatMessage.focus();
+            updateBotToggleUI(true);
+          } catch (sockErr) {
+            alert(sockErr.message || "Failed to send message.");
+          }
+        } else {
+          alert(err.message || "Failed to send message.");
+        }
       } finally {
         sendBtn.disabled = false;
         sendBtn.classList.remove("opacity-70", "scale-95");

@@ -875,7 +875,9 @@ io.on("connection", (socket) => {
       chat.lastMessageAt = new Date();
 
       if (senderRole === "admin") {
+        chat.adminTakeover = true;
         chat.userUnreadCount += 1;
+        chat.adminUnreadCount = 0;
       } else {
         chat.adminUnreadCount += 1;
       }
