@@ -20,7 +20,12 @@ const MAX_MESSAGE_LENGTH = 1500;
 const CHAT_INBOX_SELECT = "user lastMessage lastMessageAt adminUnreadCount adminTakeover";
 
 function parseMessage(req) {
-  const raw = req.body?.chat?.message ?? req.body?.message ?? "";
+  const raw =
+    req.body?.chat?.message ??
+    req.body?.message ??
+    req.body?.["chat[message]"] ??
+    req.body?.["message"] ??
+    "";
   if (typeof raw !== "string") return "";
   return raw.trim();
 }
