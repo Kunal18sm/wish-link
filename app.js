@@ -876,10 +876,10 @@ io.on("connection", (socket) => {
 
       if (senderRole === "admin") {
         chat.adminTakeover = true;
-        chat.userUnreadCount += 1;
+        chat.userUnreadCount = (chat.userUnreadCount || 0) + 1;
         chat.adminUnreadCount = 0;
       } else {
-        chat.adminUnreadCount += 1;
+        chat.adminUnreadCount = (chat.adminUnreadCount || 0) + 1;
       }
 
       await chat.save();
@@ -948,7 +948,7 @@ io.on("connection", (socket) => {
                 });
                 chat.lastMessage = botReplyText;
                 chat.lastMessageAt = new Date();
-                chat.userUnreadCount += 1;
+                chat.userUnreadCount = (chat.userUnreadCount || 0) + 1;
                 await chat.save();
                 invalidateChatInboxCache();
 
