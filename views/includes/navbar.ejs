@@ -36,6 +36,16 @@
       </div>
     <% } %>
 
+    <% if(navUser && navUser.isAdmin) {%>
+      <a href="/chat"
+        class="relative flex items-center justify-center w-10 h-10 rounded-full bg-[#1e293b] border border-slate-700 hover:border-indigo-500 transition-all focus:outline-none shadow-md text-slate-200"
+        title="Chat Inbox">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+      </a>
+    <% } %>
+
     <button id="navThemeToggleBtn"
       type="button"
       aria-label="Toggle theme"
@@ -85,6 +95,10 @@
             </a>
           <% } %>
           <% if(navUser && navUser.isAdmin) {%>
+            <a href="/chat"
+              class="flex items-center gap-3 px-4 py-3 text-sm text-indigo-300 font-semibold hover:bg-indigo-600 hover:text-white transition">
+              <span>💬 Chat Inbox</span>
+            </a>
             <a href="/requests"
               class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-indigo-600 hover:text-white transition">
               <span>Requests</span>
